@@ -7,7 +7,7 @@
 #endif
 
 /* Sort tree by child node structure and area size. This provide 
-	 some robustness on rotation for tree comparison. */
+   some robustness on rotation for tree comparison. */
 //#define BLOB_SORT_TREE
 
 /* Set this env. variable to enable diagonal checks between compared pixels. */
@@ -110,11 +110,11 @@
 //#ifdef BLOB_DIMENSION ## BLOB_BARYCENTER //short version throws waring in gcc.
 #ifdef BLOB_DIMENSION 
 /* Update current position for each step */
-	#define PIXEL_POSITION
+  #define PIXEL_POSITION
 #else
 #ifdef BLOB_BARYCENTER
 /* Update current position for each step */
-	#define PIXEL_POSITION
+  #define PIXEL_POSITION
 #endif
 #endif
 

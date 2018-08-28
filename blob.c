@@ -90,7 +90,7 @@ Node *blobtree_first( Blobtree *blob){
 Node *blobtree_next( Blobtree *blob){
 
   if( blob->filter.only_leafs ){
-    while(	blob->it_next.node != NULL ){
+    while( blob->it_next.node != NULL ){
       blob->it.node = blob->it_next.node;
       blob->it.depth = blob->it_next.depth;
       blobtree_next2(blob,&blob->it_next);
@@ -118,7 +118,7 @@ void blobtree_next2(Blobtree *blob, Iterator* pit){
   if( it->child != NULL){
     it = it->child;
     it_depth++;
-  }else	if( it->silbing != NULL ){
+  }else if( it->silbing != NULL ){
     it = it->silbing;
   }else{
     while( 1 ){

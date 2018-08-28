@@ -12,9 +12,9 @@
 
 
 typedef struct {
-	//Node *childroot; //root of tree of children relation.
+  //Node *childroot; //root of tree of children relation.
     size_t subblobs_length;
-	Blobtree **subblobs ;// list of blobstructs
+  Blobtree **subblobs ;// list of blobstructs
     Tree *childblobs;
     Tree *leafblobs;
 } Subblobtree;
@@ -66,12 +66,12 @@ void subblobtree_destroy(Subblobtree *sub){
 }
 
 void subblobtree_eval( Subblobtree *sub,
-		const unsigned char *data, 
-		const int w, const int h,
+    const unsigned char *data, 
+    const int w, const int h,
         const Blobtree *blobs,
         const Blob *baseblob,
-		//const BlobtreeRect subroi,
-		const unsigned char startthresh  /* should be thresh of blobs. */
+    //const BlobtreeRect subroi,
+    const unsigned char startthresh  /* should be thresh of blobs. */
         ){
 
     BlobtreeRect *subroi = baseblob->roi;
@@ -97,7 +97,7 @@ void subblobtree_eval( Subblobtree *sub,
         blobtree_set_filter(blob, F_DEPTH_MAX, 1);
 
         //check if tree is empty.
-	    if( blobtree_first(blob) == NULL ) break;
+      if( blobtree_first(blob) == NULL ) break;
 
         sub->subblobs[i] = blob; 
     }
