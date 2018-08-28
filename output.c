@@ -99,54 +99,54 @@ char *sprint_coloured_threshblob_ids(
             expand_buf_if_required(&buf_len, &buf, used_buf_size, 50, 100);
 
             if(col[0] != prev_col[0] || col[1] != prev_col[1] || col[2] != prev_col[2]){
-								if( id==background_id ){
-									// Do not define any color information for 'empty space'.
-								
-									// Reset color information
-									expand_buf_if_required(&buf_len, &buf, used_buf_size, 3, 0);
-									used_buf_size += sprintf(buf+used_buf_size, "\e[m");
+                if( id==background_id ){
+                  // Do not define any color information for 'empty space'.
+                
+                  // Reset color information
+                  expand_buf_if_required(&buf_len, &buf, used_buf_size, 3, 0);
+                  used_buf_size += sprintf(buf+used_buf_size, "\e[m");
 
-								}else{
-									// Prepend next char with new color information
-									consumed_chars = sprintf(buf+used_buf_size,
-											"\x1b[%d;2;%d;%d;%dm", 
-											bg?48:38, 
-											col[0], col[1], col[2]
-											);
-									CHECK_CONSUMED_CHARS(consumed_chars, buf, used_buf_size);
-									used_buf_size += consumed_chars;
+                }else{
+                  // Prepend next char with new color information
+                  consumed_chars = sprintf(buf+used_buf_size,
+                      "\x1b[%d;2;%d;%d;%dm", 
+                      bg?48:38, 
+                      col[0], col[1], col[2]
+                      );
+                  CHECK_CONSUMED_CHARS(consumed_chars, buf, used_buf_size);
+                  used_buf_size += consumed_chars;
 
-									if( bg ){
-										// Foreground color should depends on background for better readability
-										if( col[0] + col[1] + col[2] > 400 ){
-											consumed_chars = sprintf(buf+used_buf_size, "\x1b[%d;2;%d;%d;%dm", 38, 0, 0, 0);
-										}else{
-											consumed_chars = sprintf(buf+used_buf_size, "\x1b[%d;2;%d;%d;%dm", 38, 240, 240, 240);
-										}
-										CHECK_CONSUMED_CHARS(consumed_chars, buf, used_buf_size);
-										used_buf_size += consumed_chars;
-									}
-								}
+                  if( bg ){
+                    // Foreground color should depends on background for better readability
+                    if( col[0] + col[1] + col[2] > 400 ){
+                      consumed_chars = sprintf(buf+used_buf_size, "\x1b[%d;2;%d;%d;%dm", 38, 0, 0, 0);
+                    }else{
+                      consumed_chars = sprintf(buf+used_buf_size, "\x1b[%d;2;%d;%d;%dm", 38, 240, 240, 240);
+                    }
+                    CHECK_CONSUMED_CHARS(consumed_chars, buf, used_buf_size);
+                    used_buf_size += consumed_chars;
+                  }
+                }
             }else{
                 // Reuse previous color
             }
 
-						consumed_chars = sprintf(buf+used_buf_size,
-								"%c",
-								id==background_id?' ':char_map[id%char_map_len]
-								);
+            consumed_chars = sprintf(buf+used_buf_size,
+                "%c",
+                id==background_id?' ':char_map[id%char_map_len]
+                );
 
-						CHECK_CONSUMED_CHARS(consumed_chars, buf, used_buf_size);
+            CHECK_CONSUMED_CHARS(consumed_chars, buf, used_buf_size);
             used_buf_size += consumed_chars;
 
         }
 
-				if( bg ){
-					// Reset color information
-					expand_buf_if_required(&buf_len, &buf, used_buf_size, 3, 0);
-					used_buf_size += sprintf(buf+used_buf_size, "\e[m");
-					col[0] = -1; // Trigger color generation at next line
-				}
+        if( bg ){
+          // Reset color information
+          expand_buf_if_required(&buf_len, &buf, used_buf_size, 3, 0);
+          used_buf_size += sprintf(buf+used_buf_size, "\e[m");
+          col[0] = -1; // Trigger color generation at next line
+        }
 
         consumed_chars = sprintf(buf+used_buf_size, "\n");
         CHECK_CONSUMED_CHARS(consumed_chars, buf, used_buf_size);
@@ -170,9 +170,9 @@ int print_coloured_threshblob_ids(
         const char *char_map
         )
 {
-	char *out = sprint_coloured_threshblob_ids(data, frameblobs, pprint_roi, tworkspace,
+  char *out = sprint_coloured_threshblob_ids(data, frameblobs, pprint_roi, tworkspace,
           display_filtered_areas, background_id, char_map);
-	int ret = printf("%s\n", out);
+  int ret = printf("%s\n", out);
   free(out);
   return ret;
 }
@@ -245,12 +245,12 @@ char *sprint_coloured_threshblob_areas(
 
         }
 
-				if( bg ){
-					// Reset color information
-					expand_buf_if_required(&buf_len, &buf, used_buf_size, 3, 0);
-					used_buf_size += sprintf(buf+used_buf_size, "\e[m");
-					col[0] = -1; // Trigger color generation at next line
-				}
+        if( bg ){
+          // Reset color information
+          expand_buf_if_required(&buf_len, &buf, used_buf_size, 3, 0);
+          used_buf_size += sprintf(buf+used_buf_size, "\e[m");
+          col[0] = -1; // Trigger color generation at next line
+        }
 
         consumed_chars = sprintf(buf+used_buf_size, "\n");
         CHECK_CONSUMED_CHARS(consumed_chars, buf, used_buf_size);
@@ -271,8 +271,8 @@ int print_coloured_threshblob_areas(
         ThreshtreeWorkspace *tworkspace,
         const int display_filtered_areas)
 {
-	char *out = sprint_coloured_threshblob_areas(data, frameblobs, pprint_roi, tworkspace, display_filtered_areas);
-	int ret = printf("%s\n", out);
+  char *out = sprint_coloured_threshblob_areas(data, frameblobs, pprint_roi, tworkspace, display_filtered_areas);
+  int ret = printf("%s\n", out);
   free(out);
   return ret;
 }
