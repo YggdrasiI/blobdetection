@@ -1284,7 +1284,7 @@ void threshtree_filter_blob_ids(
 		}
 
 		/*3. Expand nodeToFilteredNode map information on all ids
-		 * 3a)	Use projection (yes, its project now) comp_same to map id
+		 * 3a)	Use projection comp_same to map id
 		 * 			on preimage of real_ids_inv. (=> id2)
 		 * 3b) Get node for id2. The dummy node produce +1 shift.
 		 * 3c) Finally, use nodeToFilteredNode map.
@@ -1293,12 +1293,14 @@ void threshtree_filter_blob_ids(
 		while( id ){
 			*(blob_id_filtered+id) = *(nodeToFilteredNode +	*(real_ids_inv + *(comp_same+id)) + 1 );
 			//*(blob_id_filtered+id) = *(nodeToFilteredNode +	*(real_ids_inv + *(comp_same+*(comp_same+id))) + 1 );
+#if VERBOSE > 0
 			printf("bif[%u] = %u, riv[%u]=%u\n",id, *(blob_id_filtered+id), id, *(real_ids_inv+id) );
+#endif
 			id--;
 		}
-		//*(blob_id_filtered+id) = *(nodeToFilteredNode +	*(real_ids_inv + *(comp_same+id)) + 1 );
+		*(blob_id_filtered+id) = *(nodeToFilteredNode +	*(real_ids_inv + *(comp_same+id)) + 1 );
 
-#if VERBOSE > -1
+#if VERBOSE > 0
 		printf("nodeToFilteredNode[realid] = realid\n");
 		for( ri=0; ri<numNodes; ri++){
 			unsigned int id = ((Blob*)((blob->tree->root +ri)->data))->id;
@@ -1316,5 +1318,73 @@ void threshtree_filter_blob_ids(
 }
 
 
+unsigned int threshtree_get_id(
+		const int x, const int y,
+		ThreshtreeWorkspace *pworkspace
+		)
+{
+	unsigned int id;
+	unsigned int *ids, *riv, *cm;
 
+	ids = pworkspace->ids;      // id map for complete image
+	cm = pworkspace->comp_same; // Map connected ids on one representor
+	riv = pworkspace->real_ids_inv; // Map representor on output id (= blob id)
+
+	id = ids[ y*pworkspace->w + x ];
+	return *(riv + *(cm + id));
+	//return *(cm + id);
+}
+
+unsigned int threshtree_get_id_roi(
+		const BlobtreeRect roi,
+		const int x, const int y,
+		ThreshtreeWorkspace *pworkspace
+		)
+{
+	if( x < 0 || y < 0 || x >= roi.width || y >= roi.height ){
+		fprintf(stderr, "(threshtree_get_id_roi) Requested pixel (%i,%i) not in roi (%i, %i, %i, %i).",
+				x, y, roi.x, roi.y, roi.width, roi.height);
+		return -1;
+	}
+	return threshtree_get_id(x + roi.x, y + roi.y, pworkspace);
+}
+
+unsigned int threshtree_get_filtered_id(
+		const Blobtree *blobs,
+		const int x, const int y,
+		ThreshtreeWorkspace *pworkspace
+		)
+{
+	unsigned int id;
+	unsigned int *ids, *riv, *bif, *cm;
+
+	ids = pworkspace->ids;      // id map for complete image
+	cm = pworkspace->comp_same; // Map connected ids on one representor
+	riv = pworkspace->real_ids_inv; // Map representor on output id
+	bif = pworkspace->blob_id_filtered; //maps  'unfiltered id' on 'parent filtered id'
+	if( bif == NULL ){
+		fprintf(stderr, "(threshtree_get_filtered_id). 'blob_id_filtered' is NULL."
+				"Call threshtree_filter_blobs(...) to initialize it.");
+		return -1;
+	}
+
+	id = ids[ y*pworkspace->w + x ];
+	return *(bif + id);
+}
+
+/* Postprocessing: Get filtered blob id for coordinate. Roi version */
+unsigned int threshtree_get_filtered_id_roi(
+		const Blobtree *blobs,
+		const BlobtreeRect roi,
+		const int x, const int y,
+		ThreshtreeWorkspace *pworkspace
+		)
+{
+	if( x < 0 || y < 0 || x >= roi.width || y >= roi.height ){
+		fprintf(stderr, "(threshtree_get_filtered_id_roi) Requested pixel (%i,%i) not in roi (%i, %i, %i, %i).",
+				x, y, roi.x, roi.y, roi.width, roi.height);
+		return -1;
+	}
+	return threshtree_get_filtered_id( blobs, x + roi.x, y + roi.y, pworkspace);
+}
 #endif

@@ -10,6 +10,17 @@
                 return BUF; \
             }
 
+#define ID_TO_RGB_A(ID, COL) \
+            (COL)[0] =  ((ID)*5*5+100)%256; \
+            (COL)[1] =  ((ID)*7*7+10)%256;  \
+            (COL)[2] =  ((ID)*29*29+1)%256; 
+
+// Darker
+#define ID_TO_RGB_B(ID, COL) \
+            (COL)[0] =  ((ID)*5*511+100)%180; \
+            (COL)[1] =  ((ID)*7*753+10)%180;  \
+            (COL)[2] =  ((ID)*29*29+1)%180; 
+
 /*
  * Explands buffer if less than 'required' characters left.
  */
@@ -34,99 +45,108 @@ void expand_buf_if_required(
 char *sprint_coloured_threshblob_ids(
         unsigned char* data,
         Blobtree *frameblobs,
+        const BlobtreeRect *pprint_roi,
         ThreshtreeWorkspace *tworkspace,
-        int background_id,
+        const int display_filtered_areas,
+        const int background_id,
         const char *char_map
         )
 {
-    BlobtreeRect output_roi = {0, 0, tworkspace->w, tworkspace->h}; // Region to print
+    // Region to print
+    BlobtreeRect output_roi = {0, 0, tworkspace->w, tworkspace->h};
+    if( pprint_roi != NULL ) output_roi = *pprint_roi;
 
-    unsigned int seed, id, s2, s3, s4;
-    unsigned int *ids, *riv, *bif, *cm;
-    int display_filtered_areas = 0;
-    int reset_ids = 0;
-    unsigned int col[3] = {0, 0, 0};
-    unsigned int prev_col[3];
-    ids = tworkspace->ids;
-    cm = tworkspace->comp_same;
-    riv = tworkspace->real_ids_inv;
     if(char_map == NULL) char_map = "0123456789ABCDEF";
-    size_t char_map_len = sizeof(char_map);
+    size_t char_map_len = strlen(char_map);
 
     if( display_filtered_areas ){
+        // Setup filtered ids ( = tworkspace->blob_id_filtered)
         threshtree_filter_blob_ids(frameblobs, tworkspace);
     }
-    bif = tworkspace->blob_id_filtered; //maps  'unfiltered id' on 'parent filtered id'
+    const unsigned int *bif = tworkspace->blob_id_filtered;
+    unsigned int col[3] = {0, 0, 0};
+    unsigned int prev_col[3];
 
     //printf("Roi: (%i %i %i %i)\n", output_roi.x, output_roi.y, output_roi.width, output_roi.height);
     size_t buf_len = output_roi.width * output_roi.height * 4;
     size_t used_buf_size = 0;
     char *buf = malloc(buf_len);
 
-    const int bg = 0;  // Flag indicates if background or foreground color should be changed.
+    const int bg = 1;  // Flag indicates if background or foreground color should be changed.
     int consumed_chars = 0; // set by sprintf calls
+    unsigned int id;
 
     for( unsigned int y=0, H=output_roi.height; y<H; ++y){
-
         //restrict on grid pixels.
         if( y % frameblobs->grid.height != 0 && y!= H-1 ) continue;
 
         for( unsigned int x=0, W=output_roi.width; x<W; ++x) {
-
             //restrict on grid pixels.
             if( x % frameblobs->grid.width != 0 && x!= W-1 ) continue;
 
-            id = ids[ (y+output_roi.y)*tworkspace->w + x + output_roi.x ];
-            seed = id;
-
             if( display_filtered_areas && bif ){
-                s2 = *(bif + seed);
+                id = threshtree_get_filtered_id_roi(frameblobs, output_roi, x, y, tworkspace);
             }else{
-                /* This transformation just adjust the set of if- and else-branch.
+                /* The translation by 1 just adjust the results of both branches
                  * to avoid color flickering after the flag changes. */
-                s2 = *(riv + *(cm + seed)) + 1 ;
+                id = threshtree_get_id_roi(output_roi, x, y, tworkspace); //+ 1;
             }
 
-#if 0
-            /* To reduce color flickering for thresh changes
-             * eval variable which depends on some geometric information.
-             * Use seed(=id) to get the associated node of the tree structure. 
-             * Adding 1 compensate the dummy element at position 0.
-             */
-            Blob *pixblob = (Blob*) (frameblobs->tree->root + s2 )->data;
-            s3 = pixblob->area + pixblob->roi.x + pixblob->roi.y;
-#else
-            s3 = s2;
-#endif
-
-            unsigned char d = *(data+
-                    y * tworkspace->w + x);
+            unsigned char d = *(data + y * tworkspace->w + x);
             prev_col[0] = col[0]; prev_col[1] = col[1]; prev_col[2] = col[2];
-            col[0] =  (s3*5*5+100)%256; 
-            col[1] =  (s3*7*7+10)%256; 
-            col[2] =  (s3*29*29+1)%256; 
+            ID_TO_RGB_B(id, col);
 
             expand_buf_if_required(&buf_len, &buf, used_buf_size, 50, 100);
 
-            if( col[0] != prev_col[0] || col[1] != prev_col[1] || col[2] != prev_col[2]){
-                // Prepend next char with new color information
-                consumed_chars = sprintf(buf+used_buf_size,
-                        "\x1b[%d;2;%d;%d;%dm%c", 
-                        bg?48:38, 
-                        col[0], col[1], col[2],
-                        s2==background_id?' ':char_map[s2%char_map_len]
-                        );
+            if(col[0] != prev_col[0] || col[1] != prev_col[1] || col[2] != prev_col[2]){
+								if( id==background_id ){
+									// Do not define any color information for 'empty space'.
+								
+									// Reset color information
+									expand_buf_if_required(&buf_len, &buf, used_buf_size, 3, 0);
+									used_buf_size += sprintf(buf+used_buf_size, "\e[m");
+
+								}else{
+									// Prepend next char with new color information
+									consumed_chars = sprintf(buf+used_buf_size,
+											"\x1b[%d;2;%d;%d;%dm", 
+											bg?48:38, 
+											col[0], col[1], col[2]
+											);
+									CHECK_CONSUMED_CHARS(consumed_chars, buf, used_buf_size);
+									used_buf_size += consumed_chars;
+
+									if( bg ){
+										// Foreground color should depends on background for better readability
+										if( col[0] + col[1] + col[2] > 400 ){
+											consumed_chars = sprintf(buf+used_buf_size, "\x1b[%d;2;%d;%d;%dm", 38, 0, 0, 0);
+										}else{
+											consumed_chars = sprintf(buf+used_buf_size, "\x1b[%d;2;%d;%d;%dm", 38, 240, 240, 240);
+										}
+										CHECK_CONSUMED_CHARS(consumed_chars, buf, used_buf_size);
+										used_buf_size += consumed_chars;
+									}
+								}
             }else{
                 // Reuse previous color
-                consumed_chars = sprintf(buf+used_buf_size,
-                        "%c",
-                        s2==background_id?' ':char_map[s2%char_map_len]
-                        );
             }
-            CHECK_CONSUMED_CHARS(consumed_chars, buf, used_buf_size);
+
+						consumed_chars = sprintf(buf+used_buf_size,
+								"%c",
+								id==background_id?' ':char_map[id%char_map_len]
+								);
+
+						CHECK_CONSUMED_CHARS(consumed_chars, buf, used_buf_size);
             used_buf_size += consumed_chars;
 
         }
+
+				if( bg ){
+					// Reset color information
+					expand_buf_if_required(&buf_len, &buf, used_buf_size, 3, 0);
+					used_buf_size += sprintf(buf+used_buf_size, "\e[m");
+					col[0] = -1; // Trigger color generation at next line
+				}
 
         consumed_chars = sprintf(buf+used_buf_size, "\n");
         CHECK_CONSUMED_CHARS(consumed_chars, buf, used_buf_size);
@@ -140,40 +160,41 @@ char *sprint_coloured_threshblob_ids(
     return buf;
 }
 
-void print_coloured_threshblob_ids(
+int print_coloured_threshblob_ids(
         unsigned char* data,
         Blobtree *frameblobs,
+        const BlobtreeRect *pprint_roi,
         ThreshtreeWorkspace *tworkspace,
-        int background_id,
+        const int display_filtered_areas,
+        const int background_id,
         const char *char_map
         )
 {
-	char *out = sprint_coloured_threshblob_ids(data, frameblobs, tworkspace, background_id, char_map);
-	printf("%s\n", out);
+	char *out = sprint_coloured_threshblob_ids(data, frameblobs, pprint_roi, tworkspace,
+          display_filtered_areas, background_id, char_map);
+	int ret = printf("%s\n", out);
   free(out);
+  return ret;
 }
 
 char *sprint_coloured_threshblob_areas(
-        unsigned char* data,
+        const unsigned char* data,
         Blobtree *frameblobs,
-        ThreshtreeWorkspace *tworkspace)
+        const BlobtreeRect *pprint_roi,
+        ThreshtreeWorkspace *tworkspace,
+        const int display_filtered_areas)
 {
-    BlobtreeRect output_roi = {0, 0, tworkspace->w, tworkspace->h}; // Region to print
-
-    unsigned int seed, id, s2, s3, s4;
-    unsigned int *ids, *riv, *bif, *cm;
-    int display_filtered_areas = 0;
-    int reset_ids = 0;
-    unsigned int col[3] = {0, 0, 0};
-    unsigned int prev_col[3];
-    ids = tworkspace->ids;
-    cm = tworkspace->comp_same;
-    riv = tworkspace->real_ids_inv;
+    // Region to print
+    BlobtreeRect output_roi = {0, 0, tworkspace->w, tworkspace->h};
+    if( pprint_roi != NULL ) output_roi = *pprint_roi;
 
     if( display_filtered_areas ){
+        // Setup filtered ids ( = tworkspace->blob_id_filtered)
         threshtree_filter_blob_ids(frameblobs, tworkspace);
     }
-    bif = tworkspace->blob_id_filtered; //maps  'unfiltered id' on 'parent filtered id'
+    const unsigned int *bif = tworkspace->blob_id_filtered;
+    unsigned int col[3] = {0, 0, 0};
+    unsigned int prev_col[3];
 
     //printf("Roi: (%i %i %i %i)\n", output_roi.x, output_roi.y, output_roi.width, output_roi.height);
     size_t buf_len = output_roi.width * output_roi.height * 4;
@@ -182,47 +203,27 @@ char *sprint_coloured_threshblob_areas(
 
     const int bg = 0;  // Flag indicates if background or foreground color should be changed.
     int consumed_chars = 0; // set by sprintf calls
+    unsigned int id;
 
     for( unsigned int y=0, H=output_roi.height; y<H; ++y){
-
         //restrict on grid pixels.
         if( y % frameblobs->grid.height != 0 && y!= H-1 ) continue;
 
         for( unsigned int x=0, W=output_roi.width; x<W; ++x) {
-
             //restrict on grid pixels.
             if( x % frameblobs->grid.width != 0 && x!= W-1 ) continue;
 
-            id = ids[ (y+output_roi.y)*tworkspace->w + x + output_roi.x ];
-
-            seed = id;
-
             if( display_filtered_areas && bif ){
-                s2 = *(bif + seed);
+                id = threshtree_get_filtered_id_roi(frameblobs, output_roi, x, y, tworkspace);
             }else{
-                /* This transformation just adjust the set of if- and else-branch.
+                /* The translation by 1 just adjust the results of both branches
                  * to avoid color flickering after the flag changes. */
-                s2 = *(riv + *(cm + seed)) + 1 ;
+                id = threshtree_get_id_roi(output_roi, x, y, tworkspace); //+ 1;
             }
 
-#if 0
-            /* To reduce color flickering for thresh changes
-             * eval variable which depends on some geometric information.
-             * Use seed(=id) to get the associated node of the tree structure. 
-             * Adding 1 compensate the dummy element at position 0.
-             */
-            Blob *pixblob = (Blob*) (frameblobs->tree->root + s2 )->data;
-            s3 = pixblob->area + pixblob->roi.x + pixblob->roi.y;
-#else
-            s3 = s2;
-#endif
-
-            unsigned char d = *(data+
-                    y * tworkspace->w + x);
+            unsigned char d = *(data + y * tworkspace->w + x);
             prev_col[0] = col[0]; prev_col[1] = col[1]; prev_col[2] = col[2];
-            col[0] =  (s3*5*5+100)%256; 
-            col[1] =  (s3*7*7+10)%256; 
-            col[2] =  (s3*29*29+1)%256; 
+            ID_TO_RGB_B(id, col);
 
             expand_buf_if_required(&buf_len, &buf, used_buf_size, 50, 100);
 
@@ -244,6 +245,13 @@ char *sprint_coloured_threshblob_areas(
 
         }
 
+				if( bg ){
+					// Reset color information
+					expand_buf_if_required(&buf_len, &buf, used_buf_size, 3, 0);
+					used_buf_size += sprintf(buf+used_buf_size, "\e[m");
+					col[0] = -1; // Trigger color generation at next line
+				}
+
         consumed_chars = sprintf(buf+used_buf_size, "\n");
         CHECK_CONSUMED_CHARS(consumed_chars, buf, used_buf_size);
         used_buf_size += consumed_chars;
@@ -256,12 +264,15 @@ char *sprint_coloured_threshblob_areas(
     return buf;
 }
 
-void print_coloured_threshblob_areas(
-        unsigned char* data,
-        Blobtree *frameblobs, 
-        ThreshtreeWorkspace *tworkspace)
+int print_coloured_threshblob_areas(
+        const unsigned char* data,
+        Blobtree *frameblobs,
+        const BlobtreeRect *pprint_roi,
+        ThreshtreeWorkspace *tworkspace,
+        const int display_filtered_areas)
 {
-	char *out = sprint_coloured_threshblob_areas(data, frameblobs, tworkspace);
-	printf("%s\n", out);
+	char *out = sprint_coloured_threshblob_areas(data, frameblobs, pprint_roi, tworkspace, display_filtered_areas);
+	int ret = printf("%s\n", out);
   free(out);
+  return ret;
 }

@@ -139,9 +139,14 @@ void print_tree_filtered(Node *root, int shift, unsigned int minA){
 	//printf("%2i (w%u,h%u,a%2i) ",root->data.id, root->width, root->height, root->data.area);
 	//shift2+=9+4;
 #ifdef SAVE_DEPTH_MAP_VALUE
+#ifdef BLOB_DIMENSION
 	printf("%2i (lvl:%3i, a:%4i) ",data->id, data->depth_level, data->area);
 	//printf("%2i (wxh:%3i, a:%4i) ",data->id, data->roi.width*data->roi.height, data->area);
 	shift2+=22;
+#else
+	printf("%2i (lvl:%3i) ",data->id, data->depth_level);
+	shift2+=14;
+#endif
 #else
 	printf("%2i (area:%4i) ",data->id, data->area);
 	shift2+=9+6;
@@ -408,7 +413,7 @@ void approx_areas(const Tree * const tree, Node * const startnode,
 	do{
 		data->area = *(comp_size + data->id );
 
-		/* To to next node. update parent node on uprising flank */
+		/* Go to next node. update parent node on uprising flank */
 		if( node->child != NULL ){
 			node = node->child;
 			data = (Blob*)node->data;
@@ -709,21 +714,22 @@ void debug_print_matrix( unsigned int* data, unsigned int w, unsigned int h, Blo
 			//printf("%u ",d);
 			//printf("%s", d==0?"■⬛":"□");
 			//printf("%s", d==0?"✘":" ");
-			if(d>0)
-				//printf("%s%u",d<10&&d>=0?" ":"", d);
-				printf("%3i", d);
-			else
+			if(d>0){
+				printf("%3u", d);
+			}else{
 				printf("   ");
+			}
 		}
 		j-=gridw-wr;
 
 		if(w2<roi.width){
 			for(;j<roi.x+roi.width;j+=1){
 				d = *(data+i*w+j);
-				if(d>0)
-					printf("%s%u",d<10&&d>=0?" ":"", d);
-				else
-					printf("  ");
+				if(d>0){
+					printf("%3u", d);
+				}else{
+					printf("   ");
+				}
 			}
 		}
 		
@@ -735,20 +741,22 @@ void debug_print_matrix( unsigned int* data, unsigned int w, unsigned int h, Blo
 		for( ;i<roi.y+roi.height;i+=1){
 			for(j=roi.x;j<roi.x+w2;j+=gridw){
 				d = *(data+i*w+j);
-				if(d>0)
-					printf("%s%u",d<10&&d>=0?" ":"", d);
-				else
-					printf("  ");
+				if(d>0){
+					printf("%3u", d);
+				}else{
+					printf("   ");
+				}
 			}
 			j-=gridw-wr;
 
 			if(w2<roi.width){
 				for(;j<roi.x+roi.width;j+=1){
 					d = *(data+i*w+j);
-					if(d>0)
-						printf("%s%u",d<10&&d>=0?" ":"", d);
-					else
-						printf("  ");
+					if(d>0){
+						printf("%3u", d);
+					}else{
+						printf("   ");
+					}
 				}
 			}
 			printf("\n");
@@ -770,9 +778,11 @@ void debug_print_matrix2(unsigned int* ids, unsigned int* data, unsigned int w, 
 			if( *(ids+i*w+j) > 0 ){
 				d = *(data+*(ids+i*w+j));
 				if(twice) d=*(data+d);
-				printf("%s%u",d<10&&d>=0?" ":"", d);
+				//printf("%s%u",d<10&&d>=0?" ":"", d);
+				printf("%3u", d);
 			}else{
-				printf("  ");
+				//printf("  ");
+				printf("   ");
 			}
 		}
 		j-=gridw-wr;
@@ -782,9 +792,10 @@ void debug_print_matrix2(unsigned int* ids, unsigned int* data, unsigned int w, 
 				if( *(ids+i*w+j) > 0 ){
 					d = *(data+*(ids+i*w+j));
 					if(twice) d=*(data+d);
-					printf("%s%u",d<10&&d>=0?" ":"", d);
+					//printf("%s%u",d<10&&d>=0?" ":"", d);
+					printf("%3u", d);
 				}else{
-					printf("  ");
+					printf("   ");
 				}
 			}
 		}
@@ -798,9 +809,10 @@ void debug_print_matrix2(unsigned int* ids, unsigned int* data, unsigned int w, 
 			for(j=roi.x;j<roi.x+w2;j+=gridw){
 				if( *(ids+i*w+j) > 0 ){
 					d = *(data+*(ids+i*w+j));
-					printf("%s%u",d<10&&d>=0?" ":"", d);
+					//printf("%s%u",d<10&&d>=0?" ":"", d);
+					printf("%3u", d);
 				}else{
-					printf("  ");
+					printf("   ");
 				}
 			}
 			j-=gridw-wr;
@@ -836,7 +848,8 @@ void debug_print_matrix_char( unsigned char * data, unsigned int w, unsigned int
 			//printf("%s", d==0?"■⬛":"□");
 			//printf("%s", d==0?"✘":" ");
 			if(d>0)
-				printf("%s%u",d<10&&d>=0?" ":"", d);
+				//printf("%s%u",d<10&&d>=0?" ":"", d);
+				printf("%2u", d);
 			else
 				printf("  ");
 		}
@@ -846,7 +859,8 @@ void debug_print_matrix_char( unsigned char * data, unsigned int w, unsigned int
 			for(;j<roi.x+roi.width;j+=1){
 				d = *(data+i*w+j);
 				if(d>0)
-					printf("%s%u",d<10&&d>=0?" ":"", d);
+					//printf("%s%u",d<10&&d>=0?" ":"", d);
+					printf("%2u", d);
 				else
 					printf("  ");
 			}
@@ -861,7 +875,8 @@ void debug_print_matrix_char( unsigned char * data, unsigned int w, unsigned int
 			for(j=roi.x;j<roi.x+w2;j+=gridw){
 				d = *(data+i*w+j);
 				if(d>0)
-					printf("%s%u",d<10&&d>=0?" ":"", d);
+					//printf("%s%u",d<10&&d>=0?" ":"", d);
+					printf("%2u", d);
 				else
 					printf("  ");
 			}
@@ -871,7 +886,8 @@ void debug_print_matrix_char( unsigned char * data, unsigned int w, unsigned int
 				for(;j<roi.x+roi.width;j+=1){
 					d = *(data+i*w+j);
 					if(d>0)
-						printf("%s%u",d<10&&d>=0?" ":"", d);
+						//printf("%s%u",d<10&&d>=0?" ":"", d);
+						printf("%2u", d);
 					else
 						printf("  ");
 				}

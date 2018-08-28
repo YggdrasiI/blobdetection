@@ -3,7 +3,7 @@
 
 /* 0, 1, 2(with stops) */
 #ifndef VERBOSE
-//#define VERBOSE 1
+//#define VERBOSE 1 
 #endif
 
 /* Sort tree by child node structure and area size. This provide 
@@ -11,13 +11,17 @@
 //#define BLOB_SORT_TREE
 
 /* Set this env. variable to enable diagonal checks between compared pixels. */
+#ifndef NO_BLOB_DIAGONAL_CHECK
 #ifndef BLOB_DIAGONAL_CHECK
-#define BLOB_DIAGONAL_CHECK
+//#define BLOB_DIAGONAL_CHECK
+#endif
 #endif
 
 /* Eval vertical and horizontal dimension */
+#ifndef NO_BLOB_DIMENSION
 #ifndef BLOB_DIMENSION
-#define BLOB_DIMENSION
+//#define BLOB_DIMENSION
+#endif
 #endif
 
 /* Extend blob dimension of parent blobs (for depthblob algorithm).
@@ -26,8 +30,10 @@
  * Set this env. variable to checked and fix this mostly unwanted behaviour.
  * The used algorithm is non-recursive relating to the tree depth.
  */
+#ifndef NO_EXTEND_BOUNDING_BOXES
 #ifndef EXTEND_BOUNDING_BOXES
-#define EXTEND_BOUNDING_BOXES
+//#define EXTEND_BOUNDING_BOXES
+#endif
 #endif
 
 /* Count pixels of each area. (Stored in node.data.area).
@@ -38,8 +44,10 @@
  * by the 'wetted area' of the bounding box and the
  * bounding boxes of children areas.
  */
+#ifndef NO_BLOB_COUNT_PIXEL
 #ifndef BLOB_COUNT_PIXEL
-#define BLOB_COUNT_PIXEL
+//#define BLOB_COUNT_PIXEL
+#endif
 #endif
 
 /* Evaluate the barycenter in both directions.
@@ -95,9 +103,10 @@
 #define VPRINTF(...) 
 #endif
 
-
+//=============================================================================
 /* Derive some environment variables from the above settings.
  */
+
 //#ifdef BLOB_DIMENSION ## BLOB_BARYCENTER //short version throws waring in gcc.
 #ifdef BLOB_DIMENSION 
 /* Update current position for each step */

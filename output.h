@@ -22,20 +22,24 @@
 char *sprint_coloured_threshblob_ids(
         unsigned char* data,
         Blobtree *frameblobs,
+        const BlobtreeRect *pprint_roi,  // could be NULL
         ThreshtreeWorkspace *tworkspace,
-        int background_id,
+        const int display_filtered_areas,
+        const int background_id,
         const char *char_map
         )
     ;
 
-void print_coloured_threshblob_ids(
+int print_coloured_threshblob_ids(
         unsigned char* data,
         Blobtree *frameblobs,
+        const BlobtreeRect *pprint_roi,
         ThreshtreeWorkspace *tworkspace,
-        int background_id,
+        const int display_filtered_areas,
+        const int background_id,
         const char *char_map
         )
-;
+    ;
 
 /* Colouring pixels by its connection component.
  * ░: Pixels < thresh value of previous threshblob evaluation
@@ -53,15 +57,19 @@ void print_coloured_threshblob_ids(
  * ░█████████████████░░░░░░░░░░
  */
 char *sprint_coloured_threshblob_areas(
-        unsigned char* data,
+        const unsigned char* data,
         Blobtree *frameblobs,
-        ThreshtreeWorkspace *tworkspace)
+        const BlobtreeRect *pprint_roi,
+        ThreshtreeWorkspace *tworkspace,
+        const int display_filtered_areas)
     ;
 
-void print_coloured_threshblob_areas(
-        unsigned char* data,
+int print_coloured_threshblob_areas(
+        const unsigned char* data,
         Blobtree *frameblobs,
-        ThreshtreeWorkspace *tworkspace)
+        const BlobtreeRect *pprint_roi,
+        ThreshtreeWorkspace *tworkspace,
+        const int display_filtered_areas)
     ;
 
 #endif

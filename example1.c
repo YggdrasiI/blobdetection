@@ -46,28 +46,33 @@ int main(int argc, char **argv) {
 	// Now search the blobs.
 	threshtree_find_blobs(blobs, sw, W, H, roi, 128, workspace);
 
-	printf("Print coloured map of connection components:\n");
-	print_coloured_threshblob_areas(sw, blobs, workspace);
+	printf("Coloured map of connection components:\n");
+	print_coloured_threshblob_areas(sw, blobs, &roi, workspace, 0);
 
-	printf("Coloured map of connection component ids (last digit and 1=' '):\n");
-	char *ids_out = sprint_coloured_threshblob_ids(
-			sw, blobs, workspace,
-			1, "0123456789");
+	printf("Coloured map of connection component ids (last digit only and id(0)=' '):\n");
+	char *ids_out = sprint_coloured_threshblob_ids(sw, blobs, &roi, workspace,
+			0, 0, "0123456789");
 	printf("%s\n", ids_out);
 	free(ids_out);
 
-#if 0
+#if 1
 	// Print out result tree.
 	printf("===========\n");
 	printf("Treesize: %u, Tree null? %s\n", blobs->tree->size, blobs->tree->root==NULL?"Yes.":"No.");
 	print_tree(blobs->tree->root, 0);
+#endif
 
-	// Filter results and loop over elements.
+	// Filter results
 	printf("===========\n");
-	blobtree_set_filter(blobs, F_TREE_DEPTH_MIN, 1);
-	blobtree_set_filter(blobs, F_AREA_MIN, 0);
-	blobtree_set_filter(blobs, F_TREE_DEPTH_MAX, 1);
+	printf("Restrict on blobs on three depth 2....\n");
+	blobtree_set_filter(blobs, F_TREE_DEPTH_MIN, 2);
+	//blobtree_set_filter(blobs, F_AREA_MIN, 0);
+	//blobtree_set_filter(blobs, F_AREA_MAX, 30);
+	blobtree_set_filter(blobs, F_TREE_DEPTH_MAX, 2);
 
+#if 1 
+	// Loop over filtered elements.
+	printf("List all blobs matching the filtering criterias:\n");
 	Node *cur = blobtree_first(blobs);
 	while( cur != NULL ){
 		// bounding box
@@ -82,6 +87,29 @@ int main(int argc, char **argv) {
 		cur = blobtree_next(blobs);
 	}
 #endif
+
+	//printf("Print filtered coloured map of connection components:\n");
+	//print_coloured_threshblob_areas(sw, blobs, &roi, workspace, 1);
+
+	printf("Filtered Coloured map of connection component ids (last digit only and id(0)=' '):\n");
+	print_coloured_threshblob_ids(sw, blobs, &roi, workspace, 1, 0, "0123456789");
+
+
+	printf("===========\n");
+	printf("Restrict on blobs on three depth 1...\n");
+	blobtree_set_filter(blobs, F_CLEAR, 0);
+	blobtree_set_filter(blobs, F_TREE_DEPTH_MIN, 1);
+	blobtree_set_filter(blobs, F_TREE_DEPTH_MAX, 1);
+	printf("Filtered Coloured map of connection component ids (last digit only and id(0)=' '):\n");
+	print_coloured_threshblob_ids(sw, blobs, &roi, workspace, 1, 0, "0123456789");
+
+	printf("===========\n");
+	printf("Restrict on blobs on three depth 1 and 2...\n");
+	blobtree_set_filter(blobs, F_CLEAR, 0);
+	blobtree_set_filter(blobs, F_TREE_DEPTH_MIN, 1);
+	blobtree_set_filter(blobs, F_TREE_DEPTH_MAX, 2);
+	printf("Filtered Coloured map of connection component ids (last digit only and id(0)=' '):\n");
+	print_coloured_threshblob_ids(sw, blobs, &roi, workspace, 1, 0, "0123456789");
 
 	// Clean up.
 	blobtree_destroy(&blobs);

@@ -238,6 +238,37 @@ void threshtree_find_blobs( Blobtree *blob,
 		const unsigned char thresh,
 		ThreshtreeWorkspace *workspace );
 
+/* Postprocessing: Get blob id for coordinate. */
+unsigned int threshtree_get_id(
+		const int x, const int y,
+		ThreshtreeWorkspace *pworkspace
+		);
+
+/* Postprocessing: Get blob id for coordinate. Roi version */
+unsigned int threshtree_get_id_roi(
+		const BlobtreeRect roi,
+		const int x, const int y,
+		ThreshtreeWorkspace *pworkspace
+		);
+
+/* Postprocessing: Get filtered blob id for coordinate.
+ * This restricts the output on ids/blobs which fulfil the filter criteria,
+ * set by blobtree_set_filter(...).
+ * Call threshtree_filter_blobs(...) before you use this function.
+ * */
+unsigned int threshtree_get_filtered_id(
+		const Blobtree *blobs,
+		const int x, const int y,
+		ThreshtreeWorkspace *pworkspace
+		);
+
+/* Postprocessing: Get filtered blob id for coordinate. Roi version */
+unsigned int threshtree_get_filtered_id_roi(
+		const Blobtree *blobs,
+		const BlobtreeRect roi,
+		const int x, const int y,
+		ThreshtreeWorkspace *pworkspace
+		);
 #ifdef __cplusplus
 }
 #endif

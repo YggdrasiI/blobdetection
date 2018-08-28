@@ -36,11 +36,12 @@ typedef struct {
 typedef enum {
 	F_TREE_DEPTH_MIN=1,
 	F_TREE_DEPTH_MAX=2,
-	F_AREA_MIN=4,
-	F_AREA_MAX=8,
-	F_ONLY_LEAFS=16,
-	F_AREA_DEPTH_MIN=32,
-	F_AREA_DEPTH_MAX=64
+	F_AREA_MIN=3,
+	F_AREA_MAX=4,
+	F_ONLY_LEAFS=5,
+	F_AREA_DEPTH_MIN=6,
+	F_AREA_DEPTH_MAX=7,
+	F_CLEAR=~0
 } FILTER;
 
 /* Filter handler to mark nodes for filtering out.
