@@ -13,6 +13,8 @@ extern "C" {
 
 /* Workspace struct for array storage */
 typedef struct {
+  unsigned int w; // (Maximal) width of input data.
+  unsigned int h; // (Maximal) height of input data.
   unsigned int max_comp; // = w+h;//maximal number of components. If the value is reached some arrays will reallocate.
   unsigned int used_comp; // number of used ids ; will be set after the main algorithm finishes ; <=max_comp
   unsigned int *ids;
@@ -77,7 +79,7 @@ void depthtree_destroy_workspace(
  *
  * This is useful to draw the map of filtered blobs.
  * */
-void depthtree_filter_blob_ids(
+void depthtree_filter_blobs(
     Blobtree* blob,
     DepthtreeWorkspace *pworkspace
     );
@@ -92,8 +94,8 @@ Tree* find_depthtree(
     DepthtreeWorkspace *workspace,
     Blob** tree_data );
 
-
-unsigned int inline getRealId( unsigned int * const comp_same, unsigned int const id ){
+// Note: keyword static required for -std=gnu11 
+static unsigned int inline getRealId( unsigned int * const comp_same, unsigned int const id ){
   unsigned int rid1, rid2;
   rid1 = *(comp_same + id);
   if( (rid2 = *(comp_same + rid1)) != rid1 ){
@@ -129,7 +131,7 @@ unsigned int inline getRealId( unsigned int * const comp_same, unsigned int cons
   return rid1;
 }
 
-unsigned int inline getRealParent( unsigned int * const prob_parent, unsigned int * const comp_same, unsigned int const id ){
+static unsigned int inline getRealParent( unsigned int * const prob_parent, unsigned int * const comp_same, unsigned int const id ){
       return getRealId( comp_same, *(prob_parent + id) );
 }
 
@@ -150,6 +152,37 @@ void depthtree_find_blobs(
 void extend_bounding_boxes( Tree * const tree);
 #endif
 
+/* Postprocessing: Get blob id for coordinate. */
+unsigned int depthtree_get_id(
+    const int x, const int y,
+    DepthtreeWorkspace *pworkspace
+    );
+
+/* Postprocessing: Get blob id for coordinate. Roi version */
+unsigned int depthtree_get_id_roi(
+    const BlobtreeRect roi,
+    const int x, const int y,
+    DepthtreeWorkspace *pworkspace
+    );
+
+/* Postprocessing: Get filtered blob id for coordinate.
+ * This restricts the output on ids/blobs which fulfil the filter criteria,
+ * set by blobtree_set_filter(...).
+ * Call depthtree_filter_blobs(...) before you use this function.
+ * */
+unsigned int depthtree_get_filtered_id(
+    const Blobtree *blobs,
+    const int x, const int y,
+    DepthtreeWorkspace *pworkspace
+    );
+
+/* Postprocessing: Get filtered blob id for coordinate. Roi version */
+unsigned int depthtree_get_filtered_id_roi(
+    const Blobtree *blobs,
+    const BlobtreeRect roi,
+    const int x, const int y,
+    DepthtreeWorkspace *pworkspace
+    );
 
 #ifdef __cplusplus
 }

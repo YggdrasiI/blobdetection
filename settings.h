@@ -13,14 +13,14 @@
 /* Set this env. variable to enable diagonal checks between compared pixels. */
 #ifndef NO_BLOB_DIAGONAL_CHECK
 #ifndef BLOB_DIAGONAL_CHECK
-//#define BLOB_DIAGONAL_CHECK
+#define BLOB_DIAGONAL_CHECK
 #endif
 #endif
 
 /* Eval vertical and horizontal dimension */
 #ifndef NO_BLOB_DIMENSION
 #ifndef BLOB_DIMENSION
-//#define BLOB_DIMENSION
+#define BLOB_DIMENSION
 #endif
 #endif
 
@@ -32,7 +32,7 @@
  */
 #ifndef NO_EXTEND_BOUNDING_BOXES
 #ifndef EXTEND_BOUNDING_BOXES
-//#define EXTEND_BOUNDING_BOXES
+#define EXTEND_BOUNDING_BOXES
 #endif
 #endif
 
@@ -46,14 +46,14 @@
  */
 #ifndef NO_BLOB_COUNT_PIXEL
 #ifndef BLOB_COUNT_PIXEL
-//#define BLOB_COUNT_PIXEL
+#define BLOB_COUNT_PIXEL
 #endif
 #endif
 
 /* Evaluate the barycenter in both directions.
  *
  * Interally all pixel positions will be summed up
- * and finally divided by the area. Thus, bigger images
+ * and finally divided by the area size. Thus, bigger images
  * requires the long long data type. 
  * If your images not superseeded 2000x2000 pixels you
  * are still on the secure side with unsigned long (32bit).
@@ -70,7 +70,12 @@
 #endif
 
 
-/* See README
+/*
+ * Expands bounding box evaluation on pixels between coarse grid.
+ *
+ * Otherwise the bounding box values are restricted 
+ * on the coarse grid coordinates.
+ * See README
  */
 //#define BLOB_SUBGRID_CHECK 
 
@@ -92,7 +97,7 @@
 
 /* Force inlining of main function to create
  * constant stepwidth variable.
- * Increases compile time by factor 12. Coment out to disable optimization.
+ * Increases compile time by factor 12. Comment out to disable optimization.
  * */
 #define FORCEINLINE __attribute__((always_inline)) static
 

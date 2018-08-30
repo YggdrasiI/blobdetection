@@ -59,7 +59,7 @@ void threshtree_destroy_workspace(
     );
 
 /* See depthtree equivalent for explanation */
-void threshtree_filter_blob_ids(
+void threshtree_filter_blobs(
     Blobtree* blob,
     ThreshtreeWorkspace *pworkspace
     );

@@ -1,12 +1,12 @@
 
-THRESH_SOURCES=blob.c threshtree.c tree.c threshtree_old.c output.c
-DEPTH_SOURCES=blob.c depthtree.c tree.c
+THRESH_SOURCES=blob.c threshtree.c tree.c threshtree_old.c threshtree_output.c
+DEPTH_SOURCES=blob.c depthtree.c tree.c depthtree_output.c
 
 # -fpic required for shared libs.
-# CFLAGS=-Wall -fpic -O3 -lm
+# CFLAGS=-std=gnu11 -Wall -fpic -O3 -lm
 
 # Debug
-CFLAGS=-Wall -g -O0 -fmax-errors=3 -w -fpic
+CFLAGS=-std=gnu11 -Wall -g -O0 -fmax-errors=3 -w -fpic
 
 
 libthreshtree.a: $(THRESH_SOURCES:.c=.o) | *.h
@@ -36,6 +36,9 @@ example2.bin: example2.c example.h libdepthtree.a
 
 example1_static.bin: example1.c libthreshtree.a | example.h 
 	LANG=C $(CC) -o example1_static.bin $^ $(CFLAGS)
+
+example2_static.bin: example2.c libdepthtree.a | example.h 
+	LANG=C $(CC) -o example2_static.bin $^ $(CFLAGS)
 
 
 clean:

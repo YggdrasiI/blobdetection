@@ -26,6 +26,8 @@ bool depthtree_create_workspace(
 
   DepthtreeWorkspace *r = malloc( sizeof(DepthtreeWorkspace) );
 
+  r->w = w;
+  r->h = h;
   const unsigned int max_comp = (w+h)*100U;
   r->max_comp = max_comp;
   r->used_comp = 0;
@@ -801,7 +803,7 @@ Tree* find_depthtree(
 void depthtree_find_blobs(Blobtree *blob, const unsigned char *data, const unsigned int w, const unsigned int h, const BlobtreeRect roi, const unsigned char *depth_map, DepthtreeWorkspace *workspace ){
   // Avoid hard crash for null data.
   if( data == NULL ){
-    VPRINTF("Runtime error: Input data is NULL! threshtree_filter_blobs aborts.\n");
+    VPRINTF("Runtime error: Input data is NULL! depthtree_find_blobs aborts.\n");
   }
   //clear old tree
   if( blob->tree != NULL){
@@ -831,11 +833,11 @@ void depthtree_find_blobs(Blobtree *blob, const unsigned char *data, const unsig
     blob->tree = find_depthtree(data, w, h, roi, depth_map, 3, workspace, &blob->tree_data);
   }else if( blob->grid.width == 4 ){
     blob->tree = find_depthtree(data, w, h, roi, depth_map, 4, workspace, &blob->tree_data);
+  }else if( blob->grid.width == 5 ){
+      blob->tree = find_depthtree(data, w, h, roi, depth_map, 5, workspace, &blob->tree_data);
+  }else if( blob->grid.width == 6 ){
+      blob->tree = find_depthtree(data, w, h, roi, depth_map, 6, workspace, &blob->tree_data);
     /*
-       }else if( blob->grid.width == 5 ){
-       blob->tree = find_depthtree(data, w, h, roi, depth_map, 5, workspace, &blob->tree_data);
-       }else if( blob->grid.width == 6 ){
-       blob->tree = find_depthtree(data, w, h, roi, depth_map, 6, workspace, &blob->tree_data);
        }else if( blob->grid.width == 7 ){
        blob->tree = find_depthtree(data, w, h, roi, depth_map, 7, workspace, &blob->tree_data);
        }else if( blob->grid.width == 8 ){
@@ -860,7 +862,7 @@ void depthtree_find_blobs(Blobtree *blob, const unsigned char *data, const unsig
 }
 
 
-void depthtree_filter_blob_ids(
+void depthtree_filter_blobs(
     Blobtree* blob,
     DepthtreeWorkspace *pworkspace
     ){
@@ -942,7 +944,7 @@ void depthtree_filter_blob_ids(
     free(bif);
 
   }else{
-    printf("(depthtree_filter_blob_ids) Critical error: Mem allocation failed\n");
+    printf("(depthtree_filter_blobs) Critical error: Mem allocation failed\n");
   }
 
 
@@ -993,6 +995,75 @@ void extend_bounding_boxes( Tree * const tree){
 #endif
 
 
+unsigned int depthtree_get_id(
+    const int x, const int y,
+    DepthtreeWorkspace *pworkspace
+    )
+{
+  unsigned int id;
+  unsigned int *ids, *riv, *cm;
+
+  ids = pworkspace->ids;      // id map for complete image
+  cm = pworkspace->comp_same; // Map connected ids on one representor
+  riv = pworkspace->real_ids_inv; // Map representor on output id (= blob id)
+
+  id = ids[ y*pworkspace->w + x ];
+  return *(riv + *(cm + id));
+  //return *(cm + id);
+}
+
+unsigned int depthtree_get_id_roi(
+    const BlobtreeRect roi,
+    const int x, const int y,
+    DepthtreeWorkspace *pworkspace
+    )
+{
+  if( x < 0 || y < 0 || x >= roi.width || y >= roi.height ){
+    fprintf(stderr, "(depthtree_get_id_roi) Requested pixel (%i,%i) not in roi (%i, %i, %i, %i).",
+        x, y, roi.x, roi.y, roi.width, roi.height);
+    return -1;
+  }
+  return depthtree_get_id(x + roi.x, y + roi.y, pworkspace);
+}
+
+unsigned int depthtree_get_filtered_id(
+    const Blobtree *blobs,
+    const int x, const int y,
+    DepthtreeWorkspace *pworkspace
+    )
+{
+  unsigned int id;
+  unsigned int *ids, *riv, *bif, *cm;
+
+  ids = pworkspace->ids;      // id map for complete image
+  cm = pworkspace->comp_same; // Map connected ids on one representor
+  riv = pworkspace->real_ids_inv; // Map representor on output id
+  bif = pworkspace->blob_id_filtered; //maps  'unfiltered id' on 'parent filtered id'
+  if( bif == NULL ){
+    fprintf(stderr, "(depthtree_get_filtered_id). 'blob_id_filtered' is NULL."
+        "Call depthtree_filter_blobs(...) to initialize it.");
+    return -1;
+  }
+
+  id = ids[ y*pworkspace->w + x ];
+  return *(bif + id);
+}
+
+/* Postprocessing: Get filtered blob id for coordinate. Roi version */
+unsigned int depthtree_get_filtered_id_roi(
+    const Blobtree *blobs,
+    const BlobtreeRect roi,
+    const int x, const int y,
+    DepthtreeWorkspace *pworkspace
+    )
+{
+  if( x < 0 || y < 0 || x >= roi.width || y >= roi.height ){
+    fprintf(stderr, "(depthtree_get_filtered_id_roi) Requested pixel (%i,%i) not in roi (%i, %i, %i, %i).",
+        x, y, roi.x, roi.y, roi.width, roi.height);
+    return -1;
+  }
+  return depthtree_get_filtered_id( blobs, x + roi.x, y + roi.y, pworkspace);
+}
 
 
 

@@ -1,5 +1,5 @@
-#ifndef OUTPUT_H
-#define OUTPUT_H
+#ifndef THRESHTREE_OUTPUT_H
+#define THRESHTREE_OUTPUT_H
 
 #include "threshtree.h"
 
@@ -19,22 +19,22 @@
  * 22222222222222222          
  */
 
-char *sprint_coloured_threshblob_ids(
+char *sprint_coloured_threshtree_ids(
         unsigned char* data,
         Blobtree *frameblobs,
         const BlobtreeRect *pprint_roi,  // could be NULL
-        ThreshtreeWorkspace *tworkspace,
+        ThreshtreeWorkspace *pworkspace,
         const int display_filtered_areas,
         const int background_id,
         const char *char_map
         )
     ;
 
-int print_coloured_threshblob_ids(
+int print_coloured_threshtree_ids(
         unsigned char* data,
         Blobtree *frameblobs,
         const BlobtreeRect *pprint_roi,
-        ThreshtreeWorkspace *tworkspace,
+        ThreshtreeWorkspace *pworkspace,
         const int display_filtered_areas,
         const int background_id,
         const char *char_map
@@ -42,7 +42,7 @@ int print_coloured_threshblob_ids(
     ;
 
 /* Colouring pixels by its connection component.
- * ░: Pixels < thresh value of previous threshblob evaluation
+ * ░: Pixels < thresh value of previous threshtree evaluation
  * █: Pixels >= thresh value
  *
  * Example output (without colouring information):
@@ -56,19 +56,19 @@ int print_coloured_threshblob_ids(
  * ░░░░░░░░██░░░░░░░█░███████░░
  * ░█████████████████░░░░░░░░░░
  */
-char *sprint_coloured_threshblob_areas(
+char *sprint_coloured_threshtree_areas(
         const unsigned char* data,
         Blobtree *frameblobs,
         const BlobtreeRect *pprint_roi,
-        ThreshtreeWorkspace *tworkspace,
+        ThreshtreeWorkspace *pworkspace,
         const int display_filtered_areas)
     ;
 
-int print_coloured_threshblob_areas(
+int print_coloured_threshtree_areas(
         const unsigned char* data,
         Blobtree *frameblobs,
         const BlobtreeRect *pprint_roi,
-        ThreshtreeWorkspace *tworkspace,
+        ThreshtreeWorkspace *pworkspace,
         const int display_filtered_areas)
     ;
 

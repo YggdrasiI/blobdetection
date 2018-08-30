@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "output.h"
+#include "depthtree_output.h"
 
 #define CHECK_CONSUMED_CHARS(CONSUMED, BUF, USED) \
             if( CONSUMED < 0 ){ \
@@ -42,28 +42,28 @@ void expand_buf_if_required(
     *pbuf_len = new_len;
 }
 
-char *sprint_coloured_threshblob_ids(
+char *sprint_coloured_depthtree_ids(
         unsigned char* data,
         Blobtree *frameblobs,
         const BlobtreeRect *pprint_roi,
-        ThreshtreeWorkspace *tworkspace,
+        DepthtreeWorkspace *pworkspace,
         const int display_filtered_areas,
         const int background_id,
         const char *char_map
         )
 {
     // Region to print
-    BlobtreeRect output_roi = {0, 0, tworkspace->w, tworkspace->h};
+    BlobtreeRect output_roi = {0, 0, pworkspace->w, pworkspace->h};
     if( pprint_roi != NULL ) output_roi = *pprint_roi;
 
     if(char_map == NULL) char_map = "0123456789ABCDEF";
     size_t char_map_len = strlen(char_map);
 
     if( display_filtered_areas ){
-        // Setup filtered ids ( = tworkspace->blob_id_filtered)
-        threshtree_filter_blob_ids(frameblobs, tworkspace);
+        // Setup filtered ids ( = pworkspace->blob_id_filtered)
+        depthtree_filter_blobs(frameblobs, pworkspace);
     }
-    const unsigned int *bif = tworkspace->blob_id_filtered;
+    const unsigned int *bif = pworkspace->blob_id_filtered;
     unsigned int col[3] = {0, 0, 0};
     unsigned int prev_col[3];
 
@@ -85,14 +85,14 @@ char *sprint_coloured_threshblob_ids(
             if( x % frameblobs->grid.width != 0 && x!= W-1 ) continue;
 
             if( display_filtered_areas && bif ){
-                id = threshtree_get_filtered_id_roi(frameblobs, output_roi, x, y, tworkspace);
+                id = depthtree_get_filtered_id_roi(frameblobs, output_roi, x, y, pworkspace);
             }else{
                 /* The translation by 1 just adjust the results of both branches
                  * to avoid color flickering after the flag changes. */
-                id = threshtree_get_id_roi(output_roi, x, y, tworkspace); //+ 1;
+                id = depthtree_get_id_roi(output_roi, x, y, pworkspace); //+ 1;
             }
 
-            unsigned char d = *(data + y * tworkspace->w + x);
+            unsigned char d = *(data + y * pworkspace->w + x);
             prev_col[0] = col[0]; prev_col[1] = col[1]; prev_col[2] = col[2];
             ID_TO_RGB_B(id, col);
 
@@ -160,39 +160,39 @@ char *sprint_coloured_threshblob_ids(
     return buf;
 }
 
-int print_coloured_threshblob_ids(
+int print_coloured_depthtree_ids(
         unsigned char* data,
         Blobtree *frameblobs,
         const BlobtreeRect *pprint_roi,
-        ThreshtreeWorkspace *tworkspace,
+        DepthtreeWorkspace *pworkspace,
         const int display_filtered_areas,
         const int background_id,
         const char *char_map
         )
 {
-  char *out = sprint_coloured_threshblob_ids(data, frameblobs, pprint_roi, tworkspace,
+  char *out = sprint_coloured_depthtree_ids(data, frameblobs, pprint_roi, pworkspace,
           display_filtered_areas, background_id, char_map);
   int ret = printf("%s\n", out);
   free(out);
   return ret;
 }
 
-char *sprint_coloured_threshblob_areas(
+char *sprint_coloured_depthtree_areas(
         const unsigned char* data,
         Blobtree *frameblobs,
         const BlobtreeRect *pprint_roi,
-        ThreshtreeWorkspace *tworkspace,
+        DepthtreeWorkspace *pworkspace,
         const int display_filtered_areas)
 {
     // Region to print
-    BlobtreeRect output_roi = {0, 0, tworkspace->w, tworkspace->h};
+    BlobtreeRect output_roi = {0, 0, pworkspace->w, pworkspace->h};
     if( pprint_roi != NULL ) output_roi = *pprint_roi;
 
     if( display_filtered_areas ){
-        // Setup filtered ids ( = tworkspace->blob_id_filtered)
-        threshtree_filter_blob_ids(frameblobs, tworkspace);
+        // Setup filtered ids ( = pworkspace->blob_id_filtered)
+        depthtree_filter_blobs(frameblobs, pworkspace);
     }
-    const unsigned int *bif = tworkspace->blob_id_filtered;
+    const unsigned int *bif = pworkspace->blob_id_filtered;
     unsigned int col[3] = {0, 0, 0};
     unsigned int prev_col[3];
 
@@ -214,14 +214,14 @@ char *sprint_coloured_threshblob_areas(
             if( x % frameblobs->grid.width != 0 && x!= W-1 ) continue;
 
             if( display_filtered_areas && bif ){
-                id = threshtree_get_filtered_id_roi(frameblobs, output_roi, x, y, tworkspace);
+                id = depthtree_get_filtered_id_roi(frameblobs, output_roi, x, y, pworkspace);
             }else{
                 /* The translation by 1 just adjust the results of both branches
                  * to avoid color flickering after the flag changes. */
-                id = threshtree_get_id_roi(output_roi, x, y, tworkspace); //+ 1;
+                id = depthtree_get_id_roi(output_roi, x, y, pworkspace); //+ 1;
             }
 
-            unsigned char d = *(data + y * tworkspace->w + x);
+            unsigned char d = *(data + y * pworkspace->w + x);
             prev_col[0] = col[0]; prev_col[1] = col[1]; prev_col[2] = col[2];
             ID_TO_RGB_B(id, col);
 
@@ -264,14 +264,14 @@ char *sprint_coloured_threshblob_areas(
     return buf;
 }
 
-int print_coloured_threshblob_areas(
+int print_coloured_depthtree_areas(
         const unsigned char* data,
         Blobtree *frameblobs,
         const BlobtreeRect *pprint_roi,
-        ThreshtreeWorkspace *tworkspace,
+        DepthtreeWorkspace *pworkspace,
         const int display_filtered_areas)
 {
-  char *out = sprint_coloured_threshblob_areas(data, frameblobs, pprint_roi, tworkspace, display_filtered_areas);
+  char *out = sprint_coloured_depthtree_areas(data, frameblobs, pprint_roi, pworkspace, display_filtered_areas);
   int ret = printf("%s\n", out);
   free(out);
   return ret;

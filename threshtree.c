@@ -1224,7 +1224,7 @@ void threshtree_find_blobs( Blobtree *blob,
 }
 
 
-void threshtree_filter_blob_ids(
+void threshtree_filter_blobs(
     Blobtree* blob,
     ThreshtreeWorkspace *pworkspace
     ){
@@ -1311,7 +1311,7 @@ void threshtree_filter_blob_ids(
     free(nodeToFilteredNode);
 
   }else{
-    printf("(threshtree_filter_blob_ids) Critical error: Mem allocation failed\n");
+    printf("(threshtree_filter_blobs) Critical error: Mem allocation failed\n");
   }
 
 
