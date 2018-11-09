@@ -28,7 +28,7 @@ threshtree: libthreshtree.a
 depthtree: libdepthtree.a
 	echo "Build $(@)"
 
-example1.bin: example1.c | example.h libthreshtree.so
+example1.bin: example1.c example.h | libthreshtree.so
 	LANG=C $(CC) -o example1.bin $^ $(CFLAGS) -L. -lthreshtree
 
 example2.bin: example2.c example.h libdepthtree.a
@@ -37,7 +37,7 @@ example2.bin: example2.c example.h libdepthtree.a
 example1_static.bin: example1.c libthreshtree.a | example.h 
 	LANG=C $(CC) -o example1_static.bin $^ $(CFLAGS)
 
-example2_static.bin: example2.c libdepthtree.a | example.h 
+example2_static.bin: example2.c libdepthtree.a example.h 
 	LANG=C $(CC) -o example2_static.bin $^ $(CFLAGS)
 
 

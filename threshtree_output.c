@@ -61,7 +61,7 @@ char *sprint_coloured_threshtree_ids(
 
     if( display_filtered_areas ){
         // Setup filtered ids ( = pworkspace->blob_id_filtered)
-        threshtree_filter_blob_ids(frameblobs, pworkspace);
+        threshtree_filter_blobs(frameblobs, pworkspace);
     }
     const unsigned int *bif = pworkspace->blob_id_filtered;
     unsigned int col[3] = {0, 0, 0};
@@ -190,7 +190,7 @@ char *sprint_coloured_threshtree_areas(
 
     if( display_filtered_areas ){
         // Setup filtered ids ( = pworkspace->blob_id_filtered)
-        threshtree_filter_blob_ids(frameblobs, pworkspace);
+        threshtree_filter_blobs(frameblobs, pworkspace);
     }
     const unsigned int *bif = pworkspace->blob_id_filtered;
     unsigned int col[3] = {0, 0, 0};

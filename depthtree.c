@@ -928,10 +928,11 @@ void depthtree_filter_blobs(
      * 3c) Finally, use bif map.
      */
     unsigned int id=pworkspace->used_comp;//dec till 0
-    while( id ){
-      *(blob_id_filtered+id) = *(bif + *(real_ids_inv + *(comp_same+id)) + 1 );
+    while( id > 1 /* id=1 and id=0 are background and dummy*/ ){
+      *(blob_id_filtered+id) = *(bif + *(real_ids_inv + *(comp_same+id)) + 1 ); // Mit +1 -> Blob id, ohne +1 interne id
       id--;
     }
+    *(blob_id_filtered+id) = *(bif + *(real_ids_inv + *(comp_same+id)) + 1);
 
 #if VERBOSE > 0
     printf("bif[realid] = realid\n");

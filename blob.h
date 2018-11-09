@@ -60,7 +60,7 @@ typedef struct {
   unsigned int tree_depth_max;
   unsigned int min_area;
   unsigned int max_area;
-  unsigned char only_leafs;/*0 or 1*/
+  unsigned char only_leafs; /*0 or 1*/
   unsigned char area_depth_min;
   unsigned char area_depth_max;
   FilterNodeHandler* extra_filter;
@@ -86,7 +86,7 @@ void blobtree_create(Blobtree **blob);
 void blobtree_destroy(Blobtree **blob );
 
 /* Set one of the default filter values */
-void blobtree_set_filter( Blobtree *blob,const FILTER f,const unsigned int val);
+void blobtree_set_filter( Blobtree *blob, const FILTER f, const unsigned int val);
 /* Add own node filter function */
 void blobtree_set_extra_filter(Blobtree *blob, FilterNodeHandler* extra_filter);
 

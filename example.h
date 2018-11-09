@@ -24,7 +24,7 @@ void print_matrix_with_roi( unsigned int* data, unsigned int w, unsigned int h, 
   for(i=roi.y;i<roi.height;i++){
     for(j=roi.x;j<roi.width;j++){
       d = *(data+i*w+j);
-      printf("%s%u ",d<10?" ":"",d);
+      printf("%2u ",d);
     }
     printf("\n");
   }
@@ -36,9 +36,21 @@ void print_matrix( unsigned int* data, unsigned int w, unsigned int h){
   print_matrix_with_roi(data,w,h,roi);
 }
 
-void print_matrix_char_with_roi( char* data, unsigned int w, unsigned int h, BlobtreeRect roi, unsigned int gridw, unsigned int gridh){
+void print_matrix_char_with_roi( char* data, unsigned int w, unsigned int h,
+        BlobtreeRect roi, unsigned int gridw, unsigned int gridh,
+        const char (*print_strings)[5], /* Array of length 'print_strings_len + 1' */
+        size_t print_strings_len /*                                           ^^^^ */
+        ){
   unsigned int i,j, wr, hr, w2, h2;
   unsigned int d;
+
+#define DEFAULT_PRINT_STRINGS_LEN 2
+  const char default_print_strings[DEFAULT_PRINT_STRINGS_LEN+1][5] = {"░", "█", "?"};
+  if( print_strings == NULL || print_strings_len == 0 ){
+      print_strings = default_print_strings;
+      print_strings_len = DEFAULT_PRINT_STRINGS_LEN;
+  }
+
   wr = (roi.width-1) % gridw;
   hr = (roi.height-1) % gridh;
   w2 = roi.width - wr;
@@ -46,11 +58,16 @@ void print_matrix_char_with_roi( char* data, unsigned int w, unsigned int h, Blo
   for(i=roi.y;i<roi.y+h2;i+=gridh){
     for(j=roi.x;j<roi.x+w2;j+=gridw){
       d = *(data+i*w+j);
+
       //printf("%u ",d);
       //printf("%s", d==0?"■⬛":"□");
       //printf("%s", d==0?"✘":" ");
-      printf("%s", d!=0?"█":"░");
       //printf("%s", c(d));
+      //printf("%s", d!=0?"█":"░");
+      if( d >= print_strings_len ) {
+          d = print_strings_len; // Non-representable data displayed with highest value. Defaul char: '?'
+      }
+      printf("%s", print_strings[d]);
     }
     j-=gridw-wr;
 
@@ -79,7 +96,7 @@ void print_matrix_char_with_roi( char* data, unsigned int w, unsigned int h, Blo
 
 void print_matrix_char( char* data, unsigned int w, unsigned int h){
   BlobtreeRect roi = {0,0,w,h};
-  print_matrix_char_with_roi(data,w,h,roi,1,1);
+  print_matrix_char_with_roi(data,w,h,roi,1,1, NULL, 0);
 }
 
 

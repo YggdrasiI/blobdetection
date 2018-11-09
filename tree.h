@@ -6,7 +6,7 @@
 #endif
 
 /*
- * Simple Treestructure with Nodes N={parent,next_silbing,child,data}
+ * Simple Treestructure with Nodes N={parent, next_silbing, child, data}
  *
  * */
 
@@ -19,7 +19,7 @@
 
 // Like opencvs Rect_<int>
 typedef struct {
-  int x,y,width,height;
+  int x, y, width, height;
 } BlobtreeRect;
 
 /* Minimal Node struct
@@ -27,26 +27,26 @@ typedef struct {
  * the depth to a (unknown) root node.
  * */
 typedef struct Node Node;
- struct Node {
+struct Node {
   Node *parent;
   Node *silbing;
-  Node *child;/* second child reachable as silbing of first child and so on… */
+  Node *child; /* second child reachable as silbing of first child and so on… */
   unsigned int height; /* height = maximal reachable depth */
   unsigned int width; /* number of children */
   void *data;
 };
-static const struct Node Leaf = { NULL,NULL,NULL,0,0, NULL };
+static const struct Node Leaf = { NULL, NULL, NULL, 0, 0, NULL };
 
 /* The data struct for both algorithms.
- * Some functions, who operate on a tree
- * expect this data struct. This functions
- * should be recognizeable by its names. */
+ * Some functions, which operates on a tree
+ * expect this data struct. (This functions
+ * should be recognizeable by its names.) */
 typedef struct Blob{
   unsigned int id;
   BlobtreeRect roi;
   unsigned int area;
 #ifdef SAVE_DEPTH_MAP_VALUE
-  unsigned char depth_level; 
+  unsigned char depth_level;  // != level in tree structure 
 #endif
 #ifdef BLOB_BARYCENTER
   int barycenter[2];
@@ -56,7 +56,7 @@ typedef struct Blob{
 
 typedef struct {
   Node *root; // root of tree. Required to release mem in tree_destroy(). 
-  unsigned int size;//length of data and root array.
+  unsigned int size; //length of data and root array.
 } Tree;
 
 /* Allocate tree struct. If you use 
@@ -92,7 +92,7 @@ void print_tree_filtered(Node *root, int shift, unsigned int minA);
 INLINE void swap_silbings(Node *a, Node *b);
 
 
-/* returns 1, if a>b, and 0 otherwise. (do not use (1,0,-1) like strcmp ) */
+/* returns 1, if a>b, and 0 otherwise. (do not use (1, 0, -1) like strcmp ) */
 INLINE int cmp(Node *a, Node *b);
 
 INLINE void swap_pnode(Node **a, Node **b);
@@ -120,7 +120,7 @@ void sort_tree(Node *root);
  * Kann man das noch komprimieren, wenn man als Basis die maximale Tiefe wählt?!
  *
  * */
-void _gen_tree_id(Node *root,unsigned int **id, unsigned int *d);
+void _gen_tree_id(Node *root, unsigned int **id, unsigned int *d);
 
 
 /* Generate Unique Number [xyz...] for node

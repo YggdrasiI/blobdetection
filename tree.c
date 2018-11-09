@@ -75,11 +75,11 @@ void gen_redundant_information_recursive(Node* root, unsigned int *pheight, unsi
   if( root->child != NULL ){
     unsigned int height2=0;
     gen_redundant_information(root->child, &height2, &root->width);
-    if( *pheight < height2+1 ) *pheight = height2+1;//update height of parent node
+    if( *pheight < height2+1 ) *pheight = height2+1; //update height of parent node
   }
   if( root->silbing != NULL ){
-    (*psilbings)++;//update number of children for parent node
-    gen_redundant_information(root->silbing,pheight,psilbings);
+    (*psilbings)++; //update number of children for parent node
+    gen_redundant_information(root->silbing, pheight, psilbings);
   }
 }
 
@@ -126,7 +126,7 @@ unsigned int number_of_nodes(Node *root){
 
 
 void print_tree(Node *root, int shift){
-  return print_tree_filtered(root,shift,0);
+  return print_tree_filtered(root, shift, 0);
 }
 
 
@@ -135,20 +135,20 @@ void print_tree_filtered(Node *root, int shift, unsigned int minA){
   int shift2=0;
   Blob* data = (Blob*)root->data;
   //printf("• ");
-  //printf("%u (%u) ",root->data.id, root->data.area);
-  //printf("%2i (w%u,h%u,a%2i) ",root->data.id, root->width, root->height, root->data.area);
+  //printf("%u (%u) ", root->data.id, root->data.area);
+  //printf("%2i (w%u,h%u,a%2i) ", root->data.id, root->width, root->height, root->data.area);
   //shift2+=9+4;
 #ifdef SAVE_DEPTH_MAP_VALUE
 #ifdef BLOB_DIMENSION
-  printf("%2i (lvl:%3i, a:%4i) ",data->id, data->depth_level, data->area);
-  //printf("%2i (wxh:%3i, a:%4i) ",data->id, data->roi.width*data->roi.height, data->area);
+  printf("%2i (lvl:%3i, a:%4i) ", data->id, data->depth_level, data->area);
+  //printf("%2i (wxh:%3i, a:%4i) ", data->id, data->roi.width*data->roi.height, data->area);
   shift2+=22;
 #else
-  printf("%2i (lvl:%3i) ",data->id, data->depth_level);
+  printf("%2i (lvl:%3i) ", data->id, data->depth_level);
   shift2+=14;
 #endif
 #else
-  printf("%2i (area:%4i) ",data->id, data->area);
+  printf("%2i (area:%4i) ", data->id, data->area);
   shift2+=9+6;
 #endif
 
@@ -158,16 +158,16 @@ void print_tree_filtered(Node *root, int shift, unsigned int minA){
   }
   if( root->child != NULL){
     printf("→");
-    print_tree_filtered(root->child,shift+shift2,minA);
+    print_tree_filtered(root->child, shift+shift2, minA);
   }else{
     printf("\n");
   }
 
   if( root->silbing != NULL){
   //  printf("\n");
-    for(i=0;i<shift-1;i++) printf(" ");
+    for(i=0; i<shift-1; i++) printf(" ");
     printf("↘");
-    print_tree_filtered(root->silbing,shift,minA);
+    print_tree_filtered(root->silbing, shift, minA);
   }
 }
 
@@ -181,7 +181,7 @@ void quicksort_silbings(Node **begin, Node **end) {
     split = begin + 1;
     while (++ptr != end) {
         //if ( **ptr < **begin ) {
-        if ( cmp(*ptr,*begin)  ) {
+        if ( cmp(*ptr, *begin)  ) {
             swap_pnode(ptr, split);
             ++split;
         }
@@ -198,7 +198,7 @@ void quicksort_silbings(Node **begin, Node **end) {
  *
  * */
 void sort_tree(Node *root){
-     if( root->width == 0) return;//leaf reached
+     if( root->width == 0) return; //leaf reached
     /* Sort children and store pointer to this children */
     Node** children = (Node**) malloc( root->width*sizeof(Node*) );
     Node** next = children;
@@ -224,7 +224,7 @@ void sort_tree(Node *root){
         c=*next;
         next++;
       }
-      c->silbing = NULL;//remove previous anchor in last child.
+      c->silbing = NULL; //remove previous anchor in last child.
     }
 
     free( children );
@@ -239,20 +239,20 @@ void sort_tree(Node *root){
  * Kann man das noch komprimieren, wenn man als Basis die maximale Tiefe wählt?!
  *
  * */
-void _gen_tree_id(Node *root,unsigned int **id, unsigned int *d){
+void _gen_tree_id(Node *root, unsigned int **id, unsigned int *d){
   if( root->child != NULL ){
     //printf("o ");
     **id = 0;
-    (*id)++;//set pointer to next array element
+    (*id)++; //set pointer to next array element
     _gen_tree_id(root->child, id, d);
   }else{
-    *d = root->height;//store height of leaf.
+    *d = root->height; //store height of leaf.
   }
   if( root->silbing != NULL ){
     //print difference from last leaf and this node and add 1
     //printf("%u ", root->height -*d +1 );
     **id = (root->height - *d + 1);
-    (*id)++;//set pointer to next array element
+    (*id)++; //set pointer to next array element
     *d=root->height;
     _gen_tree_id(root->silbing, id, d);
   }
@@ -267,7 +267,7 @@ void gen_tree_id(Node *root, unsigned int* id, unsigned int size){
  //store size of array in first element
  *id = size;
  id++;
- _gen_tree_id(root,&id,&last_height);
+ _gen_tree_id(root, &id, &last_height);
  printf("\n");
 }
 
@@ -321,7 +321,7 @@ unsigned int sum_areas(Node * const root, const unsigned int * const comp_size){
     Blob* data = (Blob*)root->data;
   int *val=&data->area;
   *val = *(comp_size + data->id );
-  if( root->child != NULL) *val += sum_areas(root->child,comp_size);
+  if( root->child != NULL) *val += sum_areas(root->child, comp_size);
   if( root->silbing != NULL) return *val+sum_areas(root->silbing, comp_size);
   else return *val;
 #endif
@@ -420,14 +420,14 @@ void approx_areas(const Tree * const tree, Node * const startnode,
       continue;
     }
 
-    //printf("Id: %u Roi: (%u,%u,%u,%u)\n",data->id,
+    //printf("Id: %u Roi: (%u, %u, %u, %u)\n", data->id,
     //    data->roi.x, data->roi.y, data->roi.width, data->roi.height);
     const unsigned int N_C = number_of_coarse_roi(&data->roi, stepwidth, stepheight);
     const unsigned int A_C = (data->roi.width*data->roi.height);
     //printf("N_C=%u, A_C=%u\n\n", N_C, A_C);
 
 
-    /* Update parent node. N_C,A_C of this level is part of N_F, A_F from parent*/
+    /* Update parent node. N_C, A_C of this level is part of N_F, A_F from parent*/
     ((Blob*)node->parent->data)->area += (data->area <<1) - N_C;
     *(pA_F + (node->parent - root) ) += A_C;
 
@@ -435,7 +435,7 @@ void approx_areas(const Tree * const tree, Node * const startnode,
     if( N_C ){
       data->area = A_C * ((float)data->area/N_C) + 0.5f;
     }else{
-      data->area = 0;//area contains only subpixel
+      data->area = 0; //area contains only subpixel
     }
 
     if( node->silbing != NULL ){
@@ -456,7 +456,7 @@ void approx_areas(const Tree * const tree, Node * const startnode,
       const unsigned int A_C = (data->roi.width*data->roi.height);
 
       if( node!=startnode ){//required to avoid changes over startnode
-        /* Update parent node. N_C,A_C of this level is part of N_F, A_F from parent*/
+        /* Update parent node. N_C, A_C of this level is part of N_F, A_F from parent*/
         ((Blob*)node->parent->data)->area += (data->area <<1) - N_C;
         *(pA_F + (node->parent - root) ) += A_C;
       }
@@ -466,7 +466,7 @@ void approx_areas(const Tree * const tree, Node * const startnode,
       if( N_C ){
         data->area = A_F + (A_C - A_F) * ((float)data->area/N_C) +0.5f;
       }else{
-        data->area = 0;//area contains only subpixel
+        data->area = 0; //area contains only subpixel
       }
 
       if( node->silbing != NULL ){
@@ -483,7 +483,7 @@ void approx_areas(const Tree * const tree, Node * const startnode,
 }
 
 /* Returns the number of coarse pixels of a roi, see sketch for 
-   stepwidth=3=stepheight, W=10=H and roi={4,0,4,7}:
+   stepwidth=3=stepheight, W=10=H and roi={4, 0, 4, 7}:
 
    x - - 0 1 0 0 - x -
    - - - 0 0 0 0 - - -
@@ -498,11 +498,11 @@ void approx_areas(const Tree * const tree, Node * const startnode,
 */
 static inline unsigned int number_of_coarse_roi(BlobtreeRect* roi, unsigned int sw, unsigned int sh){
   /* Note:
-   * Three steps for each dimension of [a1,b1]x[a2,b2], a_i < b_i (not <= !)
-   * 1. Shift roi to [0,b-a]
+   * Three steps for each dimension of [a1, b1]x[a2, b2], a_i < b_i (not <= !)
+   * 1. Shift roi to [0, b-a]
    * 2. Decrease length if startpoint is not on coarse grid (a%sw!=0)
-   *    => [0,b-a-m]
-   * 3. Divide by stepwidth, stepheight [0,(b-a-m)/sw]
+   *    => [0, b-a-m]
+   * 3. Divide by stepwidth, stepheight [0, (b-a-m)/sw]
    * 4. Transform   (0) 0 0 1 1 1 2 2 2 … (Interval length remainder)
    *            to  (1) 1 1 2 2 2 3 3 3
    *            (This will be done by adding sw-1 before step 3.)
@@ -654,7 +654,7 @@ void set_area_prop(Node * const root){
  *  ist grob einstellbar.
  */
 static const unsigned int TREE_CHILDREN_MAX = 5;
-static const unsigned int TREE_DEPTH_MAX = 5;//height of root is 0.
+static const unsigned int TREE_DEPTH_MAX = 5; //height of root is 0.
 
 static unsigned int tree_hashval( Node *root){
   return -1;
@@ -702,16 +702,16 @@ free(linep);
 
 
 void debug_print_matrix( unsigned int* data, unsigned int w, unsigned int h, BlobtreeRect roi, unsigned int gridw, unsigned int gridh){
-  unsigned int i,j, wr, hr, w2, h2;
+  unsigned int i, j, wr, hr, w2, h2;
   unsigned int d;
   wr = (roi.width-1) % gridw;
   hr = (roi.height-1) % gridh;
   w2 = roi.width - wr;
   h2 = roi.height - hr;
-  for(i=roi.y;i<roi.y+h2;i+=gridh){
-    for(j=roi.x;j<roi.x+w2;j+=gridw){
+  for(i=roi.y; i<roi.y+h2; i+=gridh){
+    for(j=roi.x; j<roi.x+w2; j+=gridw){
       d = *(data+i*w+j);
-      //printf("%u ",d);
+      //printf("%u ", d);
       //printf("%s", d==0?"■⬛":"□");
       //printf("%s", d==0?"✘":" ");
       if(d>0){
@@ -723,7 +723,7 @@ void debug_print_matrix( unsigned int* data, unsigned int w, unsigned int h, Blo
     j-=gridw-wr;
 
     if(w2<roi.width){
-      for(;j<roi.x+roi.width;j+=1){
+      for(; j<roi.x+roi.width; j+=1){
         d = *(data+i*w+j);
         if(d>0){
           printf("%3u", d);
@@ -738,8 +738,8 @@ void debug_print_matrix( unsigned int* data, unsigned int w, unsigned int h, Blo
 
   i-=gridh-hr;
   if( h2 < roi.height ){
-    for( ;i<roi.y+roi.height;i+=1){
-      for(j=roi.x;j<roi.x+w2;j+=gridw){
+    for(; i<roi.y+roi.height; i+=1){
+      for(j=roi.x; j<roi.x+w2; j+=gridw){
         d = *(data+i*w+j);
         if(d>0){
           printf("%3u", d);
@@ -750,7 +750,7 @@ void debug_print_matrix( unsigned int* data, unsigned int w, unsigned int h, Blo
       j-=gridw-wr;
 
       if(w2<roi.width){
-        for(;j<roi.x+roi.width;j+=1){
+        for(; j<roi.x+roi.width; j+=1){
           d = *(data+i*w+j);
           if(d>0){
             printf("%3u", d);
@@ -767,18 +767,18 @@ void debug_print_matrix( unsigned int* data, unsigned int w, unsigned int h, Blo
 
 
 void debug_print_matrix2(unsigned int* ids, unsigned int* data, unsigned int w, unsigned int h, BlobtreeRect roi, unsigned int gridw, unsigned int gridh, char twice){
-  unsigned int i,j, wr, hr, w2, h2;
+  unsigned int i, j, wr, hr, w2, h2;
   unsigned int d;
   wr = (roi.width-1) % gridw;
   hr = (roi.height-1) % gridh;
   w2 = roi.width - wr;
   h2 = roi.height - hr;
-  for(i=roi.y;i<roi.y+h2;i+=gridh){
-    for(j=roi.x;j<roi.x+w2;j+=gridw){
+  for(i=roi.y; i<roi.y+h2; i+=gridh){
+    for(j=roi.x; j<roi.x+w2; j+=gridw){
       if( *(ids+i*w+j) > 0 ){
         d = *(data+*(ids+i*w+j));
         if(twice) d=*(data+d);
-        //printf("%s%u",d<10&&d>=0?" ":"", d);
+        //printf("%s%u", d<10&&d>=0?" ":"", d);
         printf("%3u", d);
       }else{
         //printf("  ");
@@ -788,11 +788,11 @@ void debug_print_matrix2(unsigned int* ids, unsigned int* data, unsigned int w, 
     j-=gridw-wr;
 
     if(w2<roi.width){
-      for(;j<roi.x+roi.width;j+=1){
+      for(; j<roi.x+roi.width; j+=1){
         if( *(ids+i*w+j) > 0 ){
           d = *(data+*(ids+i*w+j));
           if(twice) d=*(data+d);
-          //printf("%s%u",d<10&&d>=0?" ":"", d);
+          //printf("%s%u", d<10&&d>=0?" ":"", d);
           printf("%3u", d);
         }else{
           printf("   ");
@@ -805,11 +805,11 @@ void debug_print_matrix2(unsigned int* ids, unsigned int* data, unsigned int w, 
 
   i-=gridh-hr;
   if( h2 < roi.height ){
-    for( ;i<roi.y+roi.height;i+=1){
-      for(j=roi.x;j<roi.x+w2;j+=gridw){
+    for(; i<roi.y+roi.height; i+=1){
+      for(j=roi.x; j<roi.x+w2; j+=gridw){
         if( *(ids+i*w+j) > 0 ){
           d = *(data+*(ids+i*w+j));
-          //printf("%s%u",d<10&&d>=0?" ":"", d);
+          //printf("%s%u", d<10&&d>=0?" ":"", d);
           printf("%3u", d);
         }else{
           printf("   ");
@@ -818,10 +818,10 @@ void debug_print_matrix2(unsigned int* ids, unsigned int* data, unsigned int w, 
       j-=gridw-wr;
 
       if(w2<roi.width){
-        for(;j<roi.x+roi.width;j+=1){
+        for(; j<roi.x+roi.width; j+=1){
           if( *(ids+i*w+j) > 0 ){
             d = *(data+*(ids+i*w+j));
-            printf("%s%u",d<10&&d>=0?" ":"", d);
+            printf("%s%u", d<10&&d>=0?" ":"", d);
           }else{
             printf("  ");
           }
@@ -835,20 +835,20 @@ void debug_print_matrix2(unsigned int* ids, unsigned int* data, unsigned int w, 
 
 
 void debug_print_matrix_char( unsigned char * data, unsigned int w, unsigned int h, BlobtreeRect roi, unsigned int gridw, unsigned int gridh){
-  unsigned int i,j, wr, hr, w2, h2;
+  unsigned int i, j, wr, hr, w2, h2;
   unsigned int d;
   wr = (roi.width-1) % gridw;
   hr = (roi.height-1) % gridh;
   w2 = roi.width - wr;
   h2 = roi.height - hr;
-  for(i=roi.y;i<roi.y+h2;i+=gridh){
-    for(j=roi.x;j<roi.x+w2;j+=gridw){
+  for(i=roi.y; i<roi.y+h2; i+=gridh){
+    for(j=roi.x; j<roi.x+w2; j+=gridw){
       d = *(data+i*w+j);
-      //printf("%u ",d);
+      //printf("%u ", d);
       //printf("%s", d==0?"■⬛":"□");
       //printf("%s", d==0?"✘":" ");
       if(d>0)
-        //printf("%s%u",d<10&&d>=0?" ":"", d);
+        //printf("%s%u", d<10&&d>=0?" ":"", d);
         printf("%2u", d);
       else
         printf("  ");
@@ -856,10 +856,10 @@ void debug_print_matrix_char( unsigned char * data, unsigned int w, unsigned int
     j-=gridw-wr;
 
     if(w2<roi.width){
-      for(;j<roi.x+roi.width;j+=1){
+      for(; j<roi.x+roi.width; j+=1){
         d = *(data+i*w+j);
         if(d>0)
-          //printf("%s%u",d<10&&d>=0?" ":"", d);
+          //printf("%s%u", d<10&&d>=0?" ":"", d);
           printf("%2u", d);
         else
           printf("  ");
@@ -871,11 +871,11 @@ void debug_print_matrix_char( unsigned char * data, unsigned int w, unsigned int
 
   i-=gridh-hr;
   if( h2 < roi.height ){
-    for( ;i<roi.y+roi.height;i+=1){
-      for(j=roi.x;j<roi.x+w2;j+=gridw){
+    for(; i<roi.y+roi.height; i+=1){
+      for(j=roi.x; j<roi.x+w2; j+=gridw){
         d = *(data+i*w+j);
         if(d>0)
-          //printf("%s%u",d<10&&d>=0?" ":"", d);
+          //printf("%s%u", d<10&&d>=0?" ":"", d);
           printf("%2u", d);
         else
           printf("  ");
@@ -883,10 +883,10 @@ void debug_print_matrix_char( unsigned char * data, unsigned int w, unsigned int
       j-=gridw-wr;
 
       if(w2<roi.width){
-        for(;j<roi.x+roi.width;j+=1){
+        for(; j<roi.x+roi.width; j+=1){
           d = *(data+i*w+j);
           if(d>0)
-            //printf("%s%u",d<10&&d>=0?" ":"", d);
+            //printf("%s%u", d<10&&d>=0?" ":"", d);
             printf("%2u", d);
           else
             printf("  ");
@@ -905,7 +905,7 @@ void swap_silbings(Node *a, Node *b)
   Node *p = a->parent;
   Node *c = p->child;
   Node *d = p->child;
-  //serach c,d with ...,c,a,...,d,b order
+  //serach c, d with ..., c, a, ..., d, b order
   if(c==a) c = NULL;
   else{
     while(c->silbing!=a) c=c->silbing;
@@ -942,7 +942,7 @@ int cmp(Node *a, Node *b)
   Node *ca = a->child;
   Node *cb = b->child;
   while( ret == 0 && ca!=NULL ){
-    ret = cmp(ca,cb);
+    ret = cmp(ca, cb);
     ca=ca->silbing;
     cb=cb->silbing;
   }
