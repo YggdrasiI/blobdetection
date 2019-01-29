@@ -766,7 +766,7 @@ void debug_print_matrix( unsigned int* data, unsigned int w, unsigned int h, Blo
 }
 
 
-void debug_print_matrix2(unsigned int* ids, unsigned int* data, unsigned int w, unsigned int h, BlobtreeRect roi, unsigned int gridw, unsigned int gridh, char twice){
+void debug_print_matrix2(unsigned int* ids, unsigned int* data, unsigned int w, unsigned int h, BlobtreeRect roi, unsigned int gridw, unsigned int gridh, char b_twice){
   unsigned int i, j, wr, hr, w2, h2;
   unsigned int d;
   wr = (roi.width-1) % gridw;
@@ -777,7 +777,7 @@ void debug_print_matrix2(unsigned int* ids, unsigned int* data, unsigned int w, 
     for(j=roi.x; j<roi.x+w2; j+=gridw){
       if( *(ids+i*w+j) > 0 ){
         d = *(data+*(ids+i*w+j));
-        if(twice) d=*(data+d);
+        if(b_twice) d=*(data+d);
         //printf("%s%u", d<10&&d>=0?" ":"", d);
         printf("%3u", d);
       }else{
@@ -791,7 +791,7 @@ void debug_print_matrix2(unsigned int* ids, unsigned int* data, unsigned int w, 
       for(; j<roi.x+roi.width; j+=1){
         if( *(ids+i*w+j) > 0 ){
           d = *(data+*(ids+i*w+j));
-          if(twice) d=*(data+d);
+          if(b_twice) d=*(data+d);
           //printf("%s%u", d<10&&d>=0?" ":"", d);
           printf("%3u", d);
         }else{

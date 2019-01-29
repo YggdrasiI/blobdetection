@@ -2,7 +2,11 @@
 #define TREE_H
 
 #ifndef INLINE
+#ifdef VISUAL_STUDIO
+#define INLINE extern __inline
+#else
 #define INLINE extern inline
+#endif
 #endif
 
 /*
@@ -11,16 +15,24 @@
  * */
 
 #include <stdlib.h>
-#include <stdbool.h>
+
+// Do not use bool to prevent conflicts with c++'s bool
+//#ifdef VISUAL_STUDIO
+//#include "vc_stdbool.h"
+//#else
+//#include <stdbool.h>
+//#endif
+
 #include <limits.h>
 #include <stdio.h>
 
 #include "settings.h"
 
 // Like opencvs Rect_<int>
-typedef struct {
+typedef struct BlobtreeRect BlobtreeRect;
+struct BlobtreeRect{
   int x, y, width, height;
-} BlobtreeRect;
+} ;
 
 /* Minimal Node struct
  * Note: The height value stores the length of the longest path of successors, not
@@ -41,27 +53,28 @@ static const struct Node Leaf = { NULL, NULL, NULL, 0, 0, NULL };
  * Some functions, which operates on a tree
  * expect this data struct. (This functions
  * should be recognizeable by its names.) */
-typedef struct Blob{
+typedef struct Blob Blob;
+struct Blob{
   unsigned int id;
   BlobtreeRect roi;
   unsigned int area;
 #ifdef SAVE_DEPTH_MAP_VALUE
-  unsigned char depth_level;  // != level in tree structure 
+  unsigned char depth_level;  // != level in tree structure
 #endif
 #ifdef BLOB_BARYCENTER
   int barycenter[2];
 #endif
-} Blob;
+};
 
-
-typedef struct {
-  Node *root; // root of tree. Required to release mem in tree_destroy(). 
+typedef struct Tree Tree;
+struct Tree{
+  Node *root; // root of tree. Required to release mem in tree_destroy().
   unsigned int size; //length of data and root array.
-} Tree;
+};
 
-/* Allocate tree struct. If you use 
- * the data pointer of the nodes you has to 
- * setup/handle the storage for this data 
+/* Allocate tree struct. If you use
+ * the data pointer of the nodes you has to
+ * setup/handle the storage for this data
  * separatly */
 Tree *tree_create(unsigned int size);
 
@@ -85,8 +98,8 @@ void print_tree(Node *root, int shift);
 void print_tree_filtered(Node *root, int shift, unsigned int minA);
 
 
-/* 
- * Helper functions for sorting 
+/*
+ * Helper functions for sorting
  * */
 // Swap nodes with same parent
 INLINE void swap_silbings(Node *a, Node *b);
@@ -151,7 +164,7 @@ void set_area_prop(Node *root);
 #endif
 
 // Debug/Helper-Functions
-char * debug_getline(void); 
+char * debug_getline(void);
 void debug_print_matrix( unsigned int* data, unsigned int w, unsigned int h, BlobtreeRect roi, unsigned int gridw, unsigned int gridh);
 void debug_print_matrix2(unsigned int* ids, unsigned int* data, unsigned int w, unsigned int h, BlobtreeRect roi, unsigned int gridw, unsigned int gridh, char twice);
 void debug_print_matrix_char( unsigned char * data, unsigned int w, unsigned int h, BlobtreeRect roi, unsigned int gridw, unsigned int gridh);

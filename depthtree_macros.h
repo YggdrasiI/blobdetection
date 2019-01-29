@@ -126,7 +126,7 @@ BD( \
 BLOB_INIT_BARY; \
 if( id>=max_comp ){ \
   int max_comp2 = (int) ( (float)w*h*max_comp/(dPi-data) ); /*try estimation */ \
-  if( true || max_comp2 < max_comp*1.5 ){ \
+  if( 1 || max_comp2 < max_comp*1.5 ){ \
     max_comp += max_comp; \
   }else{ \
     max_comp = max_comp2; \

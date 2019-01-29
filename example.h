@@ -3,6 +3,15 @@
 
 #include "time.h"
 
+
+#include "settings.h"
+#ifdef VISUAL_STUDIO
+int random(){
+    return rand();
+}
+
+#endif
+
 #include "tree.h"
 #include "blob.h"
 

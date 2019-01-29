@@ -1,6 +1,12 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
+// For compiling (of interfacse/examples) with
+// Visual Studio C++ 2010 and above.
+#ifdef _MSC_VER
+#define VISUAL_STUDIO
+#endif
+
 /* 0, 1, 2(with stops) */
 #ifndef VERBOSE
 #define VERBOSE 1 
@@ -99,7 +105,25 @@
  * constant stepwidth variable.
  * Increases compile time by factor 12. Comment out to disable optimization.
  * */
+#ifndef FORCEINLINE
+#ifdef VISUAL_STUDIO
+#define FORCEINLINE __forceinline static
+#else
 #define FORCEINLINE __attribute__((always_inline)) static
+#endif
+#endif
+
+
+
+#if VERBOSE > 0
+#define VPRINTF(...) printf(__VA_ARGS__);
+#else
+#ifdef VISUAL_STUDIO  // No variadic template support in 2010
+#define VPRINTF()
+#else
+#define VPRINTF(...)
+#endif
+#endif
 
 
 #if VERBOSE > 0

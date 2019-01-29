@@ -11,7 +11,7 @@
 
 #include "depthtree_macros.h"
 
-bool depthtree_create_workspace(
+int depthtree_create_workspace(
     const unsigned int w, const unsigned int h,
     DepthtreeWorkspace **pworkspace
     ){
@@ -22,7 +22,7 @@ bool depthtree_create_workspace(
   }
   //Now, *pworkspace is NULL
 
-  if( w*h == 0 ) return false;
+  if( w*h == 0 ) return -1;
 
   DepthtreeWorkspace *r = malloc( sizeof(DepthtreeWorkspace) );
 
@@ -65,7 +65,7 @@ bool depthtree_create_workspace(
       ){
         // alloc failed
         depthtree_destroy_workspace( &r );
-        return false;
+        return -1;
       }
 
   /* setup first entry of *_ids and *_dep to 0->255. (0 is dummy entry with
@@ -83,10 +83,10 @@ bool depthtree_create_workspace(
   r->blob_id_filtered = NULL;
 
   *pworkspace=r;
-  return true;
+  return 0;
 }
 
-bool depthtree_realloc_workspace(
+int depthtree_realloc_workspace(
     const unsigned int max_comp,
     DepthtreeWorkspace **pworkspace
     ){
@@ -114,13 +114,13 @@ bool depthtree_realloc_workspace(
     // realloc failed
     VPRINTF("Critical error: Reallocation of workspace failed!\n");
     depthtree_destroy_workspace( pworkspace );
-    return false;
+    return -1;
   }
 
   free(r->blob_id_filtered);//omit unnessecary reallocation and omit wrong/low size
   r->blob_id_filtered = NULL;//should be allocated later if needed.
 
-  return true;
+  return 0;
 }
 
 void depthtree_destroy_workspace(
@@ -579,7 +579,7 @@ Tree* find_depthtree(
   //printf("comp_same:\n");
   //print_matrix(comp_same, id+1, 1);
   debug_print_matrix( ids, w, h, roi, 1, 1);
-  debug_print_matrix2( ids, comp_same, w, h, roi, 1, 1, true);
+  debug_print_matrix2( ids, comp_same, w, h, roi, 1, 1, 1);
 #endif
 
   /* Postprocessing.

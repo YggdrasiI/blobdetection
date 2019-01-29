@@ -12,7 +12,7 @@
 //#include "threshtree_macros_old.h"
 
 
-bool threshtree_create_workspace(
+int threshtree_create_workspace(
     const unsigned int w, const unsigned int h,
     ThreshtreeWorkspace **pworkspace
     ){
@@ -23,7 +23,7 @@ bool threshtree_create_workspace(
   }
   //Now, *pworkspace is NULL
 
-  if( w*h == 0 ) return false;
+  if( w*h == 0 ) return -1;
 
   ThreshtreeWorkspace *r = malloc( sizeof(ThreshtreeWorkspace) );
 
@@ -53,7 +53,7 @@ bool threshtree_create_workspace(
       0 ){
     // alloc failed
     threshtree_destroy_workspace( &r );
-    return false;
+    return -1;
   }
 
 #ifdef BLOB_SUBGRID_CHECK
@@ -67,10 +67,10 @@ bool threshtree_create_workspace(
   r->blob_id_filtered = NULL;
 
   *pworkspace=r;
-  return true;
+  return 0;
 }
 
-bool threshtree_realloc_workspace(
+int threshtree_realloc_workspace(
     const unsigned int max_comp,
     ThreshtreeWorkspace **pworkspace
     ){
@@ -97,13 +97,13 @@ bool threshtree_realloc_workspace(
     // realloc failed
     VPRINTF("Critical error: Reallocation of workspace failed!\n");
     threshtree_destroy_workspace( pworkspace );
-    return false;
+    return -1;
   }
 
   free(r->blob_id_filtered);//omit unnessecary reallocation and omit wrong/low size
   r->blob_id_filtered = NULL;//should be allocated later if needed.
 
-  return true;
+  return 0;
 }
 
 void threshtree_destroy_workspace(

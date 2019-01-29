@@ -54,11 +54,11 @@ typedef struct {
 } DepthtreeWorkspace;
 
 
-bool depthtree_create_workspace(
+int depthtree_create_workspace(
     const unsigned int w, const unsigned int h,
     DepthtreeWorkspace **pworkspace
     );
-bool depthtree_realloc_workspace(
+int depthtree_realloc_workspace(
     const unsigned int max_comp,
     DepthtreeWorkspace **pworkspace
     );

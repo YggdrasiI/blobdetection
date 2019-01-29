@@ -46,11 +46,11 @@ typedef struct {
 } ThreshtreeWorkspace;
 
 
-bool threshtree_create_workspace(
+int threshtree_create_workspace(
     const unsigned int w, const unsigned int h,
     ThreshtreeWorkspace **pworkspace
     );
-bool threshtree_realloc_workspace(
+int threshtree_realloc_workspace(
     const unsigned int max_comp,
     ThreshtreeWorkspace **pworkspace
     );
