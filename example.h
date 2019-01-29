@@ -36,7 +36,7 @@ void print_matrix( unsigned int* data, unsigned int w, unsigned int h){
   print_matrix_with_roi(data,w,h,roi);
 }
 
-void print_matrix_char_with_roi( char* data, unsigned int w, unsigned int h,
+void print_matrix_char_with_roi( unsigned char* data, unsigned int w, unsigned int h,
         BlobtreeRect roi, unsigned int gridw, unsigned int gridh,
         const char (*print_strings)[5], /* Array of length 'print_strings_len + 1' */
         size_t print_strings_len /*                                           ^^^^ */
@@ -64,8 +64,8 @@ void print_matrix_char_with_roi( char* data, unsigned int w, unsigned int h,
       //printf("%s", d==0?"✘":" ");
       //printf("%s", c(d));
       //printf("%s", d!=0?"█":"░");
-      if( d >= print_strings_len ) {
-          d = print_strings_len; // Non-representable data displayed with highest value. Defaul char: '?'
+      if( d >= print_strings_len) {
+          d = print_strings_len-1; // Non-representable data displayed with highest value. Default char: '?'
       }
       printf("%s", print_strings[d]);
     }
@@ -146,7 +146,7 @@ void gen_image_data2(unsigned char* sw, unsigned int w, unsigned int h, unsigned
     for( j=0;j<Bw;j++ ){
       col = 1;
       for( d=0;d<depth+1;d++ ){
-        col = 200*(random()%2);
+        col = 200*(random()%2); // (200 is over thresh in example1)
         //col = 1-col;
         //von außen nach innen einen Block mit col füllen
         for(k=d;k<Bbreite-d;k++){

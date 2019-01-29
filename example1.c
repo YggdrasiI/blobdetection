@@ -29,7 +29,13 @@ int main(int argc, char **argv) {
   gen_image_data2(sw, W, H, 4);
 
   printf("Input image data:\n");
-  print_matrix_char_with_roi( (char*) sw, W, H, roi, 1, 1, NULL, 0);
+  // Because it is not a [0,1]-Image, but a [0,200]-image we need a longer 
+  // array for print_matrix_char_with_roi.
+  char level_chars[201][5]; // 5 = 4 byte char + '\0'
+  for( int i=0; i<200; ++i) { strcpy(level_chars[i],"░"); }
+  strcpy(level_chars[200], "█");
+
+  print_matrix_char_with_roi( (char*) sw, W, H, roi, 1, 1, level_chars, 201);
 
   //Init workspace
   ThreshtreeWorkspace *workspace = NULL;
@@ -49,19 +55,22 @@ int main(int argc, char **argv) {
   printf("Coloured map of connection components:\n");
   print_coloured_threshtree_areas(sw, blobs, &roi, workspace, 0);
 
+#if 1
   printf("Coloured map of connection component ids (last digit only and id(0)=' '):\n");
   char *ids_out = sprint_coloured_threshtree_ids(sw, blobs, &roi, workspace,
       0, 0, "0123456789");
   printf("%s\n", ids_out);
   free(ids_out);
+#endif
 
-#if 1
+#if 0
   // Print out result tree.
   printf("===========\n");
   printf("Treesize: %u, Tree null? %s\n", blobs->tree->size, blobs->tree->root==NULL?"Yes.":"No.");
   print_tree(blobs->tree->root, 0);
 #endif
 
+#if 1
   // Filter results
   printf("===========\n");
   printf("Restrict on blobs on tree level/depth 2....\n");
@@ -70,7 +79,7 @@ int main(int argc, char **argv) {
   //blobtree_set_filter(blobs, F_AREA_MAX, 30);
   blobtree_set_filter(blobs, F_TREE_DEPTH_MAX, 2);
 
-#if 1 
+#if 0
   // Loop over filtered elements.
   printf("List all blobs matching the filtering criterias:\n");
   Node *cur = blobtree_first(blobs);
@@ -78,9 +87,9 @@ int main(int argc, char **argv) {
     // bounding box
     Blob *data = (Blob*)cur->data;
     BlobtreeRect *rect = &data->roi;
-    printf("Blob with id %u: x=%u y=%u w=%u h=%u area=%u\n", data->id, 
-        rect->x, rect->y, 
-        rect->width, rect->height, 
+    printf("Blob with id %u: x=%u y=%u w=%u h=%u area=%u\n", data->id,
+        rect->x, rect->y,
+        rect->width, rect->height,
         data->area
         );
 
@@ -93,8 +102,9 @@ int main(int argc, char **argv) {
 
   printf("Filtered Coloured map of blob ids (last digit only and blobid(0)=' '):\n");
   print_coloured_threshtree_ids(sw, blobs, &roi, workspace, 1, 0, "0123456789");
+#endif
 
-
+#if 0
   printf("===========\n");
   printf("Restrict on blobs on tree level/depth 1...\n");
   blobtree_set_filter(blobs, F_CLEAR, 0);
@@ -110,6 +120,7 @@ int main(int argc, char **argv) {
   blobtree_set_filter(blobs, F_TREE_DEPTH_MAX, 2);
   printf("Filtered Coloured map of blob ids (last digit only and blobid(0)=' '):\n");
   print_coloured_threshtree_ids(sw, blobs, &roi, workspace, 1, 0, "0123456789");
+#endif
 
   // Clean up.
   blobtree_destroy(&blobs);
