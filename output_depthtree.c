@@ -1,46 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "output.h"
 #include "output_depthtree.h"
-
-#define CHECK_CONSUMED_CHARS(CONSUMED, BUF, USED) \
-            if( CONSUMED < 0 ){ \
-                fprintf(stderr, "(%s) Hey sprintf failed in line %i\n", __FILE__, __LINE__); \
-                BUF[USED] = '\0'; \
-                return BUF; \
-            }
-
-#define ID_TO_RGB_A(ID, COL) \
-            (COL)[0] =  ((ID)*5*5+100)%256; \
-            (COL)[1] =  ((ID)*7*7+10)%256;  \
-            (COL)[2] =  ((ID)*29*29+1)%256; 
-
-// Darker
-#define ID_TO_RGB_B(ID, COL) \
-            (COL)[0] =  ((ID)*5*511+100)%180; \
-            (COL)[1] =  ((ID)*7*753+10)%180;  \
-            (COL)[2] =  ((ID)*29*29+1)%180; 
-
-/*
- * Explands buffer if less than 'required' characters left.
- */
-void expand_buf_if_required(
-        size_t *pbuf_len,  // Length of *ppbuf
-        char **ppbuf,
-        size_t already_used,  // <= *pbuf_len
-        size_t required,
-        size_t extra_padding  // reallocation to size buf_len-buf_used + required  + extra_padding
-        ){
-    if( *pbuf_len > already_used + required ) return;
-    if( *pbuf_len < already_used ){
-        fprintf(stderr, "(%s) Hey buf_used=%lu > %lu=buf_len\n", __FILE__, already_used, *pbuf_len);
-        return;
-    }
-    size_t new_len = already_used + required + extra_padding;
-    //fprintf(stderr, "Increase from %lu to %lu \n", *pbuf_len, new_len);
-    *ppbuf = realloc(*ppbuf, new_len * sizeof(typeof(*pbuf_len)));
-    *pbuf_len = new_len;
-}
 
 char *sprint_coloured_depthtree_ids(
         unsigned char* data,
@@ -52,6 +14,10 @@ char *sprint_coloured_depthtree_ids(
         const char *char_map
         )
 {
+    if( term_color_mode < 0 && set_term_color_mode()){
+        fprintf(stderr, "Can't detect color capabilities of terminal.");
+    }
+
     // Region to print
     BlobtreeRect output_roi = {0, 0, pworkspace->w, pworkspace->h};
     if( pprint_roi != NULL ) output_roi = *pprint_roi;
@@ -72,7 +38,7 @@ char *sprint_coloured_depthtree_ids(
     size_t used_buf_size = 0;
     char *buf = malloc(buf_len);
 
-    const int bg = 1;  // Flag indicates if background or foreground color should be changed.
+    const int bg = CHANGE_BACKGROUND_PLUS;
     int consumed_chars = 0; // set by sprintf calls
     unsigned int id;
 
@@ -100,62 +66,43 @@ char *sprint_coloured_depthtree_ids(
 
             if(col[0] != prev_col[0] || col[1] != prev_col[1] || col[2] != prev_col[2]){
                 if( id==background_id ){
-                  // Do not define any color information for 'empty space'.
-                
-                  // Reset color information
-                  expand_buf_if_required(&buf_len, &buf, used_buf_size, 3, 0);
-                  used_buf_size += sprintf(buf+used_buf_size, "\e[m");
+                    // Do not define any color information for 'empty space'.
+
+                    // Reset color information
+                    used_buf_size += sprintf(buf+used_buf_size, RESETCOLOR);
 
                 }else{
-                  // Prepend next char with new color information
-                  consumed_chars = sprintf(buf+used_buf_size,
-                      "\x1b[%d;2;%d;%d;%dm", 
-                      bg?48:38, 
-                      col[0], col[1], col[2]
-                      );
-                  CHECK_CONSUMED_CHARS(consumed_chars, buf, used_buf_size);
-                  used_buf_size += consumed_chars;
-
-                  if( bg ){
-                    // Foreground color should depends on background for better readability
-                    if( col[0] + col[1] + col[2] > 400 ){
-                      consumed_chars = sprintf(buf+used_buf_size, "\x1b[%d;2;%d;%d;%dm", 38, 0, 0, 0);
-                    }else{
-                      consumed_chars = sprintf(buf+used_buf_size, "\x1b[%d;2;%d;%d;%dm", 38, 240, 240, 240);
-                    }
-                    CHECK_CONSUMED_CHARS(consumed_chars, buf, used_buf_size);
-                    used_buf_size += consumed_chars;
-                  }
+                    // Prepend next char with new color information
+                    used_buf_size += sprintf_color(buf+used_buf_size,
+                            bg, col[0], col[1], col[2],
+                            NULL);
                 }
             }else{
                 // Reuse previous color
             }
 
             consumed_chars = sprintf(buf+used_buf_size,
-                "%c",
-                id==background_id?' ':char_map[id%char_map_len]
-                );
+                    "%c",
+                    id==background_id?' ':char_map[id%char_map_len]
+                    );
 
-            CHECK_CONSUMED_CHARS(consumed_chars, buf, used_buf_size);
+            //CHECK_CONSUMED_CHARS(consumed_chars, buf, used_buf_size);
             used_buf_size += consumed_chars;
 
         }
 
         if( bg ){
-          // Reset color information
-          expand_buf_if_required(&buf_len, &buf, used_buf_size, 3, 0);
-          used_buf_size += sprintf(buf+used_buf_size, "\e[m");
-          col[0] = -1; // Trigger color generation at next line
+            // Reset color information
+            used_buf_size += sprintf(buf+used_buf_size, RESETCOLOR);
+            col[0] = -1; // Trigger color generation at next line
         }
 
-        consumed_chars = sprintf(buf+used_buf_size, "\n");
-        CHECK_CONSUMED_CHARS(consumed_chars, buf, used_buf_size);
-        used_buf_size += consumed_chars;
+        used_buf_size += sprintf(buf+used_buf_size, "\n");
     }
 
     // Reset color information
     expand_buf_if_required(&buf_len, &buf, used_buf_size, 3, 0);
-    used_buf_size += sprintf(buf+used_buf_size, "\e[m");
+    used_buf_size += sprintf(buf+used_buf_size, RESETCOLOR);
 
     return buf;
 }
@@ -184,6 +131,10 @@ char *sprint_coloured_depthtree_areas(
         DepthtreeWorkspace *pworkspace,
         const int display_filtered_areas)
 {
+    if( term_color_mode < 0 && set_term_color_mode()){
+        fprintf(stderr, "Can't detect color capabilities of terminal.");
+    }
+
     // Region to print
     BlobtreeRect output_roi = {0, 0, pworkspace->w, pworkspace->h};
     if( pprint_roi != NULL ) output_roi = *pprint_roi;
@@ -201,7 +152,7 @@ char *sprint_coloured_depthtree_areas(
     size_t used_buf_size = 0;
     char *buf = malloc(buf_len);
 
-    const int bg = 0;  // Flag indicates if background or foreground color should be changed.
+    const int bg = CHANGE_FOREGROUND;
     int consumed_chars = 0; // set by sprintf calls
     unsigned int id;
 
@@ -229,37 +180,31 @@ char *sprint_coloured_depthtree_areas(
 
             if( col[0] != prev_col[0] || col[1] != prev_col[1] || col[2] != prev_col[2]){
                 // Prepend next char with new color information
-                consumed_chars = sprintf(buf+used_buf_size,
-                        "\x1b[%d;2;%d;%d;%dm%s", 
-                        bg?48:38, 
-                        col[0], col[1], col[2],
-                        d!=0?"█":"░"
-                        );
+                consumed_chars = sprintf_color(buf+used_buf_size,
+                        bg, col[0], col[1], col[2],
+                        d!=0?"█":"░");
             }else{
                 // Reuse previous color
                 consumed_chars = sprintf(buf+used_buf_size,
                         "%s", d!=0?"█":"░");
             }
-            CHECK_CONSUMED_CHARS(consumed_chars, buf, used_buf_size);
+            //CHECK_CONSUMED_CHARS(consumed_chars, buf, used_buf_size);
             used_buf_size += consumed_chars;
 
         }
 
         if( bg ){
           // Reset color information
-          expand_buf_if_required(&buf_len, &buf, used_buf_size, 3, 0);
-          used_buf_size += sprintf(buf+used_buf_size, "\e[m");
+          used_buf_size += sprintf(buf+used_buf_size, RESETCOLOR);
           col[0] = -1; // Trigger color generation at next line
         }
 
-        consumed_chars = sprintf(buf+used_buf_size, "\n");
-        CHECK_CONSUMED_CHARS(consumed_chars, buf, used_buf_size);
-        used_buf_size += consumed_chars;
+        used_buf_size += sprintf(buf+used_buf_size, "\n");
     }
 
     // Reset color information
     expand_buf_if_required(&buf_len, &buf, used_buf_size, 3, 0);
-    used_buf_size += sprintf(buf+used_buf_size, "\e[m");
+    used_buf_size += sprintf(buf+used_buf_size, RESETCOLOR);
 
     return buf;
 }

@@ -1,6 +1,6 @@
 
-THRESH_SOURCES=blob.c threshtree.c tree.c threshtree_old.c output_threshtree.c
-DEPTH_SOURCES=blob.c depthtree.c tree.c output_depthtree.c
+THRESH_SOURCES=blob.c threshtree.c tree.c threshtree_old.c output.c output_threshtree.c
+DEPTH_SOURCES=blob.c depthtree.c tree.c output.c output_depthtree.c
 
 # -fpic required for shared libs.
 # CFLAGS=-std=gnu11 -Wall -fpic -O3 -lm

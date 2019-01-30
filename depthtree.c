@@ -1047,7 +1047,7 @@ unsigned int depthtree_get_filtered_id(
   }
 
   id = ids[ y*pworkspace->w + x ];
-  return *(bif + id);
+  return *(bif + id) - 1;
 }
 
 /* Postprocessing: Get filtered blob id for coordinate. Roi version */

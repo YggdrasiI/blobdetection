@@ -104,16 +104,16 @@ int main(int argc, char **argv) {
   blobtree_set_filter(blobs, F_TREE_DEPTH_MIN, 1);
   blobtree_set_filter(blobs, F_TREE_DEPTH_MAX, 1);
   printf("Filtered Coloured map of blob ids (last digit only and blobid(1)=' '):\n");
-  print_coloured_depthtree_ids(sw, blobs, &roi, workspace, 1, 1, "0123456789");
+  print_coloured_depthtree_ids(sw, blobs, &roi, workspace, 1, 0, "0123456789");
 
-#if 0
+#if 1 // More filtering examples
   printf("===========\n");
   printf("Restrict on blobs on tree level/depth 2...\n");
   blobtree_set_filter(blobs, F_CLEAR, 0);
   blobtree_set_filter(blobs, F_TREE_DEPTH_MIN, 2);
   blobtree_set_filter(blobs, F_TREE_DEPTH_MAX, 2);
   printf("Filtered Coloured map of blob ids (last digit only and blobid(1)=' '):\n");
-  print_coloured_depthtree_ids(sw, blobs, &roi, workspace, 1, 1, "0123456789");
+  print_coloured_depthtree_ids(sw, blobs, &roi, workspace, 1, 0, "0123456789");
 
   printf("===========\n");
   printf("Restrict on blobs on tree level/depth 1 and 2...\n");
@@ -121,7 +121,7 @@ int main(int argc, char **argv) {
   blobtree_set_filter(blobs, F_TREE_DEPTH_MIN, 1);
   blobtree_set_filter(blobs, F_TREE_DEPTH_MAX, 2);
   printf("Filtered Coloured map of blob ids (last digit only and blobid(1)=' '):\n");
-  print_coloured_depthtree_ids(sw, blobs, &roi, workspace, 1, 1, "0123456789");
+  print_coloured_depthtree_ids(sw, blobs, &roi, workspace, 1, 0, "0123456789");
 #endif
 
   // Clean up.
