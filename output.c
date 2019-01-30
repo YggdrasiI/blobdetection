@@ -13,7 +13,7 @@ int set_term_color_mode(void){
   FILE *fp;
 
   // Set fallback values
-  term_color_mode = SW_MODE;
+  term_color_mode = COLOR_SW_MODE;
   term_num_colors = 2;
 
   if ((fp = popen(cmd, "r")) == NULL) {
@@ -34,11 +34,11 @@ int set_term_color_mode(void){
       term_num_colors = val;
       if (val >= 256){ /* Assume that it also supports rgb mode
                           ('\033[38;2;%d;%d;%dm')  */
-        term_color_mode = RGB_MODE;
+        term_color_mode = COLOR_RGB_MODE;
       }else if (val >= 8){
-        term_color_mode = LIMITED_MODE;
+        term_color_mode = COLOR_LIMITED_MODE;
       }else{
-        term_color_mode = SW_MODE;
+        term_color_mode = COLOR_SW_MODE;
       }
     }
     //fprintf(stderr, "OUTPUT: %s Colors: %d, Mode: %d\n", buf, term_num_colors, term_color_mode);
@@ -61,7 +61,7 @@ int sprintf_color(char *buf,
 {
 
     int consumed_chars = 0;
-    if( term_color_mode == RGB_MODE ){
+    if( term_color_mode == COLOR_RGB_MODE ){
         if( set_background > 1 ){
             // Also adapt foreground color on background for better readability
             if( r + g + b > 400 ){
@@ -74,7 +74,7 @@ int sprintf_color(char *buf,
                       set_background?48:38, r, g, b,
                       pextra_str?pextra_str:"");
 
-    }else if( term_color_mode == LIMITED_MODE ){
+    }else if( term_color_mode == COLOR_LIMITED_MODE ){
         int col = (r^g^b)%8; // one of the 8 colors
         int bright = (r+g+b > 400); // bright flag
         if( set_background > 1 ){

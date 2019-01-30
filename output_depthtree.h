@@ -18,6 +18,27 @@
  *        22       2 3333333  
  * 22222222222222222          
  */
+char *sprint_depthtree_ids(
+        unsigned char* data,
+        Blobtree *frameblobs,
+        const BlobtreeRect *pprint_roi,  // could be NULL
+        DepthtreeWorkspace *pworkspace,
+        const int display_filtered_areas,
+        const int background_id,
+        const char *char_map
+        )
+    ;
+
+int print_depthtree_ids(
+        unsigned char* data,
+        Blobtree *frameblobs,
+        const BlobtreeRect *pprint_roi,
+        DepthtreeWorkspace *pworkspace,
+        const int display_filtered_areas,
+        const int background_id,
+        const char *char_map
+        )
+    ;
 
 char *sprint_coloured_depthtree_ids(
         unsigned char* data,
@@ -56,6 +77,22 @@ int print_coloured_depthtree_ids(
  * ░░░░░░░░██░░░░░░░█░███████░░
  * ░█████████████████░░░░░░░░░░
  */
+char *sprint_depthtree_areas(
+        const unsigned char* data,
+        Blobtree *frameblobs,
+        const BlobtreeRect *pprint_roi,
+        DepthtreeWorkspace *pworkspace,
+        const int display_filtered_areas)
+    ;
+
+int print_depthtree_areas(
+        const unsigned char* data,
+        Blobtree *frameblobs,
+        const BlobtreeRect *pprint_roi,
+        DepthtreeWorkspace *pworkspace,
+        const int display_filtered_areas)
+    ;
+
 char *sprint_coloured_depthtree_areas(
         const unsigned char* data,
         Blobtree *frameblobs,

@@ -36,9 +36,9 @@
  * If term_color_mode is < 0, set_term_color_mode will be called by the
  * *_coloured_* functions.
  */
-#define SW_MODE 0
-#define LIMITED_MODE 1
-#define RGB_MODE 2
+#define COLOR_SW_MODE 0
+#define COLOR_LIMITED_MODE 1
+#define COLOR_RGB_MODE 2
 #define _BUFSIZE 128
 
 

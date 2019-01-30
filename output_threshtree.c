@@ -4,6 +4,39 @@
 #include "output.h"
 #include "output_threshtree.h"
 
+char *sprint_threshtree_areas(
+        const unsigned char* data,
+        Blobtree *frameblobs,
+        const BlobtreeRect *pprint_roi,
+        ThreshtreeWorkspace *pworkspace,
+        const int display_filtered_areas)
+{
+    int _term_color_mode = term_color_mode;
+    term_color_mode = COLOR_SW_MODE;
+    char *ret = sprint_coloured_threshtree_areas(
+            data, frameblobs, pprint_roi, pworkspace,
+            display_filtered_areas);
+
+    term_color_mode = _term_color_mode;
+    return ret;
+}
+
+int print_threshtree_areas(
+        const unsigned char* data,
+        Blobtree *frameblobs,
+        const BlobtreeRect *pprint_roi,
+        ThreshtreeWorkspace *pworkspace,
+        const int display_filtered_areas)
+{
+    int _term_color_mode = term_color_mode;
+    term_color_mode = COLOR_SW_MODE;
+    int ret = print_coloured_threshtree_areas(
+            data, frameblobs, pprint_roi, pworkspace,
+            display_filtered_areas);
+
+    term_color_mode = _term_color_mode;
+    return ret;
+}
 
 char *sprint_coloured_threshtree_ids(
         unsigned char* data,

@@ -19,6 +19,28 @@
  * 22222222222222222          
  */
 
+char *sprint_threshtree_ids(
+        unsigned char* data,
+        Blobtree *frameblobs,
+        const BlobtreeRect *pprint_roi,  // could be NULL
+        ThreshtreeWorkspace *pworkspace,
+        const int display_filtered_areas,
+        const int background_id,
+        const char *char_map
+        )
+    ;
+
+int print_threshtree_ids(
+        unsigned char* data,
+        Blobtree *frameblobs,
+        const BlobtreeRect *pprint_roi,
+        ThreshtreeWorkspace *pworkspace,
+        const int display_filtered_areas,
+        const int background_id,
+        const char *char_map
+        )
+    ;
+
 char *sprint_coloured_threshtree_ids(
         unsigned char* data,
         Blobtree *frameblobs,
@@ -56,6 +78,22 @@ int print_coloured_threshtree_ids(
  * ░░░░░░░░██░░░░░░░█░███████░░
  * ░█████████████████░░░░░░░░░░
  */
+char *sprint_threshtree_areas(
+        const unsigned char* data,
+        Blobtree *frameblobs,
+        const BlobtreeRect *pprint_roi,
+        ThreshtreeWorkspace *pworkspace,
+        const int display_filtered_areas)
+    ;
+
+int print_threshtree_areas(
+        const unsigned char* data,
+        Blobtree *frameblobs,
+        const BlobtreeRect *pprint_roi,
+        ThreshtreeWorkspace *pworkspace,
+        const int display_filtered_areas)
+    ;
+
 char *sprint_coloured_threshtree_areas(
         const unsigned char* data,
         Blobtree *frameblobs,
