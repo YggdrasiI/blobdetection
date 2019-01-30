@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "threshtree_output.h"
+#include "output_depthtree.h"
 
 #define CHECK_CONSUMED_CHARS(CONSUMED, BUF, USED) \
             if( CONSUMED < 0 ){ \
@@ -13,124 +13,13 @@
 #define ID_TO_RGB_A(ID, COL) \
             (COL)[0] =  ((ID)*5*5+100)%256; \
             (COL)[1] =  ((ID)*7*7+10)%256;  \
-            (COL)[2] =  ((ID)*29*29+1)%256;
+            (COL)[2] =  ((ID)*29*29+1)%256; 
 
 // Darker
 #define ID_TO_RGB_B(ID, COL) \
-            (COL)[0] =  ((ID)*5*12382511+100)%180; \
-            (COL)[1] =  ((ID)*7*32758233+10)%180;  \
-            (COL)[2] =  ((ID)*29*4817372229+1)%180;
-
-#define RESETCOLOR "\e[m" // "\033[0m" aka "\x1b[0m"
-
-/* Values for set_background flag in sprintf_color(...) */
-#define CHANGE_FOREGROUND 0
-#define CHANGE_BACKGROUND 1
-#define CHANGE_BACKGROUND_PLUS 2 /* Change background, but also adapt forground color. */
-
-/* Check if terminal supports rgb color values. Printing out unsupported codes
- * could messing up the terminal content complety.
- *
- * If term_color_mode is < 0, set_term_color_mode will be called by the
- * *_coloured_* functions.
- */
-#define SW_MODE 0
-#define LIMITED_MODE 1
-#define RGB_MODE 2
-#define _BUFSIZE 128
-static int term_color_mode = -1;
-static int term_num_colors = 2;
-
-/* Set term_num_colors and term_color_mode or
- * return -1.
- */
-int set_term_color_mode(void){
-  char *cmd = "tput colors";
-
-  char *buf = malloc(_BUFSIZE);
-  FILE *fp;
-
-  // Set fallback values
-  term_color_mode = SW_MODE;
-  term_num_colors = 2;
-
-  if ((fp = popen(cmd, "r")) == NULL) {
-    fprintf(stderr, "Error opening pipe!\n");
-    free(buf);
-    return -1;
-  }
-
-  if (fgets(buf, _BUFSIZE, fp) != NULL) {
-
-    // Remove disturbing newline
-    char *pnewline =  strchr(buf, '\n');
-    if( pnewline ){ *pnewline = '\0'; }
-
-    char *endptr;
-    int val = (int) strtol(buf, &endptr, 0);
-    if( *endptr == '\0' ){ /* string was valid */
-      term_num_colors = val;
-      if (val >= 256){ /* Assume that it also supports rgb mode
-                          ('\033[38;2;%d;%d;%dm')  */
-        term_color_mode = RGB_MODE;
-      }else if (val >= 8){
-        term_color_mode = LIMITED_MODE;
-      }else{
-        term_color_mode = SW_MODE;
-      }
-    }
-    //fprintf(stderr, "OUTPUT: %s Colors: %d, Mode: %d\n", buf, term_num_colors, term_color_mode);
-  }
-
-  if(pclose(fp))  {
-    fprintf(stderr, "Command not found or exited with error status\n");
-    free(buf);
-    return -1;
-  }
-
-  free(buf);
-  return 0;
-}
-
-int sprintf_color(char *buf, int set_background, int r, int g, int b, const char *pextra_str){
-    int consumed_chars = 0;
-    if( term_color_mode == RGB_MODE ){
-        if( set_background > 1 ){
-            // Also adapt foreground color on background for better readability
-            if( r + g + b > 400 ){
-                consumed_chars += sprintf(buf+consumed_chars, "\x1b[%d;2;%d;%d;%dm", 38, 0, 0, 0);
-            }else{
-                consumed_chars += sprintf(buf+consumed_chars, "\x1b[%d;2;%d;%d;%dm", 38, 240, 240, 240);
-            }
-        }
-        consumed_chars +=  sprintf(buf+consumed_chars, "\x1b[%d;2;%d;%d;%dm%s",
-                      set_background?48:38, r, g, b,
-                      pextra_str?pextra_str:"");
-
-    }else if( term_color_mode == LIMITED_MODE ){
-        int col = (r^g^b)%8; // one of the 8 colors
-        int bright = (r+g+b > 400); // bright flag
-        if( set_background > 1 ){
-            if( bright==0 ){
-                consumed_chars +=  sprintf(buf, "\x1b[37m"); // white
-            }else{
-                consumed_chars +=  sprintf(buf, "\x1b[30;1m"); // black
-            }
-        }
-        consumed_chars +=  sprintf(buf+consumed_chars, "\x1b[%d%sm%s",
-                col + (set_background?40:30),
-                bright?";1":"",
-                pextra_str?pextra_str:"");
-
-    }else if(pextra_str){
-        consumed_chars +=  sprintf(buf, "%s",
-                pextra_str?pextra_str:"");
-
-    }
-
-
-    return consumed_chars;
-}
+            (COL)[0] =  ((ID)*5*511+100)%180; \
+            (COL)[1] =  ((ID)*7*753+10)%180;  \
+            (COL)[2] =  ((ID)*29*29+1)%180; 
 
 /*
  * Explands buffer if less than 'required' characters left.
@@ -153,21 +42,16 @@ void expand_buf_if_required(
     *pbuf_len = new_len;
 }
 
-char *sprint_coloured_threshtree_ids(
+char *sprint_coloured_depthtree_ids(
         unsigned char* data,
         Blobtree *frameblobs,
         const BlobtreeRect *pprint_roi,
-        ThreshtreeWorkspace *pworkspace,
+        DepthtreeWorkspace *pworkspace,
         const int display_filtered_areas,
         const int background_id,
         const char *char_map
         )
 {
-
-    if( term_color_mode < 0 && set_term_color_mode()){
-        fprintf(stderr, "Can't detect color capabilities of terminal.");
-    }
-
     // Region to print
     BlobtreeRect output_roi = {0, 0, pworkspace->w, pworkspace->h};
     if( pprint_roi != NULL ) output_roi = *pprint_roi;
@@ -177,7 +61,7 @@ char *sprint_coloured_threshtree_ids(
 
     if( display_filtered_areas ){
         // Setup filtered ids ( = pworkspace->blob_id_filtered)
-        threshtree_filter_blobs(frameblobs, pworkspace);
+        depthtree_filter_blobs(frameblobs, pworkspace);
     }
     const unsigned int *bif = pworkspace->blob_id_filtered;
     unsigned int col[3] = {0, 0, 0};
@@ -188,24 +72,24 @@ char *sprint_coloured_threshtree_ids(
     size_t used_buf_size = 0;
     char *buf = malloc(buf_len);
 
-    const int bg = CHANGE_BACKGROUND_PLUS;
+    const int bg = 1;  // Flag indicates if background or foreground color should be changed.
     int consumed_chars = 0; // set by sprintf calls
     unsigned int id;
 
     for( unsigned int y=0, H=output_roi.height; y<H; ++y){
         //restrict on grid pixels.
-        if( y % frameblobs->grid.height != 0 && y != H-1 ) continue;
+        if( y % frameblobs->grid.height != 0 && y!= H-1 ) continue;
 
         for( unsigned int x=0, W=output_roi.width; x<W; ++x) {
             //restrict on grid pixels.
-            if( x % frameblobs->grid.width != 0 && x != W-1 ) continue;
+            if( x % frameblobs->grid.width != 0 && x!= W-1 ) continue;
 
             if( display_filtered_areas && bif ){
-                id = threshtree_get_filtered_id_roi(frameblobs, output_roi, x, y, pworkspace);
+                id = depthtree_get_filtered_id_roi(frameblobs, output_roi, x, y, pworkspace);
             }else{
                 /* The translation by 1 just adjust the results of both branches
                  * to avoid color flickering after the flag changes. */
-                id = threshtree_get_id_roi(output_roi, x, y, pworkspace); //+ 1;
+                id = depthtree_get_id_roi(output_roi, x, y, pworkspace); //+ 1;
             }
 
             unsigned char d = *(data + y * pworkspace->w + x);
@@ -216,21 +100,35 @@ char *sprint_coloured_threshtree_ids(
 
             if(col[0] != prev_col[0] || col[1] != prev_col[1] || col[2] != prev_col[2]){
                 if( id==background_id ){
-                    // Do not define any color information for 'empty space'.
-
-                    // Reset color information
-                    used_buf_size += sprintf(buf+used_buf_size, RESETCOLOR);
+                  // Do not define any color information for 'empty space'.
+                
+                  // Reset color information
+                  expand_buf_if_required(&buf_len, &buf, used_buf_size, 3, 0);
+                  used_buf_size += sprintf(buf+used_buf_size, "\e[m");
 
                 }else{
-                    // Prepend next char with new color information
-                    consumed_chars = sprintf_color(buf+used_buf_size,
-                            bg, col[0], col[1], col[2],
-                            NULL);
+                  // Prepend next char with new color information
+                  consumed_chars = sprintf(buf+used_buf_size,
+                      "\x1b[%d;2;%d;%d;%dm", 
+                      bg?48:38, 
+                      col[0], col[1], col[2]
+                      );
+                  CHECK_CONSUMED_CHARS(consumed_chars, buf, used_buf_size);
+                  used_buf_size += consumed_chars;
+
+                  if( bg ){
+                    // Foreground color should depends on background for better readability
+                    if( col[0] + col[1] + col[2] > 400 ){
+                      consumed_chars = sprintf(buf+used_buf_size, "\x1b[%d;2;%d;%d;%dm", 38, 0, 0, 0);
+                    }else{
+                      consumed_chars = sprintf(buf+used_buf_size, "\x1b[%d;2;%d;%d;%dm", 38, 240, 240, 240);
+                    }
                     CHECK_CONSUMED_CHARS(consumed_chars, buf, used_buf_size);
                     used_buf_size += consumed_chars;
+                  }
                 }
             }else{
-                // Re-use previous color
+                // Reuse previous color
             }
 
             consumed_chars = sprintf(buf+used_buf_size,
@@ -246,7 +144,7 @@ char *sprint_coloured_threshtree_ids(
         if( bg ){
           // Reset color information
           expand_buf_if_required(&buf_len, &buf, used_buf_size, 3, 0);
-          used_buf_size += sprintf(buf+used_buf_size, RESETCOLOR);
+          used_buf_size += sprintf(buf+used_buf_size, "\e[m");
           col[0] = -1; // Trigger color generation at next line
         }
 
@@ -257,46 +155,42 @@ char *sprint_coloured_threshtree_ids(
 
     // Reset color information
     expand_buf_if_required(&buf_len, &buf, used_buf_size, 3, 0);
-    used_buf_size += sprintf(buf+used_buf_size, RESETCOLOR);
+    used_buf_size += sprintf(buf+used_buf_size, "\e[m");
 
     return buf;
 }
 
-int print_coloured_threshtree_ids(
+int print_coloured_depthtree_ids(
         unsigned char* data,
         Blobtree *frameblobs,
         const BlobtreeRect *pprint_roi,
-        ThreshtreeWorkspace *pworkspace,
+        DepthtreeWorkspace *pworkspace,
         const int display_filtered_areas,
         const int background_id,
         const char *char_map
         )
 {
-  char *out = sprint_coloured_threshtree_ids(data, frameblobs, pprint_roi, pworkspace,
+  char *out = sprint_coloured_depthtree_ids(data, frameblobs, pprint_roi, pworkspace,
           display_filtered_areas, background_id, char_map);
   int ret = printf("%s\n", out);
   free(out);
   return ret;
 }
 
-char *sprint_coloured_threshtree_areas(
+char *sprint_coloured_depthtree_areas(
         const unsigned char* data,
         Blobtree *frameblobs,
         const BlobtreeRect *pprint_roi,
-        ThreshtreeWorkspace *pworkspace,
+        DepthtreeWorkspace *pworkspace,
         const int display_filtered_areas)
 {
-    if( term_color_mode < 0 && set_term_color_mode()){
-        fprintf(stderr, "Can't detect color capabilities of terminal.");
-    }
-
     // Region to print
     BlobtreeRect output_roi = {0, 0, pworkspace->w, pworkspace->h};
     if( pprint_roi != NULL ) output_roi = *pprint_roi;
 
     if( display_filtered_areas ){
         // Setup filtered ids ( = pworkspace->blob_id_filtered)
-        threshtree_filter_blobs(frameblobs, pworkspace);
+        depthtree_filter_blobs(frameblobs, pworkspace);
     }
     const unsigned int *bif = pworkspace->blob_id_filtered;
     unsigned int col[3] = {0, 0, 0};
@@ -305,27 +199,26 @@ char *sprint_coloured_threshtree_areas(
     //printf("Roi: (%i %i %i %i)\n", output_roi.x, output_roi.y, output_roi.width, output_roi.height);
     size_t buf_len = output_roi.width * output_roi.height * 4;
     size_t used_buf_size = 0;
-    //char *buf = malloc(buf_len);
-    char *buf = calloc(1, buf_len);
+    char *buf = malloc(buf_len);
 
-    const int bg = CHANGE_FOREGROUND;
+    const int bg = 0;  // Flag indicates if background or foreground color should be changed.
     int consumed_chars = 0; // set by sprintf calls
     unsigned int id;
 
     for( unsigned int y=0, H=output_roi.height; y<H; ++y){
         //restrict on grid pixels.
-        if( y % frameblobs->grid.height != 0 && y != H-1 ) continue;
+        if( y % frameblobs->grid.height != 0 && y!= H-1 ) continue;
 
         for( unsigned int x=0, W=output_roi.width; x<W; ++x) {
             //restrict on grid pixels.
-            if( x % frameblobs->grid.width != 0 && x != W-1 ) continue;
+            if( x % frameblobs->grid.width != 0 && x!= W-1 ) continue;
 
             if( display_filtered_areas && bif ){
-                id = threshtree_get_filtered_id_roi(frameblobs, output_roi, x, y, pworkspace);
+                id = depthtree_get_filtered_id_roi(frameblobs, output_roi, x, y, pworkspace);
             }else{
                 /* The translation by 1 just adjust the results of both branches
                  * to avoid color flickering after the flag changes. */
-                id = threshtree_get_id_roi(output_roi, x, y, pworkspace); //+ 1;
+                id = depthtree_get_id_roi(output_roi, x, y, pworkspace); //+ 1;
             }
 
             unsigned char d = *(data + y * pworkspace->w + x);
@@ -336,11 +229,14 @@ char *sprint_coloured_threshtree_areas(
 
             if( col[0] != prev_col[0] || col[1] != prev_col[1] || col[2] != prev_col[2]){
                 // Prepend next char with new color information
-                consumed_chars = sprintf_color(buf+used_buf_size,
-                        bg, col[0], col[1], col[2],
-                        d!=0?"█":"░");
+                consumed_chars = sprintf(buf+used_buf_size,
+                        "\x1b[%d;2;%d;%d;%dm%s", 
+                        bg?48:38, 
+                        col[0], col[1], col[2],
+                        d!=0?"█":"░"
+                        );
             }else{
-                // Re-use previous color
+                // Reuse previous color
                 consumed_chars = sprintf(buf+used_buf_size,
                         "%s", d!=0?"█":"░");
             }
@@ -352,9 +248,7 @@ char *sprint_coloured_threshtree_areas(
         if( bg ){
           // Reset color information
           expand_buf_if_required(&buf_len, &buf, used_buf_size, 3, 0);
-          consumed_chars = sprintf(buf+used_buf_size, RESETCOLOR);
-          CHECK_CONSUMED_CHARS(consumed_chars, buf, used_buf_size);
-          used_buf_size += consumed_chars;
+          used_buf_size += sprintf(buf+used_buf_size, "\e[m");
           col[0] = -1; // Trigger color generation at next line
         }
 
@@ -365,19 +259,19 @@ char *sprint_coloured_threshtree_areas(
 
     // Reset color information
     expand_buf_if_required(&buf_len, &buf, used_buf_size, 3, 0);
-    used_buf_size += sprintf(buf+used_buf_size, RESETCOLOR);
+    used_buf_size += sprintf(buf+used_buf_size, "\e[m");
 
     return buf;
 }
 
-int print_coloured_threshtree_areas(
+int print_coloured_depthtree_areas(
         const unsigned char* data,
         Blobtree *frameblobs,
         const BlobtreeRect *pprint_roi,
-        ThreshtreeWorkspace *pworkspace,
+        DepthtreeWorkspace *pworkspace,
         const int display_filtered_areas)
 {
-  char *out = sprint_coloured_threshtree_areas(data, frameblobs, pprint_roi, pworkspace, display_filtered_areas);
+  char *out = sprint_coloured_depthtree_areas(data, frameblobs, pprint_roi, pworkspace, display_filtered_areas);
   int ret = printf("%s\n", out);
   free(out);
   return ret;

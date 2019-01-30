@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 #include "threshtree.h"
-#include "threshtree_output.h"
+#include "output_threshtree.h"
 
 static const unsigned int W=28;
 static const unsigned int H=28;

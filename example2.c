@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 #include "depthtree.h"
-#include "depthtree_output.h"
+#include "output_depthtree.h"
 
 static const unsigned int W=28;
 static const unsigned int H=28;
