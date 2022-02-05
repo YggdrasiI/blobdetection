@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 2.8)
 #project(Bloblib)
 
-set(THRESH_SOURCES blob.c threshtree.c tree.c threshtree_old.c )
+set(THRESH_SOURCES blob.c threshtree.c tree.c threshtree_old.c output.c output_threshtree.c)
 add_library(threshtree SHARED ${THRESH_SOURCES} )
 
-set(DEPTH_SOURCES blob.c depthtree.c tree.c )
+set(DEPTH_SOURCES blob.c depthtree.c tree.c output.c output_depthtree.c)
 add_library(depthtree SHARED ${DEPTH_SOURCES} )
 
 #add_executable(example1 example1.c )
