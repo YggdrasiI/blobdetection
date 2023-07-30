@@ -8,8 +8,7 @@ link_directories (
 add_subdirectory(example1)
 add_subdirectory(example2)
 
-#install(TARGETS example1 example2
-#	RUNTIME DESTINATION bin
-#	LIBRARY DESTINATION lib
-#	)
-
+install(TARGETS example1 example2
+	RUNTIME DESTINATION bin
+	LIBRARY DESTINATION lib
+	)

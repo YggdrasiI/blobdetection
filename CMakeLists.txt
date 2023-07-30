@@ -1,6 +1,8 @@
 project(Blobdetection)
 cmake_minimum_required(VERSION 2.8)
 
+SET(CMAKE_C_STANDARD 11)
+
 OPTION(WITH_EXAMPLES "Compile examples" ON)
 
 include_directories(
