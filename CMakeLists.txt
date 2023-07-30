@@ -1,26 +1,20 @@
+project(Blobdetection)
 cmake_minimum_required(VERSION 2.8)
-#project(Bloblib)
 
-set(THRESH_SOURCES blob.c threshtree.c tree.c threshtree_old.c output.c output_threshtree.c)
-add_library(threshtree SHARED ${THRESH_SOURCES} )
+OPTION(WITH_EXAMPLES "Compile examples" ON)
 
-set(DEPTH_SOURCES blob.c depthtree.c tree.c output.c output_depthtree.c)
-add_library(depthtree SHARED ${DEPTH_SOURCES} )
-
-#add_executable(example1 example1.c )
-#target_link_libraries(example1 threshtree ) 
-
-#add_executable( example2 example2.c )
-#target_link_libraries(example2 depthtree ) 
-
-
-target_link_libraries(threshtree m)
-target_link_libraries(depthtree m)
+include_directories(
+	${CMAKE_SOURCE_DIR}/include
+	)
 
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -fpic -O3" )
 #set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -g -O0 -fmax-errors=3 -w" )
 
-#install(TARGETS threshtree depthtree example1 example2
-# RUNTIME DESTINATION bin
-# 	LIBRARY DESTINATION lib
-#	)
+add_subdirectory(src)
+
+if(WITH_EXAMPLES)
+	add_subdirectory(examples)
+else(WITH_EXAMPLES)
+	message(STATUS "Skip examples")
+endif(WITH_EXAMPLES)
+

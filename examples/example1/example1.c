@@ -7,7 +7,7 @@
 static const unsigned int W=28;
 static const unsigned int H=28;
 
-#include "example.h"
+#include "../example.h"
 
 
 int main(int argc, char **argv) {

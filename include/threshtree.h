@@ -5,7 +5,12 @@
 extern "C" {
 #endif
 
-#include "settings.h"
+#if __has_include(<settings.h>)
+#include <settings.h>
+#else
+#include <settings.default.h>
+#endif
+
 #include "tree.h"
 #include "blob.h"
 

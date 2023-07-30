@@ -26,7 +26,12 @@
 #include <limits.h>
 #include <stdio.h>
 
-#include "settings.h"
+#if __has_include(<settings.h>)
+#include <settings.h>
+#else
+#include <settings.default.h>
+#endif
+
 
 // Like opencvs Rect_<int>
 typedef struct BlobtreeRect BlobtreeRect;
