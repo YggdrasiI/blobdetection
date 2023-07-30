@@ -38,15 +38,14 @@ struct BlobtreeRect{
  * Note: The height value stores the length of the longest path of successors, not
  * the depth to a (unknown) root node.
  * */
-typedef struct Node Node;
-struct Node {
-  Node *parent;
-  Node *silbing;
-  Node *child; /* second child reachable as silbing of first child and so on… */
+typedef struct Node {
+  struct Node *parent;
+  struct Node *silbing;
+  struct Node *child; /* second child reachable as silbing of first child and so on… */
   unsigned int height; /* height = maximal reachable depth */
   unsigned int width; /* number of children */
   void *data;
-};
+} Node;
 static const struct Node Leaf = { NULL, NULL, NULL, 0, 0, NULL };
 
 /* The data struct for both algorithms.
