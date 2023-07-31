@@ -96,7 +96,7 @@ Returned tree structure (-1 = root node, 0 = background area):
          ↘16 
 
 EXAMPLE USAGE:
-	See example.c. Compile with 'make example'
+	See examples/example1 
 
 
 FLAGS:
@@ -241,3 +241,7 @@ REMARKS:
  - Coarse horizontal and/or vertical search to reduce evaluation time (untested).
  - node->data.area contains the exact number of pixels, not the bounding box area.
  - Easy filtering of result nodes. (cheap operation, no re-run needed)
+
+
+EXAMPLE USAGE:
+	See examples/example2 
