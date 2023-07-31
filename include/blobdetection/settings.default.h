@@ -9,7 +9,7 @@
 
 /* 0, 1, 2(with stops) */
 #ifndef VERBOSE
-#define VERBOSE 1 
+#define VERBOSE 0 
 #endif
 
 /* Sort tree by child node structure and area size. This provide 
