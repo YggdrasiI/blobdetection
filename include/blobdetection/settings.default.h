@@ -68,11 +68,12 @@
  */
 #ifdef BLOB_COUNT_PIXEL
 #ifndef BLOB_BARYCENTER
-//#define BLOB_BARYCENTER
+#define BLOB_BARYCENTER
 #endif
 #define BLOB_BARYCENTER_TYPE unsigned long
 #else
 #undef BLOB_BARYCENTER
+#warning "BLOB_COUNT_PIXEL was not defined, but BLOB_BARYCENTER not."
 #endif
 
 

@@ -926,6 +926,11 @@ Tree* _find_connection_components_coarse(
 #ifdef SAVE_DEPTH_MAP_VALUE
   curdata->depth_level = 0;
 #endif
+#ifdef BLOB_BARYCENTER
+  /* The barycenter will not set here, but in eval_barycenters(...) */
+  //curdata->barycenter[0] = roi.x + roi.width/2;
+  //curdata->barycenter[1] = roi.y + roi.height/2;
+#endif
   cur->data = curdata; // link to the data array.
 
   BlobtreeRect *rect;
@@ -985,7 +990,7 @@ Tree* _find_connection_components_coarse(
    *
    */
 #ifdef BLOB_BARYCENTER
-  eval_barycenters(root->child, root, comp_size, pixel_sum_X, pixel_sum_Y);
+  eval_barycenters(root, comp_size, pixel_sum_X, pixel_sum_Y);
 #define SUM_AREAS_IS_REDUNDANT
 #endif
 

@@ -90,11 +90,20 @@ int main(int argc, char **argv) {
     // bounding box
     Blob *data = (Blob*)cur->data;
     BlobtreeRect *rect = &data->roi;
-    printf("Blob with id %i: x=%i y=%i w=%i h=%i area=%i\n",data->id,
-        rect->x, rect->y,
-        rect->width, rect->height,
-        data->area
-        );
+    printf("Blob with id %u: x=%u y=%u w=%u h=%u area=%u"
+#ifdef BLOB_BARYCENTER
+            " center=(%u,%u)"
+#endif
+            "\n",
+            data->id,
+            rect->x, rect->y,
+            rect->width, rect->height,
+            data->area
+#ifdef BLOB_BARYCENTER
+            , data->barycenter[0]
+            , data->barycenter[1]
+#endif
+          );
 
     cur = blobtree_next(blobs);
   }

@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
   //blobtree_set_filter(blobs, F_AREA_MAX, 30);
   blobtree_set_filter(blobs, F_TREE_DEPTH_MAX, 2);
 
-#if 0
+#if 1
   // Loop over filtered elements.
   printf("List all blobs matching the filtering criterias:\n");
   Node *cur = blobtree_first(blobs);
@@ -88,11 +88,20 @@ int main(int argc, char **argv) {
     // bounding box
     Blob *data = (Blob*)cur->data;
     BlobtreeRect *rect = &data->roi;
-    printf("Blob with id %u: x=%u y=%u w=%u h=%u area=%u\n", data->id,
-        rect->x, rect->y,
-        rect->width, rect->height,
-        data->area
-        );
+    printf("Blob with id %u: x=%u y=%u w=%u h=%u area=%u"
+#ifdef BLOB_BARYCENTER
+            " center=(%u,%u)"
+#endif
+            "\n",
+            data->id,
+            rect->x, rect->y,
+            rect->width, rect->height,
+            data->area
+#ifdef BLOB_BARYCENTER
+            , data->barycenter[0]
+            , data->barycenter[1]
+#endif
+          );
 
     cur = blobtree_next(blobs);
   }

@@ -518,6 +518,104 @@ static inline unsigned int number_of_coarse_roi(BlobtreeRect* roi, unsigned int 
 #endif //BLOB_COUNT_PIXEL
 
 #ifdef BLOB_BARYCENTER
+
+// Variant of round(A/B) without floats
+#define ROUND_DIV(DIVIDEND, DIVISOR) ((DIVIDEND + ((DIVISOR)>>1)) / DIVISOR)
+
+/* Helper function only callable for start node below top level
+ * (thus, start_node->data->id > -1). */
+void _eval_barycenters(
+    Node * const start_node,
+    const unsigned int * const comp_size,
+    BLOB_BARYCENTER_TYPE * const pixel_sum_X,
+    BLOB_BARYCENTER_TYPE * const pixel_sum_Y
+    )
+{
+    Node * const root = start_node->parent;
+    Node *node = start_node;
+    Blob *data = (Blob*)node->data;
+    Blob *parentdata;
+
+    /* Loop through all nodes in depth-first traversal.
+     *
+     *  Pre-order operations:
+     *     • (1) Set data->area.
+     *   In-order operations:
+     *     —
+     * Post-order operations:
+     *     • (2) Eval barycenter (Can only be processed after all child nodes)
+     *     If parent exists:
+     *     • (3) Update data->area of parent node
+     *     • (4) Update pixel_sum_X, pixel_sum_Y for parent's data->id
+     *
+     * */
+
+    /* The main root (id == -1)
+     * needs to be skipped if we access arrays like pixel_sum_X
+     * or updating data->area.
+     */
+
+    do{
+        data->area = *(comp_size + data->id ); // (1)
+
+        /* Go to next node. Other operations made on uprising flank */
+        if( node->child != NULL ){
+            node = node->child;
+            data = (Blob*)node->data;
+            continue;
+        }
+
+        // Here, the node has to be a leaf
+        // (2)
+        data->barycenter[0] = ROUND_DIV(*(pixel_sum_X + data->id), data->area);
+        data->barycenter[1] = ROUND_DIV(*(pixel_sum_Y + data->id), data->area);
+
+        // (3) and (4)
+        parentdata = (Blob*)node->parent->data;
+        if(node->parent != root ){
+            parentdata->area += data->area;
+            *(pixel_sum_X + parentdata->id ) += *(pixel_sum_X + data->id );
+            *(pixel_sum_Y + parentdata->id ) += *(pixel_sum_Y + data->id );
+        }
+
+        if( node->silbing != NULL ){
+            node = node->silbing;
+            data = (Blob*)node->data;
+            continue;
+        }
+
+        // Here, node has no siblings anymore
+        // Thus, all children of parent node was handled and we can go upwards.
+        node = node->parent;
+        data = (Blob*)node->data;
+
+        while( node != root /* Silbings of start_node will be processed 
+                               in another call of _eval_barycenters() */){
+            // (2)
+            data->barycenter[0] = ROUND_DIV(*(pixel_sum_X + data->id), data->area);
+            data->barycenter[1] = ROUND_DIV(*(pixel_sum_Y + data->id), data->area);
+
+            // (3) and (4)
+            parentdata = (Blob*)node->parent->data;
+            if(node->parent != root ){
+                parentdata->area += data->area;
+                *(pixel_sum_X + parentdata->id ) += *(pixel_sum_X + data->id );
+                *(pixel_sum_Y + parentdata->id ) += *(pixel_sum_Y + data->id );
+            }
+
+            if( node->silbing != NULL ){
+                node = node->silbing;
+                data = (Blob*)node->data;
+                break;
+            }
+
+            node = node->parent;
+            data = (Blob*)node->data;
+        }
+
+    }while( node != root );
+}
+
 /* 
  * This functions loops through the tree. If all children of
  * of a node P was handled, the values pixel_sum_*[P.id] will
@@ -525,6 +623,7 @@ static inline unsigned int number_of_coarse_roi(BlobtreeRect* roi, unsigned int 
  * Finally, the barycenter will be evaluated.
  *
  * Notes:
+ * - root node data will not be altered if it's id==-1.
  * - This function SUPERSEEDS sum_areas and changes the area value, too.
  *   => Call other functions, which set the area value (i.e. approx areas)
  *   after this function.
@@ -533,83 +632,30 @@ static inline unsigned int number_of_coarse_roi(BlobtreeRect* roi, unsigned int 
  *   value of [node]->data->area could be unusable (for stepwidth>1).
  *   Thats the reason for setting the area value during the loop, too.
  * */
-void eval_barycenters( Node *const start_node,
-    const Node * const root,
+void eval_barycenters(
+    Node * const root,
     const unsigned int * const comp_size,
     BLOB_BARYCENTER_TYPE * const pixel_sum_X,
     BLOB_BARYCENTER_TYPE * const pixel_sum_Y
-    ){
-
-  Node *node = start_node;
-  Blob *data = (Blob*)node->data;
-  Blob *parentdata;
-  if( node->child == NULL){
-    data->area = *(comp_size + data->id );
-    data->barycenter[0] = (*(pixel_sum_X + data->id )+(data->area>>1)) / data->area;
-    data->barycenter[1] = (*(pixel_sum_Y + data->id )+(data->area>>1)) / data->area;
-    return data->area;
-  }
-
-  do{
-    data->area = *(comp_size + data->id );
-
-    /* Go to next node. update parent node on uprising flank */
-    if( node->child != NULL ){
-      node = node->child;
-      data = (Blob*)node->data;
-      continue;
+    )
+{
+    Node *node = root;
+    Blob *data = (Blob*)node->data;
+    if (data->id != -1){
+        return _eval_barycenters(root, comp_size, pixel_sum_X, pixel_sum_Y);
     }
 
-    //Node is Leaf
-#if 1
-    data->barycenter[0] = (*(pixel_sum_X + data->id )+(data->area>>1)) / data->area;
-    data->barycenter[1] = (*(pixel_sum_Y + data->id )+(data->area>>1)) / data->area;
-#else
-    data->barycenter[0] = round( *(pixel_sum_X + data->id )*1.0 / data->area);
-    data->barycenter[1] = round( *(pixel_sum_Y + data->id )*1.0 / data->area);
-#endif
-
-    //((Blob*)node->parent->data)->area += data->area;
-    parentdata = (Blob*)node->parent->data;
-    parentdata->area += data->area;
-    *(pixel_sum_X + parentdata->id ) += *(pixel_sum_X + data->id );
-    *(pixel_sum_Y + parentdata->id ) += *(pixel_sum_Y + data->id );
-
-    if( node->silbing != NULL ){
-      node = node->silbing;
-      data = (Blob*)node->data;
-      continue;
-    }
-
-    while( node->parent != root ){
-      node = node->parent;
-      data = (Blob*)node->data;
-
-      // All children was handled 
-#if 1
-    data->barycenter[0] = (*(pixel_sum_X + data->id )+(data->area>>1)) / data->area;
-    data->barycenter[1] = (*(pixel_sum_Y + data->id )+(data->area>>1)) / data->area;
-#else
-      data->barycenter[0] = round( *(pixel_sum_X + data->id )*1.0 / data->area);
-      data->barycenter[1] = round( *(pixel_sum_Y + data->id )*1.0 / data->area);
-#endif
-
-      if(node->parent != root ){
-        parentdata = (Blob*)node->parent->data;
-        parentdata->area += data->area;
-        *(pixel_sum_X + parentdata->id ) += *(pixel_sum_X + data->id );
-        *(pixel_sum_Y + parentdata->id ) += *(pixel_sum_Y + data->id );
-      }
-      if( node->silbing != NULL ){
+    node = node->child;
+    while( node != NULL ) {
+        _eval_barycenters(node, comp_size, pixel_sum_X, pixel_sum_Y);
         node = node->silbing;
-        data = (Blob*)node->data;
-        break;
-      }
     }
-
-  }while( node->parent != root );
-
+    // Finally, special treatment of node with id -1.
+    // It's the whole plane/roi. Just take the midpoint.
+    data->barycenter[0] = data->roi.x + data->roi.width/2;
+    data->barycenter[1] = data->roi.y + data->roi.height/2;
 }
+
 #endif
 
 #ifdef BLOB_DIMENSION
