@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "threshtree.h"
 #include "output_threshtree.h"
@@ -35,7 +36,7 @@ int main(int argc, char **argv) {
   for( int i=0; i<200; ++i) { strcpy(level_chars[i],"░"); }
   strcpy(level_chars[200], "█");
 
-  print_matrix_char_with_roi( (char*) sw, W, H, roi, 1, 1, level_chars, 201);
+  print_matrix_char_with_roi( sw, W, H, roi, 1, 1, level_chars, 201);
 
   //Init workspace
   ThreshtreeWorkspace *workspace = NULL;

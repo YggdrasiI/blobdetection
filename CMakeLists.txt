@@ -1,5 +1,5 @@
+cmake_minimum_required(VERSION 3.6)
 project(Blobdetection)
-cmake_minimum_required(VERSION 2.8)
 
 SET(CMAKE_C_STANDARD 11)
 
@@ -11,6 +11,8 @@ include_directories(
 
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -fpic -O3" )
 #set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -g -O0 -fmax-errors=3 -w" )
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c18 -Wall " )
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -std=c18 -Wall -Werror " )
 
 add_subdirectory(src)
 

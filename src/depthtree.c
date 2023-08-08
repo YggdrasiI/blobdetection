@@ -167,8 +167,41 @@ void depthtree_destroy_workspace(
   *pworkspace = NULL;
 }
 
-  FORCEINLINE
+FORCEINLINE
+Tree* _find_depthtree(
+    const unsigned char *data,
+    const unsigned int w, const unsigned int h,
+    const BlobtreeRect roi,
+    const unsigned char *depth_map,
+    const unsigned int stepwidth,
+    DepthtreeWorkspace *workspace,
+    Blob** tree_data );
+
 Tree* find_depthtree(
+    const unsigned char *data,
+    const unsigned int w, const unsigned int h,
+    const BlobtreeRect roi,
+    const unsigned char *depth_map,
+    const unsigned int stepwidth,
+    DepthtreeWorkspace *workspace,
+    Blob** tree_data )
+{
+  if( stepwidth == 1 )
+      return _find_depthtree(data, w, h, roi, depth_map, 1, workspace, tree_data);
+  if( stepwidth == 2 )
+      return _find_depthtree(data, w, h, roi, depth_map, 2, workspace, tree_data);
+  if( stepwidth == 3 )
+      return _find_depthtree(data, w, h, roi, depth_map, 3, workspace, tree_data);
+  if( stepwidth == 4 )
+      return _find_depthtree(data, w, h, roi, depth_map, 4, workspace, tree_data);
+  if( stepwidth == 5 )
+      return _find_depthtree(data, w, h, roi, depth_map, 5, workspace, tree_data);
+
+  return _find_depthtree(data, w, h, roi, depth_map, stepwidth, workspace, tree_data);
+}
+
+FORCEINLINE
+Tree* _find_depthtree(
     const unsigned char *data,
     const unsigned int w, const unsigned int h,
     const BlobtreeRect roi,
@@ -1034,11 +1067,11 @@ unsigned int depthtree_get_filtered_id(
     )
 {
   unsigned int id;
-  unsigned int *ids, *riv, *bif, *cm;
+  unsigned int *ids, *bif; //, *riv, *cm;
 
   ids = pworkspace->ids;      // id map for complete image
-  cm = pworkspace->comp_same; // Map connected ids on one representor
-  riv = pworkspace->real_ids_inv; // Map representor on output id
+  //cm = pworkspace->comp_same; // Map connected ids on one representor
+  //riv = pworkspace->real_ids_inv; // Map representor on output id
   bif = pworkspace->blob_id_filtered; //maps  'unfiltered id' on 'parent filtered id'
   if( bif == NULL ){
     fprintf(stderr, "(depthtree_get_filtered_id). 'blob_id_filtered' is NULL."

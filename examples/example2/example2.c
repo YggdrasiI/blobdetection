@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "depthtree.h"
 #include "output_depthtree.h"
@@ -35,7 +36,7 @@ int main(int argc, char **argv) {
   // Visualisation of input data.
   const char level_strings[7+1][5] = {"░", "▒", "▓", "█", "■", "?", "▞", "▚"};
   printf("Input image data:\n");
-  print_matrix_char_with_roi( (char*) sw,W,H,roi, 1, 1, level_strings, 5);
+  print_matrix_char_with_roi( sw,W,H,roi, 1, 1, level_strings, 5);
 
   printf("\t\t\t\tLegend: 0=%s, 1=%s, 2=%s, 3=%s, 4=%s\n",
           level_strings[0], level_strings[1], 

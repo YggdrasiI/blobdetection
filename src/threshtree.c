@@ -472,7 +472,7 @@ Tree* find_connection_components_subcheck(
 #if VERBOSE > 1
       debug_print_matrix( ids, w, h, roi, 1, 1);
       printf("F, casenbr: %u, *tri: %u %u %u\n",casenbr, *(tri-1), *(tri-triwidth), *(tri-triwidth+1));
-      debug_getline();
+      free(debug_getline());
 #endif
       if( dPi+stepwidth>=dR2 ){
         //set bit do avoid PART1c/PART1d calls for column of last loop step.
@@ -779,7 +779,7 @@ Tree* find_connection_components_subcheck(
 #if VERBOSE > 2
     debug_print_matrix( ids, w, h, roi, 1, 1);
     printf("G *tri: %u %u %u\n", *(tri-1), *(tri-triwidth), *(tri-triwidth+1));
-    debug_getline();
+    free(debug_getline());
 #endif
 
     /* now process last, bigger, cell.
@@ -813,7 +813,7 @@ Tree* find_connection_components_subcheck(
 #if VERBOSE > 2
     debug_print_matrix( ids, w, h, roi, 1, 1);
     printf("Z:%u, S:%u, I:%u %u\n",z,s,dPi-dS, iPi-ids-(dS-data) );
-    debug_getline();
+    free(debug_getline());
 #endif
 
   } //row loop
@@ -830,7 +830,7 @@ Tree* find_connection_components_subcheck(
 #if VERBOSE > 1
   debug_print_matrix( ids, w, h, roi, 1, 1);
   printf("Z:%u, S:%u, I:%u %u\n",z,s,dPi-dS, iPi-ids-(dS-data) );
-  debug_getline();
+  free(debug_getline());
 #endif
 
   if( dE2 != dE ){
@@ -868,7 +868,7 @@ Tree* find_connection_components_subcheck(
 #if VERBOSE > 1
       debug_print_matrix( ids, w, h, roi, 1, 1);
       printf("Z:%u, S:%u, I:%u %u\n",z,s,dPi-dS, iPi-ids-(dS-data) );
-      debug_getline();
+      free(debug_getline());
 #endif
     }
   }//end of if(dE2<dE)
@@ -1356,12 +1356,12 @@ unsigned int threshtree_get_filtered_id(
     )
 {
   unsigned int id;
-  unsigned int *ids, *riv, *bif, *cm;
+  unsigned int *ids, *bif; //, *riv, *cm;
 
   ids = pworkspace->ids;      // id map for complete image
-  cm = pworkspace->comp_same; // Map connected ids on one representor
-  riv = pworkspace->real_ids_inv; // Map representor on output id
   bif = pworkspace->blob_id_filtered; //maps  'unfiltered id' on 'parent filtered id'
+  //cm = pworkspace->comp_same; // Map connected ids on one representor
+  //riv = pworkspace->real_ids_inv; // Map representor on output id
   if( bif == NULL ){
     fprintf(stderr, "(threshtree_get_filtered_id). 'blob_id_filtered' is NULL."
         "Call threshtree_filter_blobs(...) to initialize it.");

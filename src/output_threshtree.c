@@ -95,7 +95,7 @@ char *sprint_coloured_threshtree_ids(
                 id = threshtree_get_id_roi(output_roi, x, y, pworkspace); //+ 1;
             }
 
-            unsigned char d = *(data + y * pworkspace->w + x);
+            //unsigned char d = *(data + y * pworkspace->w + x);
             prev_col[0] = col[0]; prev_col[1] = col[1]; prev_col[2] = col[2];
             ID_TO_RGB_B(id, col);
 

@@ -5,6 +5,7 @@
 #include <string.h> //for memset
 
 #include "threshtree.h"
+#include "threshtree_old.h"
 
 #include "threshtree_macros.h"
 #include "threshtree_macros_old.h"
@@ -20,18 +21,20 @@ Tree* find_connection_components_coarse(
     ThreshtreeWorkspace *workspace )
 {
   if( stepwidth == 1 && stepheight == 1 ){
-    return find_connection_components_coarse2(data,w,h,roi,thresh,
+    return _find_connection_components_coarse(data,w,h,roi,thresh,
         1,1,
         tree_data, workspace);
   }else{
-    return find_connection_components_coarse2(data,w,h,roi,thresh,
+    return _find_connection_components_coarse(data,w,h,roi,thresh,
         stepwidth,stepheight
         ,tree_data, workspace);
   }
 }
 
-  FORCEINLINE
-Tree* find_connection_components_coarse2(
+
+/* Let compiler optimize code for fixed stepwidth and stepheight by inlining*/
+FORCEINLINE
+Tree* _find_connection_components_coarse(
     const unsigned char *data,
     const unsigned int w, const unsigned int h,
     const BlobtreeRect roi,
@@ -759,7 +762,7 @@ Tree* find_connection_components_coarse2(
    * extremal limits in [left|right|bottom]_index(*(real_ids+X)).
    * */
   unsigned int nids = id+1; //number of ids
-  unsigned int tmp_id,tmp_id2, real_ids_size=0,l;
+  unsigned int tmp_id,real_ids_size=0,l;
 
   free(workspace->real_ids);
   workspace->real_ids = calloc( nids, sizeof(unsigned int) ); //store join of ids.
@@ -832,6 +835,7 @@ Tree* find_connection_components_coarse2(
   /* Old approach: Attention, old version does not create
    * the projection property of comp_same (cs). Here, only cs^2=cs^3.
    */
+  unsigned int tmp_id2;
   unsigned int found;
   for(k=0;k<nids;k++){
     tmp_id = k;

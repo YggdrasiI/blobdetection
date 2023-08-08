@@ -1,4 +1,7 @@
-//#include "tree.h"
+//#define INLINE extern inline
+#include "tree.h"
+#include "tree_intern.h"
+
 #include "blob.h"
 
 const  Filter Default_Filter = {0,INT_MAX, 0,INT_MAX, 0, 0,255, NULL };

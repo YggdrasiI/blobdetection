@@ -1,14 +1,6 @@
 #ifndef TREE_H
 #define TREE_H
 
-#ifndef INLINE
-#ifdef VISUAL_STUDIO
-#define INLINE extern __inline
-#else
-#define INLINE extern inline
-#endif
-#endif
-
 /*
  * Simple Treestructure with Nodes N={parent, next_silbing, child, data}
  *
@@ -100,28 +92,6 @@ void print_tree(Node *root, int shift);
 
 /* Print only nodes with area>=minA */
 void print_tree_filtered(Node *root, int shift, unsigned int minA);
-
-
-/*
- * Helper functions for sorting
- * */
-// Swap nodes with same parent
-INLINE void swap_silbings(Node *a, Node *b);
-
-
-/* returns 1, if a>b, and 0 otherwise. (do not use (1, 0, -1) like strcmp ) */
-INLINE int cmp(Node *a, Node *b);
-
-INLINE void swap_pnode(Node **a, Node **b);
-
-INLINE int successor(Node *parent, Node *child);
-
-void quicksort_silbings(Node **begin, Node **end);
-
-/*
- * End Helper functions for sorting
- * */
-
 
 /* Sorting the nodes such that topological equal trees has
  * the same image. The algorithm sort rekursivly all children

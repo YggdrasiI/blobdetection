@@ -89,7 +89,6 @@ void depthtree_filter_blobs(
     DepthtreeWorkspace *pworkspace
     );
 
-FORCEINLINE
 Tree* find_depthtree(
     const unsigned char *data,
     const unsigned int w, const unsigned int h,

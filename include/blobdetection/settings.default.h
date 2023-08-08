@@ -109,7 +109,7 @@
 #ifdef VISUAL_STUDIO
 #define FORCEINLINE __forceinline static
 #else
-#define FORCEINLINE __attribute__((always_inline)) static
+#define FORCEINLINE static inline __attribute__((always_inline))
 #endif
 #endif
 

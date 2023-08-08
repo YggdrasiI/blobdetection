@@ -103,7 +103,7 @@ void print_matrix_char_with_roi( unsigned char* data, unsigned int w, unsigned i
   }
 }
 
-void print_matrix_char( char* data, unsigned int w, unsigned int h){
+void print_matrix_char( unsigned char* data, unsigned int w, unsigned int h){
   BlobtreeRect roi = {0,0,w,h};
   print_matrix_char_with_roi(data,w,h,roi,1,1, NULL, 0);
 }

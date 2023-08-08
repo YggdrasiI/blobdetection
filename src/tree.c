@@ -3,6 +3,7 @@
 
 #define INLINE inline
 #include "tree.h"
+#include "tree_intern.h"
 
 /* Allocate tree struct. If you use
  * the data pointer of the nodes you has to
@@ -646,7 +647,7 @@ void set_area_prop(Node * const root){
 #endif
 
 
-
+#if 0
 /* tree_hashval, (NEVER FINISHED)
  * Berechnet für einen Baum eine Id, die eindeutig ist,
  * wenn die Bäume eine bestimmte Struktur einhalten.
@@ -659,7 +660,7 @@ static const unsigned int TREE_DEPTH_MAX = 5; //height of root is 0.
 static unsigned int tree_hashval( Node *root){
   return -1;
 }
-
+#endif
 
 
 
@@ -681,6 +682,7 @@ char * debug_getline(void) {
             break;
 
         if(--len == 0) {
+            size_t dist = (line - linep);
             char * linen = (char*) realloc(linep, lenmax *= 2);
             len = lenmax;
 
@@ -688,7 +690,7 @@ char * debug_getline(void) {
                 free(linep);
                 return NULL;
             }
-            line = linen + (line - linep);
+            line = linen + dist;
             linep = linen;
         }
 
@@ -696,7 +698,6 @@ char * debug_getline(void) {
             break;
     }
     *line = '\0';
-free(linep);
     return linep;
 }
 
@@ -898,68 +899,3 @@ void debug_print_matrix_char( unsigned char * data, unsigned int w, unsigned int
   printf("\n");
 }
 
-
-//Functions declared 'extern inline' in tree.h
-void swap_silbings(Node *a, Node *b)
-{
-  Node *p = a->parent;
-  Node *c = p->child;
-  Node *d = p->child;
-  //serach c, d with ..., c, a, ..., d, b order
-  if(c==a) c = NULL;
-  else{
-    while(c->silbing!=a) c=c->silbing;
-  }
-  if(d==b) d = NULL;
-  else{
-    while(d->silbing!=b) d=d->silbing;
-  }
-
-  //swap anchor of a and b
-  if( c == NULL ) p->child = b;
-  else c->silbing = b;
-  if( d == NULL ) p->child = a;
-  else d->silbing = a;
-  
-  //at least, swap silbings
-  d = a->silbing;
-  a->silbing = b->silbing;
-  b->silbing = d;
-}
-
-int cmp(Node *a, Node *b)
-{
-  if( a->height < b->height) return 0;
-  if( a->height > b->height) return 1;
-  if( a->width < b->width) return 0;
-  if( a->width > b->width) return 1;
-
-  /* Now assme, that children already sorted.
-   * Then for topological equalness only i-th child of a needs
-   * compared with i-th child of b.
-   * */
-  int ret=0;
-  Node *ca = a->child;
-  Node *cb = b->child;
-  while( ret == 0 && ca!=NULL ){
-    ret = cmp(ca, cb);
-    ca=ca->silbing;
-    cb=cb->silbing;
-  }
-  return ret;
-}
-
-void swap_pnode(Node **a, Node **b)
-{
-    Node *tmp = *a;
-    *a = *b;
-    *b = tmp;
-}
-
-int successor(Node *parent, Node *child){
-  while( child != NULL ){
-    child = child->parent;
-    if( child == parent ) return 1;
-  }
-  return 0;
-}
