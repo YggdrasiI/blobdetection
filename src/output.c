@@ -113,7 +113,7 @@ void expand_buf_if_required(
         ){
     if( *pbuf_len > already_used + required ) return;
     if( *pbuf_len < already_used ){
-        fprintf(stderr, "(%s) Hey buf_used=%lu > %lu=buf_len\n", __FILE__, already_used, *pbuf_len);
+        fprintf(stderr, "(%s) Hey buf_used=%zu > %zu=buf_len\n", __FILE__, already_used, *pbuf_len);
         return;
     }
     size_t new_len = already_used + required + extra_padding;
