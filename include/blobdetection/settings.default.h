@@ -9,7 +9,7 @@
 
 /* 0, 1, 2(with stops) */
 #ifndef VERBOSE
-#define VERBOSE 0 
+#define VERBOSE 1 
 #endif
 
 /* Sort tree by child node structure and area size. This provide 
@@ -148,5 +148,15 @@
 #endif
 #endif
 
+// Maximal depth of trees.
+#define TREE_MAX_HEIGHT 255
+
+// Maximal number of siblings per node
+#define TREE_MAX_CHILDREN 4058
+
+// Evaluate Node.width and Node.height of trees.
+#ifndef NO_TREE_REDUNDANT_INFOS
+#define TREE_REDUNDANT_INFOS
+#endif
 
 #endif

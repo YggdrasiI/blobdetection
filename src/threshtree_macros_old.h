@@ -9,7 +9,7 @@ COUNT( *(comp_size+id) = 0; ) \
 BLOB_INIT_INDEX_ARRAYS; \
 BLOB_INIT_BARY; \
 if( id>=max_comp ){ \
-  max_comp = (unsigned int) ( (float)w*h*max_comp/(dPi-data) ); \
+  max_comp = (uint32_t) ( (float)w*h*max_comp/(dPi-data) ); \
   VPRINTF("Extend max_comp=%i\n", max_comp); \
   threshtree_realloc_workspace(max_comp, &workspace); \
   /* Reallocation requires update of pointers */ \

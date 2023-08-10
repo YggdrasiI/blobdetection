@@ -5,15 +5,15 @@
 #include "threshtree.h"
 #include "output_threshtree.h"
 
-static const unsigned int W=28;
-static const unsigned int H=28;
+static const uint32_t W=28;
+static const uint32_t H=28;
 
 #include "../example.h"
 
 
-int main(int argc, char **argv) {
+int32_t main(int32_t argc, char **argv) {
   // Stepwidth
-  unsigned int gridW=1, gridH=1;
+  uint32_t gridW=1, gridH=1;
   // Region of interest
   BlobtreeRect roi= {0, 0, W, H};
   //BlobtreeRect roi= {18, 0, 9, 17};
@@ -24,16 +24,16 @@ int main(int argc, char **argv) {
   }
 
   // Generate test image
-  unsigned char* sw;
-  sw = calloc( W*H, sizeof(unsigned char) );
+  uint8_t* sw;
+  sw = calloc( W*H, sizeof(uint8_t) );
   if( sw == NULL ) return -1;
   gen_image_data2(sw, W, H, 4);
 
   printf("Input image data:\n");
   // Because it is not a [0,1]-Image, but a [0,200]-image we need a longer 
   // array for print_matrix_char_with_roi.
-  char level_chars[201][5]; // 5 = 4 byte char + '\0'
-  for( int i=0; i<200; ++i) { strcpy(level_chars[i],"░"); }
+  char level_chars[201][5]; // 5 = 4 byte int8_t + '\0'
+  for( int32_t i=0; i<200; ++i) { strcpy(level_chars[i],"░"); }
   strcpy(level_chars[200], "█");
 
   print_matrix_char_with_roi( sw, W, H, roi, 1, 1, level_chars, 201);

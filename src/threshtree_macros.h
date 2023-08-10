@@ -39,7 +39,7 @@
 
 #ifdef BLOB_COUNT_PIXEL
 #define COUNT(X) X;
-#define BLOB_REALLOC_COMP_SIZE comp_size = realloc(comp_size, max_comp*sizeof(unsigned int) );
+#define BLOB_REALLOC_COMP_SIZE comp_size = realloc(comp_size, max_comp*sizeof(uint32_t) );
 #define BLOB_INIT_COMP_SIZE *(comp_size+id) = 0; /*Increase now every pixel. => Can't start with 1 anymore. Overhead of |ids| operations */
 //#define BLOB_INC_COMP_SIZE *(comp_size+*(iPi)) += 1;
 #define BLOB_INC_COMP_SIZE(ID) *(comp_size+ID) += 1; 
@@ -91,7 +91,7 @@
 #define BARY(X) X;
 #define BLOB_REALLOC_BARY \
   pixel_sum_X = realloc(pixel_sum_X, max_comp*sizeof(BLOB_BARYCENTER_TYPE) ); \
-pixel_sum_X = realloc(pixel_sum_X, max_comp*sizeof(BLOB_BARYCENTER_TYPE) );
+  pixel_sum_X = realloc(pixel_sum_X, max_comp*sizeof(BLOB_BARYCENTER_TYPE) );
 
 //#define BLOB_INIT_BARY *(pixel_sum_X+id) = s; *(pixel_sum_Y+id) = z;
 #define BLOB_INIT_BARY *(pixel_sum_X+id) = 0; *(pixel_sum_Y+id) = 0; /* (0,0) is the matching start value for BLOB_INIT_COMP_SIZE(...) = 0. Prevent values on 'subpixels'. */
@@ -108,9 +108,9 @@ pixel_sum_X = realloc(pixel_sum_X, max_comp*sizeof(BLOB_BARYCENTER_TYPE) );
   id++; \
 /*if(*(iPi) > 0 ){ \
   printf("Fehler: Id war schon gesetzt! (%i, %i), a=%i,n=%i, triT1=%i,triT2=%i\n",s,z,*(iPi),id, *(tri-triwidth), *(tri-triwidth+1) ); \
-{ const BlobtreeRect roiVorne = {s-3-5,z-20+1,26,26}; debug_print_matrix( ids, w, h, roiVorne, 1, 1); unsigned int crash=1/0;} \
+{ const BlobtreeRect roiVorne = {s-3-5,z-20+1,26,26}; debug_print_matrix( ids, w, h, roiVorne, 1, 1); uint32_t crash=1/0;} \
 }{ \
-unsigned int ss=(iPi-ids)%roi.width;if( ss!=s)printf("Spaltenproblem: %i!=%i\n",s,ss);\
+uint32_t ss=(iPi-ids)%roi.width;if( ss!=s)printf("Spaltenproblem: %i!=%i\n",s,ss);\
 }\*/ \
 *(iPi) = id; \
 /* *(anchors+id) = dPi-dS; */\
@@ -120,7 +120,7 @@ BLOB_INIT_COMP_SIZE; \
 BLOB_INIT_INDEX_ARRAYS; \
 BLOB_INIT_BARY; \
 if( id>=max_comp ){ \
-  max_comp = (unsigned int) ( (float)w*h*max_comp/(dPi-data) ); \
+  max_comp = (uint32_t) ( (float)w*h*max_comp/(dPi-data) ); \
   VPRINTF("Extend max_comp=%i\n", max_comp); \
   threshtree_realloc_workspace(max_comp, &workspace); \
   /* Reallocation requires update of pointers */ \
@@ -358,7 +358,7 @@ if( *(DPI) > thresh ){ \
  * 1xxxXxxx
  * */
 #define SUBCHECK_ROW(DPI,IPI,STEPWIDTH,W,SH,S,Z,SWR) { \
-  const unsigned char * const pc = DPI+SWR; \
+  const uint8_t * const pc = DPI+SWR; \
   DPI -= STEPWIDTH-1; \
   IPI -= STEPWIDTH-1; \
   SZ(S -= STEPWIDTH-1); \
@@ -406,7 +406,7 @@ if( *(DPI) > thresh ){ \
  * 0000X
  */
 #define SUBCHECK_PART1a(DPI,IPI,STEPWIDTH,W,SH,S,Z) {\
-  const unsigned char * const pc = DPI-SH; \
+  const uint8_t * const pc = DPI-SH; \
   DPI -= SH+STEPWIDTH-1; \
   IPI -= SH+STEPWIDTH-1; \
   SZ(S -= STEPWIDTH-1); \
@@ -452,7 +452,7 @@ if( *(DPI) > thresh ){ \
  * 0000X
  */
 #define SUBCHECK_PART1b(DPI,IPI,STEPWIDTH,W,SH,S,Z) {\
-  const unsigned char * const pc = DPI-SH; \
+  const uint8_t * const pc = DPI-SH; \
   DPI -= SH+STEPWIDTH-1; \
   IPI -= SH+STEPWIDTH-1; \
   SZ(S -= STEPWIDTH-1); \
@@ -513,8 +513,8 @@ if( *(DPI) > thresh ){ \
  * 0000X
  */
 #define SUBCHECK_PART1bb(DPI,IPI,STEPWIDTH,W,SH,S,Z) {\
-  const unsigned char * const pc = DPI-SH; \
-  unsigned int shift = W, shh=1; \
+  const uint8_t * const pc = DPI-SH; \
+  uint32_t shift = W, shh=1; \
   DPI -= SH+STEPWIDTH-1; \
   IPI -= SH+STEPWIDTH-1; \
   SZ(S -= STEPWIDTH-1); \
@@ -572,7 +572,7 @@ if( *(DPI) > thresh ){ \
  * 0000X
  */
 #define SUBCHECK_PART1c(DPI,IPI,STEPWIDTH,W,SH,S,Z) {\
-  const unsigned char * const pc = DPI-SH+STEPWIDTH; \
+  const uint8_t * const pc = DPI-SH+STEPWIDTH; \
   DPI -= SH-1; \
   IPI -= SH-1; \
   SZ(++S); \
@@ -621,7 +621,7 @@ if( *(DPI) > thresh ){ \
  * 0000X
  */
 #define SUBCHECK_PART1d(DPI,IPI,STEPWIDTH,W,SH,S,Z) {\
-  const unsigned char * const pc = DPI-SH+STEPWIDTH; \
+  const uint8_t * const pc = DPI-SH+STEPWIDTH; \
   DPI -= SH-1; \
   IPI -= SH-1; \
   SZ(++S); \
@@ -684,8 +684,8 @@ if( *(DPI) > thresh ){ \
  * 0000X
  */
 #define SUBCHECK_PART1dd(DPI,IPI,STEPWIDTH,W,SH,S,Z) {\
-  const unsigned char * const pc = DPI-SH+STEPWIDTH; \
-  unsigned int shift=W, shh=1; \
+  const uint8_t * const pc = DPI-SH+STEPWIDTH; \
+  uint32_t shift=W, shh=1; \
   DPI -= SH-1; \
   IPI -= SH-1; \
   SZ(++S); \
@@ -760,7 +760,7 @@ if( *(DPI) > thresh ){ \
  * 0000X
  */
 #define SUBCHECK_PART2a(DPI,IPI,STEPWIDTH,W,SH,S,Z) { \
-  const unsigned char * const pc = DPI-W; \
+  const uint8_t * const pc = DPI-W; \
   DPI -= SH+STEPWIDTH; \
   IPI -= SH+STEPWIDTH; \
   SZ(S -= STEPWIDTH); \
@@ -797,16 +797,16 @@ if( *(DPI) > thresh ){ \
  * X0000
  */
 #define SUBCHECK_PART2b(DPI,IPI,STEPWIDTH,W,SH,S,Z) { \
-  const unsigned char * const pc = DPI; \
+  const uint8_t * const pc = DPI; \
   DPI -= sh1; \
   IPI -= sh1; \
   SZ(Z -= STEPWIDTH-1); \
-  unsigned int ww = STEPWIDTH-1; \
+  uint32_t ww = STEPWIDTH-1; \
   for( ; DPI<pc ; ){ \
     SUBCHECK_TOPDIAG(DPI,IPI,STEPWIDTH,W,SH,S,Z); \
     ++DPI; ++IPI; \
     SZ(++S); \
-    const unsigned char *xx = DPI+ww; \
+    const uint8_t *xx = DPI+ww; \
     for( ; DPI<xx ; ){ \
       SUBCHECK_ALLDIR(DPI,IPI,STEPWIDTH,W,SH,S,Z); \
       ++DPI; ++IPI; \
@@ -830,17 +830,17 @@ if( *(DPI) > thresh ){ \
  * 000X
  */
 #define SUBCHECK_PART3a(DPI,IPI,STEPWIDTH,W,SH,S,Z) { \
-  const unsigned char * const pc = DPI-STEPWIDTH; \
+  const uint8_t * const pc = DPI-STEPWIDTH; \
   DPI -= sh1/*SH-W*/+STEPWIDTH; \
   IPI -= sh1/*SH-W*/+STEPWIDTH; \
   SZ(S -= STEPWIDTH); \
   SZ(Z -= STEPWIDTH-1); \
-  unsigned int ww = STEPWIDTH+STEPWIDTH-1; \
+  uint32_t ww = STEPWIDTH+STEPWIDTH-1; \
   for( ; DPI<pc ; ){ \
     SUBCHECK_TOPDIAG(DPI,IPI,STEPWIDTH,W,SH,S,Z); \
     ++DPI; ++IPI; \
     SZ(++S); \
-    const unsigned char *xx = DPI+ww; \
+    const uint8_t *xx = DPI+ww; \
     for( ; DPI<xx ; ){ \
       SUBCHECK_ALLDIR(DPI,IPI,STEPWIDTH,W,SH,S,Z); \
       ++DPI; ++IPI; \
@@ -866,12 +866,12 @@ if( *(DPI) > thresh ){ \
  * 000X
  */
 #define SUBCHECK_PART3b(DPI,IPI,STEPWIDTH,W,SH,S,Z) { \
-  const unsigned char * const pc = DPI-W; \
+  const uint8_t * const pc = DPI-W; \
   DPI -= sh1/*SH-W*/; \
   IPI -= sh1/*SH-W*/; \
   SZ(Z -= STEPWIDTH-1); \
   for( ; DPI<=pc ; ) { \
-    const unsigned char *xx = DPI+STEPWIDTH; \
+    const uint8_t *xx = DPI+STEPWIDTH; \
     for( ; DPI<xx ; ){ \
       SUBCHECK_ALLDIR(DPI,IPI,STEPWIDTH,W,SH,S,Z); \
       ++DPI; ++IPI; \
@@ -896,7 +896,7 @@ if( *(DPI) > thresh ){ \
  * 1xxxX
  */
 #define SUBCHECK_PART4a(DPI,IPI,STEPWIDTH,W,SH,S,Z) { \
-  const unsigned char * const pc = DPI; \
+  const uint8_t * const pc = DPI; \
   DPI -= STEPWIDTH-1; \
   IPI -= STEPWIDTH-1; \
   SZ(S -= STEPWIDTH-1); \
@@ -960,7 +960,7 @@ if( *(DPI) > thresh ){ \
  * 1xxX xx
  * */
 #define SUBCHECK_PART6a(DPI,IPI,STEPWIDTH,W,SH,S,Z,SWR) { \
-  const unsigned char * const pc = DPI-W+SWR; \
+  const uint8_t * const pc = DPI-W+SWR; \
   DPI -= sh1/*SH-W*/+STEPWIDTH; \
   IPI -= sh1/*SH-W*/+STEPWIDTH; \
   SZ(S -= STEPWIDTH); \
@@ -970,7 +970,7 @@ if( *(DPI) > thresh ){ \
     SUBCHECK_TOPDIAG(DPI,IPI,STEPWIDTH,W,SH,S,Z); \
     ++DPI; ++IPI; \
     SZ(++S);\
-    const unsigned char *xx = DPI+STEPWIDTH+SWR-1; \
+    const uint8_t *xx = DPI+STEPWIDTH+SWR-1; \
     for( ; DPI<xx ; ){ \
       SUBCHECK_ALLDIR(DPI,IPI,STEPWIDTH,W,SH,S,Z); \
       ++DPI; ++IPI; \
@@ -986,7 +986,7 @@ if( *(DPI) > thresh ){ \
   /*Last row, skip corner */ \
   ++DPI; ++IPI; \
   SZ(++S);\
-  const unsigned char *xx = DPI+STEPWIDTH+SWR-1; \
+  const uint8_t *xx = DPI+STEPWIDTH+SWR-1; \
   for( ; DPI<xx ; ){ \
     SUBCHECK_ALLDIR(DPI,IPI,STEPWIDTH,W,SH,S,Z); \
     ++DPI; ++IPI; \
@@ -1007,13 +1007,13 @@ if( *(DPI) > thresh ){ \
  * 1xxX xx
  * */
 #define SUBCHECK_PART6b(DPI,IPI,STEPWIDTH,W,SH,S,Z,SWR) { \
-  const unsigned char * const pc = DPI+SWR; \
+  const uint8_t * const pc = DPI+SWR; \
   DPI -= sh1/*SH-W*/; \
   IPI -= sh1/*SH-W*/; \
   SZ(Z -= STEPWIDTH-1); \
-  unsigned int ww = 0; \
+  uint32_t ww = 0; \
   for( ; DPI<pc ; ){ \
-    const unsigned char *xx = DPI+SWR+ww; \
+    const uint8_t *xx = DPI+SWR+ww; \
     for( ; DPI<xx ; ){ \
       SUBCHECK_ALLDIR(DPI,IPI,STEPWIDTH,W,SH,S,Z); \
       ++DPI; ++IPI; \

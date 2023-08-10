@@ -1,12 +1,18 @@
 #ifndef EXAMPLE_H
 #define EXAMPLE_H
 
-#include "time.h"
+#include <stdint.h>
+#include <time.h>
 
 
+#if __has_include("settings.h")
 #include "settings.h"
+#else
+#include "settings.default.h"
+#endif
+
 #ifdef VISUAL_STUDIO
-int random(){
+int32_t random(){
     return rand();
 }
 
@@ -15,7 +21,7 @@ int random(){
 #include "tree.h"
 #include "blob.h"
 
-static char * c( char i){
+static const char * c( uint8_t i){
   switch(i){
     case 0: return " ";
     case 1: return "□";
@@ -28,8 +34,8 @@ static char * c( char i){
   }
 }
 
-void print_matrix_with_roi( unsigned int* data, unsigned int w, unsigned int h, BlobtreeRect roi){
-  unsigned int i,j,d;
+void print_matrix_with_roi( uint32_t* data, uint32_t w, uint32_t h, BlobtreeRect roi){
+  uint32_t i,j,d;
   for(i=roi.y;i<roi.height;i++){
     for(j=roi.x;j<roi.width;j++){
       d = *(data+i*w+j);
@@ -40,18 +46,18 @@ void print_matrix_with_roi( unsigned int* data, unsigned int w, unsigned int h, 
   printf("\n");
 }
 
-void print_matrix( unsigned int* data, unsigned int w, unsigned int h){
+void print_matrix( uint32_t* data, uint32_t w, uint32_t h){
   BlobtreeRect roi = {0,0,w,h};
   print_matrix_with_roi(data,w,h,roi);
 }
 
-void print_matrix_char_with_roi( unsigned char* data, unsigned int w, unsigned int h,
-        BlobtreeRect roi, unsigned int gridw, unsigned int gridh,
+void print_matrix_char_with_roi( uint8_t* data, uint32_t w, uint32_t h,
+        BlobtreeRect roi, uint32_t gridw, uint32_t gridh,
         const char (*print_strings)[5], /* Array of length 'print_strings_len + 1' */
         size_t print_strings_len /*                                           ^^^^ */
         ){
-  unsigned int i,j, wr, hr, w2, h2;
-  unsigned int d;
+  uint32_t i,j, wr, hr, w2, h2;
+  uint32_t d;
 
 #define DEFAULT_PRINT_STRINGS_LEN 2
   const char default_print_strings[DEFAULT_PRINT_STRINGS_LEN+1][5] = {"░", "█", "?"};
@@ -74,7 +80,7 @@ void print_matrix_char_with_roi( unsigned char* data, unsigned int w, unsigned i
       //printf("%s", c(d));
       //printf("%s", d!=0?"█":"░");
       if( d >= print_strings_len) {
-          d = print_strings_len-1; // Non-representable data displayed with highest value. Default char: '?'
+          d = print_strings_len-1; // Non-representable data displayed with highest value. Default int: '?'
       }
       printf("%s", print_strings[d]);
     }
@@ -103,19 +109,19 @@ void print_matrix_char_with_roi( unsigned char* data, unsigned int w, unsigned i
   }
 }
 
-void print_matrix_char( unsigned char* data, unsigned int w, unsigned int h){
+void print_matrix_char( uint8_t* data, uint32_t w, uint32_t h){
   BlobtreeRect roi = {0,0,w,h};
   print_matrix_char_with_roi(data,w,h,roi,1,1, NULL, 0);
 }
 
 
-void test(Node* root, unsigned int tree_size){
+void test(Node* root, uint32_t tree_size){
   /* Allocate space for 'name' of tree */
-  unsigned int* tree_name = malloc( tree_size*sizeof(unsigned int) );
+  uint32_t* tree_name = (uint32_t*) malloc( tree_size*sizeof(uint32_t) );
 
-  gen_tree_id(root->child, tree_name, tree_size);
+  tree_generate_id(root->child, tree_name, tree_size);
 
-  unsigned int l;
+  uint32_t l;
   for( l=0;l<tree_size;l++)
     printf("%u ", *(tree_name+l) );
   printf("\n");
@@ -124,10 +130,10 @@ void test(Node* root, unsigned int tree_size){
 }
 
 
-void gen_image_data(unsigned char* sw, unsigned int w, unsigned int h){
+void gen_image_data(uint8_t* sw, uint32_t w, uint32_t h){
 
   srand( time(NULL) );
-  unsigned int wh=w*h,i;
+  uint32_t wh=w*h,i;
   for( i=0;i<w+1;i++){
     *(sw+i) = 0;
     *(sw+wh-1-i) = 0;
@@ -141,14 +147,14 @@ void gen_image_data(unsigned char* sw, unsigned int w, unsigned int h){
     }
 }
 
-void gen_image_data2(unsigned char* sw, unsigned int w, unsigned int h, unsigned int depth){
+void gen_image_data2(uint8_t* sw, uint32_t w, uint32_t h, uint32_t depth){
   //srand( time(NULL) );
-  unsigned int wh=w*h,i,j,k,l,d,col;
-  unsigned int tx,ty;
+  uint32_t wh=w*h,i,j,k,l,d,col;
+  uint32_t tx,ty;
   //B == Block
-  unsigned int Bbreite = 2*depth+1;
-  unsigned int Bw = w/Bbreite;
-  unsigned int Bh = h/Bbreite;
+  uint32_t Bbreite = 2*depth+1;
+  uint32_t Bw = w/Bbreite;
+  uint32_t Bh = h/Bbreite;
 
   //durchlaufe alle Blöcke
   for( i=0;i<Bh;i++ ){
@@ -177,14 +183,14 @@ void gen_image_data2(unsigned char* sw, unsigned int w, unsigned int h, unsigned
   for( i=w+1;i<wh-w-1;i++) if( i%w==0 || i%w==w-1) *(sw+i) = 0;
 }
 
-void gen_image_data3(unsigned char* sw, unsigned int w, unsigned int h, unsigned int depth){
+void gen_image_data3(uint8_t* sw, uint32_t w, uint32_t h, uint32_t depth){
   //srand( time(NULL) );
-  unsigned int wh=w*h,i,j,k,l,d,col;
-  unsigned int tx,ty;
+  uint32_t wh=w*h,i,j,k,l,d,col;
+  uint32_t tx,ty;
   //B == Block
-  unsigned int Bbreite = 2*depth+1;
-  unsigned int Bw = w/Bbreite;
-  unsigned int Bh = h/Bbreite;
+  uint32_t Bbreite = 2*depth+1;
+  uint32_t Bw = w/Bbreite;
+  uint32_t Bh = h/Bbreite;
 
   //durchlaufe alle Blöcke
   for( i=0;i<Bh;i++ ){

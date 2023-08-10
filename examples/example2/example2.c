@@ -5,15 +5,15 @@
 #include "depthtree.h"
 #include "output_depthtree.h"
 
-static const unsigned int W=28;
-static const unsigned int H=28;
+static const uint32_t W=28;
+static const uint32_t H=28;
 
 #include "../example.h"
 
 
-int main(int argc, char **argv) {
+int32_t main(int32_t argc, char **argv) {
   // Stepwidth
-  unsigned int w=1,h=1;
+  uint32_t w=1,h=1;
   // Region of interest
   BlobtreeRect roi= {0,0,W,H};
   //BlobtreeRect roi= {18,0,9,17};
@@ -24,8 +24,8 @@ int main(int argc, char **argv) {
   }
 
   // Generate test image
-  unsigned char* sw;
-  sw = calloc( W*H,sizeof(unsigned char) );
+  uint8_t* sw;
+  sw = calloc( W*H,sizeof(uint8_t) );
   if( sw == NULL ) return -1;
 
   // Image with 5 different levels 0,...,4
@@ -62,16 +62,18 @@ int main(int argc, char **argv) {
 
 
   //Init depth_map
-  unsigned char depth_map[256];
-  unsigned int i; for( i=0; i<256; i++) depth_map[i] = i;
+  uint8_t depth_map[256];
+  uint32_t i; for( i=0; i<256; i++) depth_map[i] = i;
 
   // Now search the blobs.
   depthtree_find_blobs(blobs, sw, W, H, roi, depth_map, workspace);
 
   // Print out result tree.
   printf("===========\n");
-  printf("Treesize: %i, Tree null? %s\n", blobs->tree->size, blobs->tree->root==NULL?"Yes.":"No.");
-  print_tree(blobs->tree->root, 0);
+  //printf("Allocated node size: %i, Tree null? %s\n", blobs->tree->size, blobs->tree->root==NULL?"Yes.":"No.");
+  tree_print(blobs->tree, NULL, 0);
+
+  blobtree_print(blobs, 0);
 
 
   printf("Coloured map of connection component ids (last digit only and id(0)=' '):\n");
@@ -133,6 +135,8 @@ int main(int argc, char **argv) {
   printf("Filtered Coloured map of blob ids (last digit only and blobid(1)=' '):\n");
   print_coloured_depthtree_ids(sw, blobs, &roi, workspace, 1, 0, "0123456789");
 #endif
+
+  tree_print_integrity_check(blobs->tree->root);
 
   // Clean up.
   depthtree_destroy_workspace( &workspace );

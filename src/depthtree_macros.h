@@ -55,7 +55,7 @@
 
 #ifdef BLOB_COUNT_PIXEL
 #define COUNT(X) X;
-#define BLOB_REALLOC_COMP_SIZE comp_size = realloc(comp_size, max_comp*sizeof(int) );
+#define BLOB_REALLOC_COMP_SIZE comp_size = realloc(comp_size, max_comp*sizeof(int32_t) );
 #define BLOB_INIT_COMP_SIZE *(comp_size+id) = 1;
 #define BLOB_INC_COMP_SIZE(ID) *(comp_size+ID) += 1; 
 #else
@@ -99,7 +99,7 @@
 #define BARY(X) X;
 #define BLOB_REALLOC_BARY \
   pixel_sum_X = realloc(pixel_sum_X, max_comp*sizeof(BLOB_BARYCENTER_TYPE) ); \
-pixel_sum_X = realloc(pixel_sum_X, max_comp*sizeof(BLOB_BARYCENTER_TYPE) );
+  pixel_sum_X = realloc(pixel_sum_X, max_comp*sizeof(BLOB_BARYCENTER_TYPE) );
 
 #define BLOB_INIT_BARY *(pixel_sum_X+id) = s; *(pixel_sum_Y+id) = z;
 #define BLOB_INC_BARY(ID) *(pixel_sum_X+ID) += s;  *(pixel_sum_Y+ID) += z;
@@ -125,7 +125,7 @@ BD( \
   ) \
 BLOB_INIT_BARY; \
 if( id>=max_comp ){ \
-  int max_comp2 = (int) ( (float)w*h*max_comp/(dPi-data) ); /*try estimation */ \
+  int32_t max_comp2 = (int32_t) ( (float)w*h*max_comp/(dPi-data) ); /*try estimation */ \
   if( 1 || max_comp2 < max_comp*1.5 ){ \
     max_comp += max_comp; \
   }else{ \
@@ -235,7 +235,7 @@ if( id>=max_comp ){ \
     /* 1. Compare DEPX with the depth of a, and b. (5 Cases) \
      * */ \
 /*Debug */ \
-/*{int xxx;\
+/*{int32_t xxx;\
 for(xxx=0;xxx<=id;xxx++){\
 printf("CS(%i)=%i, P(%i)=%i, D(%i)=%i \n",xxx,*(comp_same+xxx), xxx, *(prob_parent+xxx)  ,xxx, *(id_depth+xxx));\
 }}*/ \

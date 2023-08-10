@@ -6,14 +6,17 @@
 #include <time.h>
 #include <string.h> //for memset
 
+#include <assert.h>
+
 #include "threshtree.h"
+#include "tree_intern.h"
 
 #include "threshtree_macros.h"
 //#include "threshtree_macros_old.h"
 
 
-int threshtree_create_workspace(
-    const unsigned int w, const unsigned int h,
+int32_t threshtree_create_workspace(
+    const uint32_t w, const uint32_t h,
     ThreshtreeWorkspace **pworkspace
     ){
 
@@ -29,21 +32,21 @@ int threshtree_create_workspace(
 
   r->w = w;
   r->h = h;
-  const unsigned int max_comp = (w+h)*100;
+  const uint32_t max_comp = (w+h)*100;
   r->max_comp = max_comp;
   r->used_comp = 0;
   if(
-      ( r->ids = (unsigned int*) malloc( w*h*sizeof(unsigned int) ) ) == NULL ||
-      ( r->comp_same = (unsigned int*) malloc( max_comp*sizeof(unsigned int) ) ) == NULL ||
-      ( r->prob_parent = (unsigned int*) malloc( max_comp*sizeof(unsigned int) ) ) == NULL ||
+      ( r->ids = (uint32_t*) malloc( w*h*sizeof(uint32_t) ) ) == NULL ||
+      ( r->comp_same = (uint32_t*) malloc( max_comp*sizeof(uint32_t) ) ) == NULL ||
+      ( r->prob_parent = (uint32_t*) malloc( max_comp*sizeof(uint32_t) ) ) == NULL ||
 #ifdef BLOB_COUNT_PIXEL
-      ( r->comp_size = (unsigned int*) malloc( max_comp*sizeof(unsigned int) ) ) == NULL ||
+      ( r->comp_size = (uint32_t*) malloc( max_comp*sizeof(uint32_t) ) ) == NULL ||
 #endif
 #ifdef BLOB_DIMENSION
-      ( r->top_index = (unsigned int*) malloc( max_comp*sizeof(unsigned int) ) ) == NULL ||
-      ( r->left_index = (unsigned int*) malloc( max_comp*sizeof(unsigned int) ) ) == NULL ||
-      ( r->right_index = (unsigned int*) malloc( max_comp*sizeof(unsigned int) ) ) == NULL ||
-      ( r->bottom_index = (unsigned int*) malloc( max_comp*sizeof(unsigned int) ) ) == NULL ||
+      ( r->top_index = (uint32_t*) malloc( max_comp*sizeof(uint32_t) ) ) == NULL ||
+      ( r->left_index = (uint32_t*) malloc( max_comp*sizeof(uint32_t) ) ) == NULL ||
+      ( r->right_index = (uint32_t*) malloc( max_comp*sizeof(uint32_t) ) ) == NULL ||
+      ( r->bottom_index = (uint32_t*) malloc( max_comp*sizeof(uint32_t) ) ) == NULL ||
 
 #endif
 #ifdef BLOB_BARYCENTER
@@ -70,28 +73,28 @@ int threshtree_create_workspace(
   return 0;
 }
 
-int threshtree_realloc_workspace(
-    const unsigned int max_comp,
+int32_t threshtree_realloc_workspace(
+    const uint32_t max_comp,
     ThreshtreeWorkspace **pworkspace
     ){
 
   ThreshtreeWorkspace *r = *pworkspace;
   r->max_comp = max_comp;
   if(
-      ( r->comp_same = (unsigned int*) realloc(r->comp_same, max_comp*sizeof(unsigned int) ) ) == NULL ||
-      ( r->prob_parent = (unsigned int*) realloc(r->prob_parent, max_comp*sizeof(unsigned int) ) ) == NULL ||
+      ( r->comp_same = (uint32_t*) _reallocarray_or_free(r->comp_same, max_comp, sizeof(uint32_t) ) ) == NULL ||
+      ( r->prob_parent = (uint32_t*) _reallocarray_or_free(r->prob_parent, max_comp, sizeof(uint32_t) ) ) == NULL ||
 #ifdef BLOB_COUNT_PIXEL
-      ( r->comp_size = (unsigned int*) realloc(r->comp_size, max_comp*sizeof(unsigned int) ) ) == NULL ||
+      ( r->comp_size = (uint32_t*) _reallocarray_or_free(r->comp_size, max_comp, sizeof(uint32_t) ) ) == NULL ||
 #endif
 #ifdef BLOB_DIMENSION
-      ( r->top_index = (unsigned int*) realloc(r->top_index, max_comp*sizeof(unsigned int) ) ) == NULL ||
-      ( r->left_index = (unsigned int*) realloc(r->left_index, max_comp*sizeof(unsigned int) ) ) == NULL ||
-      ( r->right_index = (unsigned int*) realloc(r->right_index, max_comp*sizeof(unsigned int) ) ) == NULL ||
-      ( r->bottom_index = (unsigned int*) realloc(r->bottom_index, max_comp*sizeof(unsigned int) ) ) == NULL ||
+      ( r->top_index = (uint32_t*) _reallocarray_or_free(r->top_index, max_comp, sizeof(uint32_t) ) ) == NULL ||
+      ( r->left_index = (uint32_t*) _reallocarray_or_free(r->left_index, max_comp, sizeof(uint32_t) ) ) == NULL ||
+      ( r->right_index = (uint32_t*) _reallocarray_or_free(r->right_index, max_comp, sizeof(uint32_t) ) ) == NULL ||
+      ( r->bottom_index = (uint32_t*) _reallocarray_or_free(r->bottom_index, max_comp, sizeof(uint32_t) ) ) == NULL ||
 #endif
 #ifdef BLOB_BARYCENTER
-      ( r->pixel_sum_X = (BLOB_BARYCENTER_TYPE*) realloc(r->pixel_sum_X, max_comp*sizeof(BLOB_BARYCENTER_TYPE) ) ) == NULL ||
-      ( r->pixel_sum_Y = (BLOB_BARYCENTER_TYPE*) realloc(r->pixel_sum_Y, max_comp*sizeof(BLOB_BARYCENTER_TYPE) ) ) == NULL ||
+      ( r->pixel_sum_X = (BLOB_BARYCENTER_TYPE*) _reallocarray_or_free(r->pixel_sum_X, max_comp, sizeof(BLOB_BARYCENTER_TYPE) ) ) == NULL ||
+      ( r->pixel_sum_Y = (BLOB_BARYCENTER_TYPE*) _reallocarray_or_free(r->pixel_sum_Y, max_comp, sizeof(BLOB_BARYCENTER_TYPE) ) ) == NULL ||
 #endif
       0 ){
     // realloc failed
@@ -145,9 +148,9 @@ void threshtree_destroy_workspace(
 }
 
 Tree* find_connection_components(
-    const unsigned char *data,
-    const unsigned int w, const unsigned int h,
-    const unsigned char thresh,
+    const uint8_t *data,
+    const uint32_t w, const uint32_t h,
+    const uint8_t thresh,
     Blob** tree_data,
     ThreshtreeWorkspace *workspace )
 {
@@ -157,10 +160,10 @@ Tree* find_connection_components(
 
 
 Tree* find_connection_components_roi(
-    const unsigned char *data,
-    const unsigned int w, const unsigned int h,
+    const uint8_t *data,
+    const uint32_t w, const uint32_t h,
     const BlobtreeRect roi,
-    const unsigned char thresh,
+    const uint8_t thresh,
     Blob** tree_data,
     ThreshtreeWorkspace *workspace )
 {
@@ -174,11 +177,11 @@ Tree* find_connection_components_roi(
 #ifdef BLOB_SUBGRID_CHECK
 #define stepheight stepwidth
 Tree* find_connection_components_subcheck(
-    const unsigned char *data,
-    const unsigned int w, const unsigned int h,
+    const uint8_t *data,
+    const uint32_t w, const uint32_t h,
     const BlobtreeRect roi,
-    const unsigned char thresh,
-    const unsigned int stepwidth,
+    const uint8_t thresh,
+    const uint32_t stepwidth,
     Blob** tree_data,
     ThreshtreeWorkspace *workspace )
 {
@@ -225,49 +228,49 @@ Tree* find_connection_components_subcheck(
   }
 
   //init
-  unsigned int r=w-roi.x-roi.width; //right border
-  unsigned int b=h-roi.y-roi.height; //bottom border
+  uint32_t r=w-roi.x-roi.width; //right border
+  uint32_t b=h-roi.y-roi.height; //bottom border
   if( r>(1<<16) || b>(1<<16) ){
     fprintf(stderr,"[blob.c] BlobtreeRect not matching.\n");
     *tree_data = NULL;
     return NULL;
   }
 
-  unsigned int swr = (roi.width-1)%stepwidth; // remainder of width/stepwidth;
-  unsigned int shr = (roi.height-1)%stepheight; // remainder of height/stepheight;
-  unsigned int sh = stepheight*w;
-  unsigned int sh1 = (stepheight-1)*w;
-  // unsigned int sh2 = shr*w;
+  uint32_t swr = (roi.width-1)%stepwidth; // remainder of width/stepwidth;
+  uint32_t shr = (roi.height-1)%stepheight; // remainder of height/stepheight;
+  uint32_t sh = stepheight*w;
+  uint32_t sh1 = (stepheight-1)*w;
+  // uint32_t sh2 = shr*w;
 
 #define DUMMY_ID -1 //id virtual parent of first element (id=0)
-  unsigned int id=-1;//id for next component would be ++id
-  unsigned int a1,a2; // for comparation of g(f(x))=a1,a2=g(f(y))
-  unsigned int k; //loop variable
+  uint32_t id=-1;//id for next component would be ++id
+  uint32_t a1,a2; // for comparation of g(f(x))=a1,a2=g(f(y))
+  uint32_t k; //loop variable
 
   /* Create pointer to workspace arrays */
-  unsigned int max_comp = workspace->max_comp;
+  uint32_t max_comp = workspace->max_comp;
 
-  unsigned int* ids = workspace->ids;
+  uint32_t* ids = workspace->ids;
 
-  unsigned int* comp_same = workspace->comp_same;
-  unsigned int* prob_parent = workspace->prob_parent;
+  uint32_t* comp_same = workspace->comp_same;
+  uint32_t* prob_parent = workspace->prob_parent;
 #ifdef BLOB_COUNT_PIXEL
-  unsigned int* comp_size = workspace->comp_size;
+  uint32_t* comp_size = workspace->comp_size;
 #endif
 #ifdef BLOB_DIMENSION
-  unsigned int* top_index = workspace->top_index;
-  unsigned int* left_index = workspace->left_index;
-  unsigned int* right_index = workspace->right_index;
-  unsigned int* bottom_index = workspace->bottom_index;
+  uint32_t* top_index = workspace->top_index;
+  uint32_t* left_index = workspace->left_index;
+  uint32_t* right_index = workspace->right_index;
+  uint32_t* bottom_index = workspace->bottom_index;
 #endif
 #ifdef BLOB_BARYCENTER
   BLOB_BARYCENTER_TYPE *pixel_sum_X = workspace->pixel_sum_X; 
   BLOB_BARYCENTER_TYPE *pixel_sum_Y = workspace->pixel_sum_Y; 
 #endif
 #ifdef PIXEL_POSITION
-  unsigned int s=roi.x,z=roi.y; //s-spalte, z-zeile
+  uint32_t s=roi.x,z=roi.y; //s-spalte, z-zeile
 #else
-  const unsigned int s=0,z=0; //Should not be used.
+  const uint32_t s=0,z=0; //Should not be used.
 #endif
 
   /* triangle array store information about the
@@ -285,39 +288,39 @@ Tree* find_connection_components_subcheck(
    * 2 - All pixels of the quad was examined.
    *
    * */
-  const unsigned int triwidth = (roi.width-1)/stepwidth + 1;
+  const uint32_t triwidth = (roi.width-1)/stepwidth + 1;
   const size_t triangle_len = (triwidth+1)* ( (roi.height-1)/stepheight + 1);
   if( triangle_len  > workspace->triangle_len ){
     free(workspace->triangle);
-    workspace->triangle = (unsigned char*) malloc( triangle_len * sizeof(unsigned char) );
+    workspace->triangle = (uint8_t*) malloc( triangle_len * sizeof(uint8_t) );
     if( workspace->triangle == NULL ){
       printf("(threshtree) Critical error: Mem allocation for triangle failed\n");
     }
     workspace->triangle_len = triangle_len;
   }
 
-  unsigned char* const triangle = workspace->triangle;
-  unsigned char* tri = triangle;
+  uint8_t* const triangle = workspace->triangle;
+  uint8_t* tri = triangle;
 #if VERBOSE > 0
   printf("triwidth: %u\n", triwidth);
 #endif
 
-  const unsigned char* const dS = data+w*roi.y+roi.x;
-  const unsigned char* dR = dS+roi.width; //Pointer to right border. Update on every line
-  //unsigned char* dR2 = swr>0?dR-swr-stepwidth-stepwidth:dR; //cut last indizies.
-  const unsigned char* dR2 = dR-swr-stepwidth; //cut last indizies.
+  const uint8_t* const dS = data+w*roi.y+roi.x;
+  const uint8_t* dR = dS+roi.width; //Pointer to right border. Update on every line
+  //uint8_t* dR2 = swr>0?dR-swr-stepwidth-stepwidth:dR; //cut last indizies.
+  const uint8_t* dR2 = dR-swr-stepwidth; //cut last indizies.
 
-  const unsigned char* const dE = dR + (roi.height-1)*w;
-  const unsigned char* const dE2 = dE - shr*w;//remove last lines.
+  const uint8_t* const dE = dR + (roi.height-1)*w;
+  const uint8_t* const dE2 = dE - shr*w;//remove last lines.
 
-  //unsigned int i = w*roi.y+roi.x;
-  const unsigned char* dPi = dS; // Pointer to data+i
-  unsigned int* iPi = ids+(dS-data); // Poiner to ids+i
+  //uint32_t i = w*roi.y+roi.x;
+  const uint8_t* dPi = dS; // Pointer to data+i
+  uint32_t* iPi = ids+(dS-data); // Poiner to ids+i
 
 #if VERBOSE > 0
   //debug: prefill array
   printf("Note: Prefill ids array with 0. This will be removed for VERBOSE=0\n");
-  memset(ids,0, w*h*sizeof(unsigned int));
+  memset(ids,0, w*h*sizeof(uint32_t));
 #endif
 
   /**** A,A'-CASE *****/
@@ -411,7 +414,7 @@ Tree* find_connection_components_subcheck(
      *    The positions in '—' are already evaluated if a!=b (<=> *(tri-triwidth)==2 )
      * */
     {
-      const unsigned char casenbr = ( *(dPi) > thresh )? \
+      const uint8_t casenbr = ( *(dPi) > thresh )? \
                                     ( (( *(dPi-sh+stepwidth) <= thresh ) << 1)
                                       | (( *(dPi-sh) <= thresh ) << 0)): \
                                     ( (( *(dPi-sh+stepwidth) > thresh ) << 1)
@@ -459,7 +462,7 @@ Tree* find_connection_components_subcheck(
        * 0 2 3
        * 1
        */
-      /*const*/ unsigned char casenbr = ( *(dPi) > thresh )? \
+      /*const*/ uint8_t casenbr = ( *(dPi) > thresh )? \
                                         ( (( *(dPi-sh+stepwidth) <= thresh ) << 3)
                                           | (( *(dPi-sh) <= thresh ) << 2)
                                           | (( *(dPi-stepwidth) <= thresh ) << 1)
@@ -898,15 +901,15 @@ Tree* find_connection_components_subcheck(
    * If BLOB_DIMENSION is set, detect
    * extremal limits in [left|right|bottom]_index(*(real_ids+X)).
    * */
-  unsigned int nids = id+1; //number of ids
-  unsigned int tmp_id,/*tmp_id2,*/ real_ids_size=0,l;
+  uint32_t nids = id+1; //number of ids
+  uint32_t tmp_id,/*tmp_id2,*/ real_ids_size=0,l;
   free(workspace->real_ids);
-  workspace->real_ids = calloc( nids, sizeof(unsigned int) ); //store join of ids.
-  unsigned int* const real_ids = workspace->real_ids;
+  workspace->real_ids = calloc( nids, sizeof(uint32_t) ); //store join of ids.
+  uint32_t* const real_ids = workspace->real_ids;
 
   free(workspace->real_ids_inv);
-  workspace->real_ids_inv = calloc( nids, sizeof(unsigned int) ); //store for every id with position in real_id link to it's position.
-  unsigned int* const real_ids_inv = workspace->real_ids_inv;
+  workspace->real_ids_inv = calloc( nids, sizeof(uint32_t) ); //store for every id with position in real_id link to it's position.
+  uint32_t* const real_ids_inv = workspace->real_ids_inv;
 
 #if 1
   for(k=0;k<nids;k++){
@@ -986,7 +989,7 @@ Tree* find_connection_components_subcheck(
   /* Old approach: Attention, old version does not create
    * the projection property of comp_same (cs). Here, only cs^2=cs^3.
    */
-  unsigned int found;
+  uint32_t found;
   for(k=0;k<nids;k++){
     tmp_id = k;
     tmp_id2 = *(comp_same+tmp_id);
@@ -1052,19 +1055,16 @@ Tree* find_connection_components_subcheck(
    */
 
   /* store for real_ids the index of the node in the tree array */
-  unsigned int *tree_id_relation = malloc( (real_ids_size+1)*sizeof(unsigned int) );
+  uint32_t *tree_id_relation = malloc( (real_ids_size+1)*sizeof(uint32_t) );
 
-  Node *nodes = malloc( (real_ids_size+1)*sizeof(Node) );
-  Blob *blobs = malloc( (real_ids_size+1)*sizeof(Blob) );
-  Tree *tree = malloc( sizeof(Tree) );
-  tree->root = nodes;
-  tree->size = real_ids_size + 1;
+  Tree *tree = tree_create(real_ids_size + 1, 0);
+  *tree_data = malloc( tree->size * sizeof(Blob) ); // data
+  Node * const root = tree->root;
 
   //init all node as leafs
-  for(l=0;l<real_ids_size+1;l++) *(nodes+l)=Leaf;
+  for(l=0;l<real_ids_size+1;l++) *(root+l)=Leaf;
 
-  Node * const root = nodes;
-  Node *cur  = nodes;
+  Node *cur  = root;
   Blob *curdata  = blobs;
 
   curdata->id = -1; /* = MAX_UINT */
@@ -1074,7 +1074,7 @@ Tree* find_connection_components_subcheck(
   curdata->depth_level = 0;
 #endif
 #ifdef BLOB_BARYCENTER
-  /* The barycenter will not set here, but in eval_barycenters(...) */
+  /* The barycenter will not set here, but in blobtree_eval_barycenters(...) */
   //curdata->barycenter[0] = roi.x + roi.width/2;
   //curdata->barycenter[1] = roi.y + roi.height/2;
 #endif
@@ -1087,7 +1087,7 @@ Tree* find_connection_components_subcheck(
     curdata++;
     cur->data = curdata; // link to the data array.
 
-    const unsigned int rid = *(real_ids+l);
+    const uint32_t rid = *(real_ids+l);
     curdata->id = rid; //Set id of this blob.
 #ifdef BLOB_DIMENSION
     rect = &curdata->roi;
@@ -1097,7 +1097,7 @@ Tree* find_connection_components_subcheck(
     rect->width = *(right_index + rid) - rect->x + 1;
 #endif
 #ifdef BLOB_BARYCENTER
-    /* The barycenter will not set here, but in eval_barycenters(...) */
+    /* The barycenter will not set here, but in blobtree_eval_barycenters(...) */
     //curdata->barycenter[0] = *(pixel_sum_X + rid) / *(comp_same + rid);
     //curdata->barycenter[1] = *(pixel_sum_Y + rid) / *(comp_same + rid);
 #endif
@@ -1109,7 +1109,7 @@ Tree* find_connection_components_subcheck(
     if( tmp_id == DUMMY_ID ){
       /* Use root as parent node. */
       //cur->parent = root;
-      add_child(root, cur );
+      tree_add_child(root, cur );
     }else{
       //find real id of parent id.
 #if 1
@@ -1124,7 +1124,7 @@ Tree* find_connection_components_subcheck(
 #endif
 
       /*Now, tmp_id is in real_id array. And real_ids_inv is defined. */
-      add_child( root + 1/*root pos shift*/ + *(real_ids_inv+tmp_id ),
+      tree_add_child( root + 1/*root pos shift*/ + *(real_ids_inv+tmp_id ),
           cur );
     }
 
@@ -1132,7 +1132,7 @@ Tree* find_connection_components_subcheck(
 
 
 #ifdef BLOB_BARYCENTER
-  eval_barycenters(root, comp_size, pixel_sum_X, pixel_sum_Y);
+  blobtree_eval_barycenters(root, comp_size, pixel_sum_X, pixel_sum_Y);
 #define SUM_AREAS_IS_REDUNDANT
 #endif
 
@@ -1182,9 +1182,6 @@ Tree* find_connection_components_subcheck(
   free(tree_id_relation);
   //free(triangle);
   //free(anchors);
-
-  //set output parameter
-  *tree_data = blobs;
   return tree;
 }
 
@@ -1193,10 +1190,10 @@ Tree* find_connection_components_subcheck(
 
 
 void threshtree_find_blobs( Blobtree *blob,
-    const unsigned char *data,
-    const unsigned int w, const unsigned int h,
+    const uint8_t *data,
+    const uint32_t w, const uint32_t h,
     const BlobtreeRect roi,
-    const unsigned char thresh,
+    const uint8_t thresh,
     ThreshtreeWorkspace *workspace )
 {
   // Avoid hard crash for null data.
@@ -1234,18 +1231,18 @@ void threshtree_filter_blobs(
     ThreshtreeWorkspace *pworkspace
     ){
 
-  unsigned int numNodes = blob->tree->size;
+  uint32_t numNodes = blob->tree->size;
   VPRINTF("Num nodes: %u\n", numNodes);
 
   if(pworkspace->blob_id_filtered==NULL){
     //Attention, correct size of blob_id_filtered is assumed if != NULL.
     //See workspace reallocation
-    pworkspace->blob_id_filtered= malloc( pworkspace->max_comp*sizeof(unsigned int) );
+    pworkspace->blob_id_filtered= malloc( pworkspace->max_comp*sizeof(uint32_t) );
   }
-  unsigned int * const nodeToFilteredNode = calloc( numNodes,sizeof(unsigned int) );
-  unsigned int * const blob_id_filtered = pworkspace->blob_id_filtered;
-  const unsigned int * const comp_same = pworkspace->comp_same;
-  const unsigned int * const real_ids_inv = pworkspace->real_ids_inv;
+  uint32_t * const nodeToFilteredNode = calloc( numNodes,sizeof(uint32_t) );
+  uint32_t * const blob_id_filtered = pworkspace->blob_id_filtered;
+  const uint32_t * const comp_same = pworkspace->comp_same;
+  const uint32_t * const real_ids_inv = pworkspace->real_ids_inv;
 
   if( nodeToFilteredNode != NULL && blob_id_filtered != NULL ){
     nodeToFilteredNode[0]=0;
@@ -1258,11 +1255,11 @@ void threshtree_filter_blobs(
     const Node * const root = blob->tree->root;
     const Node *cur = blobtree_first(blob);
     while( cur != NULL ){
-      //const unsigned int id = ((Blob*)cur->data)->id;
+      //const uint32_t id = ((Blob*)cur->data)->id;
       //*(nodeToFilteredNode + node_id) = id;
 
-      //const unsigned int node_id = *(pworkspace->real_ids_inv+id) + 1;
-      const unsigned int node_id = cur-root;
+      //const uint32_t node_id = *(pworkspace->real_ids_inv+id) + 1;
+      const uint32_t node_id = cur-root;
       //note: Both definitions of node_id are equivalent.
 
       *(nodeToFilteredNode + node_id) = node_id;
@@ -1272,7 +1269,7 @@ void threshtree_filter_blobs(
     // 2. Take all nodes which are mapped to 0 and
     // search parent node with nonzero mapping.
     // Start for index=i=2 because first node is root.
-    unsigned int pn, ri; //parent real id, read id of parent node
+    uint32_t pn, ri; //parent real id, read id of parent node
     for( ri=1; ri<numNodes; ri++){
       if( nodeToFilteredNode[ri] == 0 ){
         //find parent node of 'ri' which was not filtered out
@@ -1294,7 +1291,7 @@ void threshtree_filter_blobs(
      * 3b) Get node for id2. The dummy node produce +1 shift.
      * 3c) Finally, use nodeToFilteredNode map.
      */
-    unsigned int id=pworkspace->used_comp;//dec till 0
+    uint32_t id=pworkspace->used_comp;//dec till 0
     while( id ){
       *(blob_id_filtered+id) = *(nodeToFilteredNode + *(real_ids_inv + *(comp_same+id)) + 1 );
       //*(blob_id_filtered+id) = *(nodeToFilteredNode + *(real_ids_inv + *(comp_same+*(comp_same+id))) + 1 );
@@ -1308,7 +1305,7 @@ void threshtree_filter_blobs(
 #if VERBOSE > 0
     printf("nodeToFilteredNode[realid] = realid\n");
     for( ri=0; ri<numNodes; ri++){
-      unsigned int id = ((Blob*)((blob->tree->root +ri)->data))->id;
+      uint32_t id = ((Blob*)((blob->tree->root +ri)->data))->id;
       printf("id=%u, nodeToFilteredNode[%u] = %u\n",id, ri, nodeToFilteredNode[ri]);
     }
 #endif
@@ -1323,13 +1320,13 @@ void threshtree_filter_blobs(
 }
 
 
-unsigned int threshtree_get_id(
-    const int x, const int y,
+uint32_t threshtree_get_id(
+    const int32_t x, const int32_t y,
     ThreshtreeWorkspace *pworkspace
     )
 {
-  unsigned int id;
-  unsigned int *ids, *riv, *cm;
+  uint32_t id;
+  uint32_t *ids, *riv, *cm;
 
   ids = pworkspace->ids;      // id map for complete image
   cm = pworkspace->comp_same; // Map connected ids on one representor
@@ -1340,9 +1337,9 @@ unsigned int threshtree_get_id(
   //return *(cm + id);
 }
 
-unsigned int threshtree_get_id_roi(
+uint32_t threshtree_get_id_roi(
     const BlobtreeRect roi,
-    const int x, const int y,
+    const int32_t x, const int32_t y,
     ThreshtreeWorkspace *pworkspace
     )
 {
@@ -1354,14 +1351,14 @@ unsigned int threshtree_get_id_roi(
   return threshtree_get_id(x + roi.x, y + roi.y, pworkspace);
 }
 
-unsigned int threshtree_get_filtered_id(
+uint32_t threshtree_get_filtered_id(
     const Blobtree *blobs,
-    const int x, const int y,
+    const int32_t x, const int32_t y,
     ThreshtreeWorkspace *pworkspace
     )
 {
-  unsigned int id;
-  unsigned int *ids, *bif; //, *riv, *cm;
+  uint32_t id;
+  uint32_t *ids, *bif; //, *riv, *cm;
 
   ids = pworkspace->ids;      // id map for complete image
   bif = pworkspace->blob_id_filtered; //maps  'unfiltered id' on 'parent filtered id'
@@ -1378,10 +1375,10 @@ unsigned int threshtree_get_filtered_id(
 }
 
 /* Postprocessing: Get filtered blob id for coordinate. Roi version */
-unsigned int threshtree_get_filtered_id_roi(
+uint32_t threshtree_get_filtered_id_roi(
     const Blobtree *blobs,
     const BlobtreeRect roi,
-    const int x, const int y,
+    const int32_t x, const int32_t y,
     ThreshtreeWorkspace *pworkspace
     )
 {

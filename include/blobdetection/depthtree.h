@@ -9,32 +9,31 @@ extern "C" {
 
 #if __has_include("settings.h")
 #include "settings.h"
-#else
-#include "settings.default.h"
 #endif
+#include "settings.default.h"
 
 #include "tree.h"
 #include "blob.h"
 
 /* Workspace struct for array storage */
 typedef struct {
-  unsigned int w; // (Maximal) width of input data.
-  unsigned int h; // (Maximal) height of input data.
-  unsigned int max_comp; // = w+h;//maximal number of components. If the value is reached some arrays will reallocate.
-  unsigned int used_comp; // number of used ids ; will be set after the main algorithm finishes ; <=max_comp
-  unsigned int *ids;
-  unsigned char *depths; // use monotone function to map image data into different depths
-  unsigned int *id_depth; //store depth (group) of id anchor.
-  unsigned int *comp_same; //map ids to unique ids g:{0,...,}->{0,....}
-  unsigned int *prob_parent; //store ⊂-Relation.
+  uint32_t w; // (Maximal) width of input data.
+  uint32_t h; // (Maximal) height of input data.
+  uint32_t max_comp; // = w+h;//maximal number of components. If the value is reached some arrays will reallocate.
+  uint32_t used_comp; // number of used ids ; will be set after the main algorithm finishes ; <=max_comp
+  uint32_t *ids;
+  uint8_t *depths; // use monotone function to map image data into different depths
+  uint32_t *id_depth; //store depth (group) of id anchor.
+  uint32_t *comp_same; //map ids to unique ids g:{0,...,}->{0,....}
+  uint32_t *prob_parent; //store ⊂-Relation.
 #ifdef BLOB_COUNT_PIXEL
-  unsigned int *comp_size;
+  uint32_t *comp_size;
 #endif
 #ifdef BLOB_DIMENSION
-  unsigned int *top_index; //save row number of most top element of area.
-  unsigned int *left_index; //save column number of most left element of area.
-  unsigned int *right_index; //save column number of most right element.
-  unsigned int *bottom_index; //save row number of most bottom element.
+  uint32_t *top_index; //save row number of most top element of area.
+  uint32_t *left_index; //save column number of most left element of area.
+  uint32_t *right_index; //save column number of most right element.
+  uint32_t *bottom_index; //save row number of most bottom element.
 #endif
 #ifdef BLOB_BARYCENTER
   BLOB_BARYCENTER_TYPE *pixel_sum_X; //summation of all x coordinates for an id.
@@ -45,26 +44,26 @@ typedef struct {
    * abc
    * dx
    * */
-  unsigned int *a_ids; //save chain of ids with depth(a_ids[0])>depth(a_ids[1])>...
-  unsigned char *a_dep; //save depth(a_ids[...]) to avoid lookup with id_depth(a_ids[k]).
-  unsigned int *b_ids, *c_ids, *d_ids; //same for b,c,d 
-  unsigned char *b_dep, *c_dep, *d_dep;  
+  uint32_t *a_ids; //save chain of ids with depth(a_ids[0])>depth(a_ids[1])>...
+  uint8_t *a_dep; //save depth(a_ids[...]) to avoid lookup with id_depth(a_ids[k]).
+  uint32_t *b_ids, *c_ids, *d_ids; //same for b,c,d 
+  uint8_t *b_dep, *c_dep, *d_dep;  
 
-  unsigned int *real_ids;
-  unsigned int *real_ids_inv;
+  uint32_t *real_ids;
+  uint32_t *real_ids_inv;
 
   //extra data
-  unsigned int *blob_id_filtered; //like comp_same, but respect blob tree filter.
+  uint32_t *blob_id_filtered; //like comp_same, but respect blob tree filter.
 
 } DepthtreeWorkspace;
 
 
-int depthtree_create_workspace(
-    const unsigned int w, const unsigned int h,
+int32_t depthtree_create_workspace(
+    const uint32_t w, const uint32_t h,
     DepthtreeWorkspace **pworkspace
     );
-int depthtree_realloc_workspace(
-    const unsigned int max_comp,
+int32_t depthtree_realloc_workspace(
+    const uint32_t max_comp,
     DepthtreeWorkspace **pworkspace
     );
 void depthtree_destroy_workspace(
@@ -90,17 +89,17 @@ void depthtree_filter_blobs(
     );
 
 Tree* find_depthtree(
-    const unsigned char *data,
-    const unsigned int w, const unsigned int h,
+    const uint8_t *data,
+    const uint32_t w, const uint32_t h,
     const BlobtreeRect roi,
-    const unsigned char *depth_map,
-    const unsigned int stepwidth,
+    const uint8_t *depth_map,
+    const uint32_t stepwidth,
     DepthtreeWorkspace *workspace,
     Blob** tree_data );
 
 // Note: keyword static required for -std=gnu11 
-static unsigned int inline getRealId( unsigned int * const comp_same, unsigned int const id ){
-  unsigned int rid1, rid2;
+static uint32_t inline getRealId( uint32_t * const comp_same, uint32_t const id ){
+  uint32_t rid1, rid2;
   rid1 = *(comp_same + id);
   if( (rid2 = *(comp_same + rid1)) != rid1 ){
     VPRINTF("Map %i from %i ", id, rid1);
@@ -116,7 +115,7 @@ static unsigned int inline getRealId( unsigned int * const comp_same, unsigned i
      *
      */
 
-    /*unsigned int rid0 = id;
+    /*uint32_t rid0 = id;
     rid1 = *(comp_same + rid0);
     while( rid2 != rid1 ){
      *(comp_same + rid0) = rid2;
@@ -135,7 +134,7 @@ static unsigned int inline getRealId( unsigned int * const comp_same, unsigned i
   return rid1;
 }
 
-static unsigned int inline getRealParent( unsigned int * const prob_parent, unsigned int * const comp_same, unsigned int const id ){
+static uint32_t inline getRealParent( uint32_t * const prob_parent, uint32_t * const comp_same, uint32_t const id ){
       return getRealId( comp_same, *(prob_parent + id) );
 }
 
@@ -144,10 +143,10 @@ static unsigned int inline getRealParent( unsigned int * const prob_parent, unsi
 
 void depthtree_find_blobs(
     Blobtree *blob,
-    const unsigned char *data,
-    const unsigned int w, const unsigned int h,
+    const uint8_t *data,
+    const uint32_t w, const uint32_t h,
     const BlobtreeRect roi,
-    const unsigned char *depth_map,
+    const uint8_t *depth_map,
     DepthtreeWorkspace *workspace
     );
 
@@ -157,15 +156,15 @@ void extend_bounding_boxes( Tree * const tree);
 #endif
 
 /* Postprocessing: Get blob id for coordinate. */
-unsigned int depthtree_get_id(
-    const int x, const int y,
+uint32_t depthtree_get_id(
+    const int32_t x, const int32_t y,
     DepthtreeWorkspace *pworkspace
     );
 
 /* Postprocessing: Get blob id for coordinate. Roi version */
-unsigned int depthtree_get_id_roi(
+uint32_t depthtree_get_id_roi(
     const BlobtreeRect roi,
-    const int x, const int y,
+    const int32_t x, const int32_t y,
     DepthtreeWorkspace *pworkspace
     );
 
@@ -174,17 +173,17 @@ unsigned int depthtree_get_id_roi(
  * set by blobtree_set_filter(...).
  * Call depthtree_filter_blobs(...) before you use this function.
  * */
-unsigned int depthtree_get_filtered_id(
+uint32_t depthtree_get_filtered_id(
     const Blobtree *blobs,
-    const int x, const int y,
+    const int32_t x, const int32_t y,
     DepthtreeWorkspace *pworkspace
     );
 
 /* Postprocessing: Get filtered blob id for coordinate. Roi version */
-unsigned int depthtree_get_filtered_id_roi(
+uint32_t depthtree_get_filtered_id_roi(
     const Blobtree *blobs,
     const BlobtreeRect roi,
-    const int x, const int y,
+    const int32_t x, const int32_t y,
     DepthtreeWorkspace *pworkspace
     );
 

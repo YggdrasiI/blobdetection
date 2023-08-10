@@ -7,56 +7,55 @@ extern "C" {
 
 #if __has_include("settings.h")
 #include "settings.h"
-#else
-#include "settings.default.h"
 #endif
+#include "settings.default.h"
 
 #include "tree.h"
 #include "blob.h"
 
 /* Workspace struct for array storage */
 typedef struct {
-  unsigned int w; // (Maximal) width of input data.
-  unsigned int h; // (Maximal) height of input data.
-  unsigned int max_comp; // = w+h;//maximal number of components. If the value is reached some arrays will reallocate.
-  unsigned int used_comp; // number of used ids ; will be set after the main algorithm finishes ; <=max_comp
-  unsigned int *ids;
-  unsigned char *depths; // use monotone function to map image data into different depths
-  unsigned int *comp_same; //map ids to unique ids g:{0,...,}->{0,....}
-  unsigned int *prob_parent; //store ⊂-Relation.
+  uint32_t w; // (Maximal) width of input data.
+  uint32_t h; // (Maximal) height of input data.
+  uint32_t max_comp; // = w+h;//maximal number of components. If the value is reached some arrays will reallocate.
+  uint32_t used_comp; // number of used ids ; will be set after the main algorithm finishes ; <=max_comp
+  uint32_t *ids;
+  uint8_t *depths; // use monotone function to map image data into different depths
+  uint32_t *comp_same; //map ids to unique ids g:{0,...,}->{0,....}
+  uint32_t *prob_parent; //store ⊂-Relation.
 #ifdef BLOB_COUNT_PIXEL
-  unsigned int *comp_size;
+  uint32_t *comp_size;
 #endif
 #ifdef BLOB_DIMENSION
-  unsigned int *top_index; //save row number of most top element of area.
-  unsigned int *left_index; //save column number of most left element of area.
-  unsigned int *right_index; //save column number of most right element.
-  unsigned int *bottom_index; //save row number of most bottom element.
+  uint32_t *top_index; //save row number of most top element of area.
+  uint32_t *left_index; //save column number of most left element of area.
+  uint32_t *right_index; //save column number of most right element.
+  uint32_t *bottom_index; //save row number of most bottom element.
 #endif
-  unsigned int *real_ids;
-  unsigned int *real_ids_inv;
+  uint32_t *real_ids;
+  uint32_t *real_ids_inv;
 
 #ifdef BLOB_BARYCENTER
   BLOB_BARYCENTER_TYPE *pixel_sum_X; //summation of all x coordinates for an id.
   BLOB_BARYCENTER_TYPE *pixel_sum_Y; //summation of all x coordinates for an id.
 #endif
 #ifdef BLOB_SUBGRID_CHECK
-  unsigned char *triangle;
+  uint8_t *triangle;
   size_t triangle_len;
 #endif
 
   //extra data
-  unsigned int *blob_id_filtered; //like comp_same, but respect blob tree filter.
+  uint32_t *blob_id_filtered; //like comp_same, but respect blob tree filter.
 
 } ThreshtreeWorkspace;
 
 
-int threshtree_create_workspace(
-    const unsigned int w, const unsigned int h,
+int32_t threshtree_create_workspace(
+    const uint32_t w, const uint32_t h,
     ThreshtreeWorkspace **pworkspace
     );
-int threshtree_realloc_workspace(
-    const unsigned int max_comp,
+int32_t threshtree_realloc_workspace(
+    const uint32_t max_comp,
     ThreshtreeWorkspace **pworkspace
     );
 void threshtree_destroy_workspace(
@@ -81,9 +80,9 @@ void threshtree_filter_blobs(
  *
  * Parameter:
  *   In: 
- *     -unsigned char *data: Image data
- *     -unsigned int w, unsigned int h: Dimension of image
- *     -unsigned char thresh: Distinct values in x>thresh and x<=thresh.
+ *     -uint8_t *data: Image data
+ *     -uint32_t w, uint32_t h: Dimension of image
+ *     -uint8_t thresh: Distinct values in x>thresh and x<=thresh.
  *   Out:
  *     -Blob **tree_data: 
  *   Return: 
@@ -93,9 +92,9 @@ void threshtree_filter_blobs(
  *
  */
 Tree* find_connection_components(
-    const unsigned char *data,
-    const unsigned int w, const unsigned int h,
-    const unsigned char thresh,
+    const uint8_t *data,
+    const uint32_t w, const uint32_t h,
+    const uint8_t thresh,
     Blob **tree_data,
     ThreshtreeWorkspace *workspace );
 
@@ -115,10 +114,10 @@ Tree* find_connection_components(
  *
  * Parameter:
  *   In: 
- *     -unsigned char *data: Image data
- *     -unsigned int w, unsigned int h: Dimension of image
+ *     -uint8_t *data: Image data
+ *     -uint32_t w, uint32_t h: Dimension of image
  *     -BlobtreeRect roi: Simple struct to describe roi, {x,y,width,height}.
- *     -unsigned char thresh: Distinct values in x>thresh and x<=thresh.
+ *     -uint8_t thresh: Distinct values in x>thresh and x<=thresh.
  *   Out:
  *     -Blob **tree_data: 
  *   Return: 
@@ -128,10 +127,10 @@ Tree* find_connection_components(
  *
  */
 Tree* find_connection_components_roi(
-    const unsigned char *data,
-    const unsigned int w, const unsigned int h,
+    const uint8_t *data,
+    const uint32_t w, const uint32_t h,
     const BlobtreeRect roi,
-    const unsigned char thresh,
+    const uint8_t thresh,
     Blob **tree_data,
     ThreshtreeWorkspace *workspace );
 
@@ -155,11 +154,11 @@ Tree* find_connection_components_roi(
  *
  * Parameter:
  *   In: 
- *     -unsigned char *data: Image data
- *     -unsigned int w, unsigned int h: Dimension of image
+ *     -uint8_t *data: Image data
+ *     -uint32_t w, uint32_t h: Dimension of image
  *     -BlobtreeRect roi: Simple struct to describe roi, {x,y,width,height}.
  *     -char thresh: Distinct values in x>thresh and x<=thresh.
- *     -unsined int stepwidth: 
+ *     -unsined int32_t stepwidth: 
  *   Out:
  *     -Blob **tree_data: 
  *   Return: 
@@ -169,12 +168,12 @@ Tree* find_connection_components_roi(
  *
  */
 Tree* find_connection_components_coarse(
-    const unsigned char *data,
-    const unsigned int w, const unsigned int h,
+    const uint8_t *data,
+    const uint32_t w, const uint32_t h,
     const BlobtreeRect roi,
-    const unsigned char thresh,
-    const unsigned int stepwidth,
-    const unsigned int stepheight,
+    const uint8_t thresh,
+    const uint32_t stepwidth,
+    const uint32_t stepheight,
     Blob **tree_data,
     ThreshtreeWorkspace *workspace );
 
@@ -199,11 +198,11 @@ Tree* find_connection_components_coarse(
  *
  * Parameter:
  *   In: 
- *     -unsigned char *data: Image data
- *     -unsigned int w, unsigned int h: Dimension of image
+ *     -uint8_t *data: Image data
+ *     -uint32_t w, uint32_t h: Dimension of image
  *     -BlobtreeRect roi: Simple struct to describe roi, {x,y,width,height}.
  *     -char thresh: Distinct values in x>thresh and x<=thresh.
- *     -unsigned int stepwidth: 
+ *     -uint32_t stepwidth: 
  *   Out:
  *     -Blob **tree_data: 
  *   Return: 
@@ -214,33 +213,33 @@ Tree* find_connection_components_coarse(
  */
 
 Tree* find_connection_components_subcheck(
-    const unsigned char *data,
-    const unsigned int w, const unsigned int h,
+    const uint8_t *data,
+    const uint32_t w, const uint32_t h,
     const BlobtreeRect roi,
-    const unsigned char thresh,
-    const unsigned int stepwidth,
+    const uint8_t thresh,
+    const uint32_t stepwidth,
     Blob **tree_data,
     ThreshtreeWorkspace *workspace );
 #endif
 
 /* Main function to eval blobs */
 void threshtree_find_blobs( Blobtree *blob, 
-    const unsigned char *data, 
-    const unsigned int w, const unsigned int h,
+    const uint8_t *data, 
+    const uint32_t w, const uint32_t h,
     const BlobtreeRect roi,
-    const unsigned char thresh,
+    const uint8_t thresh,
     ThreshtreeWorkspace *workspace );
 
 /* Postprocessing: Get blob id for coordinate. */
-unsigned int threshtree_get_id(
-    const int x, const int y,
+uint32_t threshtree_get_id(
+    const int32_t x, const int32_t y,
     ThreshtreeWorkspace *pworkspace
     );
 
 /* Postprocessing: Get blob id for coordinate. Roi version */
-unsigned int threshtree_get_id_roi(
+uint32_t threshtree_get_id_roi(
     const BlobtreeRect roi,
-    const int x, const int y,
+    const int32_t x, const int32_t y,
     ThreshtreeWorkspace *pworkspace
     );
 
@@ -249,17 +248,17 @@ unsigned int threshtree_get_id_roi(
  * set by blobtree_set_filter(...).
  * Call threshtree_filter_blobs(...) before you use this function.
  * */
-unsigned int threshtree_get_filtered_id(
+uint32_t threshtree_get_filtered_id(
     const Blobtree *blobs,
-    const int x, const int y,
+    const int32_t x, const int32_t y,
     ThreshtreeWorkspace *pworkspace
     );
 
 /* Postprocessing: Get filtered blob id for coordinate. Roi version */
-unsigned int threshtree_get_filtered_id_roi(
+uint32_t threshtree_get_filtered_id_roi(
     const Blobtree *blobs,
     const BlobtreeRect roi,
-    const int x, const int y,
+    const int32_t x, const int32_t y,
     ThreshtreeWorkspace *pworkspace
     );
 #ifdef __cplusplus

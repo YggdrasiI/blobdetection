@@ -20,45 +20,45 @@
  */
 
 char *sprint_threshtree_ids(
-        unsigned char* data,
+        uint8_t* data,
         Blobtree *frameblobs,
         const BlobtreeRect *pprint_roi,  // could be NULL
         ThreshtreeWorkspace *pworkspace,
-        const int display_filtered_areas,
-        const int background_id,
+        const int32_t display_filtered_areas,
+        const int32_t background_id,
         const char *char_map
         )
     ;
 
-int print_threshtree_ids(
-        unsigned char* data,
+int32_t print_threshtree_ids(
+        uint8_t* data,
         Blobtree *frameblobs,
         const BlobtreeRect *pprint_roi,
         ThreshtreeWorkspace *pworkspace,
-        const int display_filtered_areas,
-        const int background_id,
+        const int32_t display_filtered_areas,
+        const int32_t background_id,
         const char *char_map
         )
     ;
 
 char *sprint_coloured_threshtree_ids(
-        unsigned char* data,
+        uint8_t* data,
         Blobtree *frameblobs,
         const BlobtreeRect *pprint_roi,  // could be NULL
         ThreshtreeWorkspace *pworkspace,
-        const int display_filtered_areas,
-        const int background_id,
+        const int32_t display_filtered_areas,
+        const int32_t background_id,
         const char *char_map
         )
     ;
 
-int print_coloured_threshtree_ids(
-        unsigned char* data,
+int32_t print_coloured_threshtree_ids(
+        uint8_t* data,
         Blobtree *frameblobs,
         const BlobtreeRect *pprint_roi,
         ThreshtreeWorkspace *pworkspace,
-        const int display_filtered_areas,
-        const int background_id,
+        const int32_t display_filtered_areas,
+        const int32_t background_id,
         const char *char_map
         )
     ;
@@ -79,35 +79,35 @@ int print_coloured_threshtree_ids(
  * ░█████████████████░░░░░░░░░░
  */
 char *sprint_threshtree_areas(
-        const unsigned char* data,
+        const uint8_t* data,
         Blobtree *frameblobs,
         const BlobtreeRect *pprint_roi,
         ThreshtreeWorkspace *pworkspace,
-        const int display_filtered_areas)
+        const int32_t display_filtered_areas)
     ;
 
-int print_threshtree_areas(
-        const unsigned char* data,
+int32_t print_threshtree_areas(
+        const uint8_t* data,
         Blobtree *frameblobs,
         const BlobtreeRect *pprint_roi,
         ThreshtreeWorkspace *pworkspace,
-        const int display_filtered_areas)
+        const int32_t display_filtered_areas)
     ;
 
 char *sprint_coloured_threshtree_areas(
-        const unsigned char* data,
+        const uint8_t* data,
         Blobtree *frameblobs,
         const BlobtreeRect *pprint_roi,
         ThreshtreeWorkspace *pworkspace,
-        const int display_filtered_areas)
+        const int32_t display_filtered_areas)
     ;
 
-int print_coloured_threshtree_areas(
-        const unsigned char* data,
+int32_t print_coloured_threshtree_areas(
+        const uint8_t* data,
         Blobtree *frameblobs,
         const BlobtreeRect *pprint_roi,
         ThreshtreeWorkspace *pworkspace,
-        const int display_filtered_areas)
+        const int32_t display_filtered_areas)
     ;
 
 #endif

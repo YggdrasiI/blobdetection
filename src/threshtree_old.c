@@ -11,12 +11,12 @@
 #include "threshtree_macros_old.h"
 
 Tree* find_connection_components_coarse(
-    const unsigned char *data,
-    const unsigned int w, const unsigned int h,
+    const uint8_t *data,
+    const uint32_t w, const uint32_t h,
     const BlobtreeRect roi,
-    const unsigned char thresh,
-    const unsigned int stepwidth,
-    const unsigned int stepheight,
+    const uint8_t thresh,
+    const uint32_t stepwidth,
+    const uint32_t stepheight,
     Blob **tree_data,
     ThreshtreeWorkspace *workspace )
 {
@@ -35,12 +35,12 @@ Tree* find_connection_components_coarse(
 /* Let compiler optimize code for fixed stepwidth and stepheight by inlining*/
 FORCEINLINE
 Tree* _find_connection_components_coarse(
-    const unsigned char *data,
-    const unsigned int w, const unsigned int h,
+    const uint8_t *data,
+    const uint32_t w, const uint32_t h,
     const BlobtreeRect roi,
-    const unsigned char thresh,
-    const unsigned int stepwidth,
-    const unsigned int stepheight,
+    const uint8_t thresh,
+    const uint32_t stepwidth,
+    const uint32_t stepheight,
     Blob **tree_data,
     ThreshtreeWorkspace *workspace )
 {
@@ -71,60 +71,60 @@ Tree* _find_connection_components_coarse(
    *
    */
   //init
-  unsigned int r=w-roi.x-roi.width; //right border
-  unsigned int b=h-roi.y-roi.height; //bottom border
+  uint32_t r=w-roi.x-roi.width; //right border
+  uint32_t b=h-roi.y-roi.height; //bottom border
   if( r<0 || b<0 ){
     fprintf(stderr,"[blob.c] BlobtreeRect not matching.\n");
     *tree_data = NULL;
     return NULL;
   }
 
-  unsigned int swr = (roi.width-1)%stepwidth; // remainder of width/stepwidth;
-  unsigned int shr = (roi.height-1)%stepheight; // remainder of height/stepheight;
-  unsigned int sh = stepheight*w;
-  unsigned int sh1 = (stepheight-1)*w;
-  unsigned int sh2 = shr*w;
+  uint32_t swr = (roi.width-1)%stepwidth; // remainder of width/stepwidth;
+  uint32_t shr = (roi.height-1)%stepheight; // remainder of height/stepheight;
+  uint32_t sh = stepheight*w;
+  uint32_t sh1 = (stepheight-1)*w;
+  uint32_t sh2 = shr*w;
 
 #define DUMMY_ID -1 //id virtual parent of first element (id=0)
-  unsigned int id=-1;//id for next component would be ++id
-  unsigned int a1,a2; // for comparation of g(f(x))=a1,a2=g(f(y))
-  unsigned int k; //loop variable
+  uint32_t id=-1;//id for next component would be ++id
+  uint32_t a1,a2; // for comparation of g(f(x))=a1,a2=g(f(y))
+  uint32_t k; //loop variable
 
   /* Create pointer to workspace arrays */
-  unsigned int max_comp = workspace->max_comp;
+  uint32_t max_comp = workspace->max_comp;
 
-  unsigned int* ids = workspace->ids;
-  unsigned int* comp_same = workspace->comp_same;
-  unsigned int* prob_parent = workspace->prob_parent;
+  uint32_t* ids = workspace->ids;
+  uint32_t* comp_same = workspace->comp_same;
+  uint32_t* prob_parent = workspace->prob_parent;
 #ifdef BLOB_COUNT_PIXEL
-  unsigned int* comp_size = workspace->comp_size;
+  uint32_t* comp_size = workspace->comp_size;
 #endif
 #ifdef BLOB_DIMENSION
-  unsigned int* top_index = workspace->top_index;
-  unsigned int* left_index = workspace->left_index;
-  unsigned int* right_index = workspace->right_index;
-  unsigned int* bottom_index = workspace->bottom_index;
+  uint32_t* top_index = workspace->top_index;
+  uint32_t* left_index = workspace->left_index;
+  uint32_t* right_index = workspace->right_index;
+  uint32_t* bottom_index = workspace->bottom_index;
 #endif
 #ifdef BLOB_BARYCENTER
     BLOB_BARYCENTER_TYPE *pixel_sum_X = workspace->pixel_sum_X; 
     BLOB_BARYCENTER_TYPE *pixel_sum_Y = workspace->pixel_sum_Y; 
 #endif
 #ifdef PIXEL_POSITION
-  unsigned int s=roi.x,z=roi.y; //s-spalte, z-zeile
+  uint32_t s=roi.x,z=roi.y; //s-spalte, z-zeile
 #else
-  const unsigned int s=0,z=0; //Should not be used.
+  const uint32_t s=0,z=0; //Should not be used.
 #endif
 
-  const unsigned char* const dS = data+w*roi.y+roi.x;
-  const unsigned char* dR = dS+roi.width; //Pointer to right border. Update on every line
-  const unsigned char* dR2 = dR-swr; //cut last indizies.
+  const uint8_t* const dS = data+w*roi.y+roi.x;
+  const uint8_t* dR = dS+roi.width; //Pointer to right border. Update on every line
+  const uint8_t* dR2 = dR-swr; //cut last indizies.
 
-  const unsigned char* const dE = dR + (roi.height-1)*w;
-  const unsigned char* const dE2 = dE - sh2;//remove last lines.
+  const uint8_t* const dE = dR + (roi.height-1)*w;
+  const uint8_t* const dE2 = dE - sh2;//remove last lines.
 
-  //unsigned int i = w*roi.y+roi.x;
-  const unsigned char* dPi = dS; // Pointer to data+i 
-  unsigned int* iPi = ids+(dS-data); // Poiner to ids+i
+  //uint32_t i = w*roi.y+roi.x;
+  const uint8_t* dPi = dS; // Pointer to data+i 
+  uint32_t* iPi = ids+(dS-data); // Poiner to ids+i
 
   /**** A,A'-CASE *****/
   //top, left corner of BlobtreeRect get first id.
@@ -761,16 +761,16 @@ Tree* _find_connection_components_coarse(
    * If BLOB_DIMENSION is set, detect
    * extremal limits in [left|right|bottom]_index(*(real_ids+X)).
    * */
-  unsigned int nids = id+1; //number of ids
-  unsigned int tmp_id,real_ids_size=0,l;
+  uint32_t nids = id+1; //number of ids
+  uint32_t tmp_id,real_ids_size=0,l;
 
   free(workspace->real_ids);
-  workspace->real_ids = calloc( nids, sizeof(unsigned int) ); //store join of ids.
-  unsigned int* const real_ids = workspace->real_ids;
+  workspace->real_ids = calloc( nids, sizeof(uint32_t) ); //store join of ids.
+  uint32_t* const real_ids = workspace->real_ids;
 
   free(workspace->real_ids_inv);
-  workspace->real_ids_inv = calloc( nids, sizeof(unsigned int) ); //store for every id with position in real_id link to it's position.
-  unsigned int* const real_ids_inv = workspace->real_ids_inv;
+  workspace->real_ids_inv = calloc( nids, sizeof(uint32_t) ); //store for every id with position in real_id link to it's position.
+  uint32_t* const real_ids_inv = workspace->real_ids_inv;
 
 #if 1
   for(k=0;k<nids;k++){
@@ -835,8 +835,8 @@ Tree* _find_connection_components_coarse(
   /* Old approach: Attention, old version does not create
    * the projection property of comp_same (cs). Here, only cs^2=cs^3.
    */
-  unsigned int tmp_id2;
-  unsigned int found;
+  uint32_t tmp_id2;
+  uint32_t found;
   for(k=0;k<nids;k++){
     tmp_id = k;
     tmp_id2 = *(comp_same+tmp_id);
@@ -904,21 +904,18 @@ Tree* _find_connection_components_coarse(
    */
 
   /* store for real_ids the index of the node in the tree array */
-  unsigned int *tree_id_relation = malloc( (real_ids_size+1)*sizeof(unsigned int) );
+  uint32_t *tree_id_relation = malloc( (real_ids_size+1)*sizeof(uint32_t) );
 
-  Node *nodes = malloc( (real_ids_size+1)*sizeof(Node) );
-  Blob *blobs = malloc( (real_ids_size+1)*sizeof(Blob) );
-  Tree *tree = malloc( sizeof(Tree) );
-  tree->root = nodes;
-  tree->size = real_ids_size + 1;
+  Tree *tree = tree_create(real_ids_size + 1, 0);
+  *tree_data = malloc( tree->size * sizeof(Blob) );
+  Node * const root = tree->root;
 
   //init all node as leafs
-  for(l=0;l<real_ids_size+1;l++) *(nodes+l)=Leaf;
+  for(l=0;l<real_ids_size+1;l++) *(root+l)=Leaf;
 
   //set root node (the desired output are the child(ren) of this node.)
-  Node * const root = nodes;
-  Node *cur  = nodes;
-  Blob *curdata  = blobs;
+  Node *cur  = root;
+  Blob *curdata  = *tree_data;
 
   curdata->id = -1; /* = MAX_UINT */
   memcpy( &curdata->roi, &roi, sizeof(BlobtreeRect) );
@@ -927,7 +924,7 @@ Tree* _find_connection_components_coarse(
   curdata->depth_level = 0;
 #endif
 #ifdef BLOB_BARYCENTER
-  /* The barycenter will not set here, but in eval_barycenters(...) */
+  /* The barycenter will not set here, but in blobtree_eval_barycenters(...) */
   //curdata->barycenter[0] = roi.x + roi.width/2;
   //curdata->barycenter[1] = roi.y + roi.height/2;
 #endif
@@ -940,10 +937,10 @@ Tree* _find_connection_components_coarse(
     curdata++;
     cur->data = curdata; // link to the data array.
 
-    const unsigned int rid = *(real_ids+l);
+    const uint32_t rid = *(real_ids+l);
     curdata->id = rid;  //Set id of this blob.
     //not useful?!
-    //unsigned int anchor = *(anchors+*(real_ids+l)); //get anchor of this blob
+    //uint32_t anchor = *(anchors+*(real_ids+l)); //get anchor of this blob
 #ifdef BLOB_DIMENSION
     rect = &curdata->roi;
     rect->y = *(top_index + rid);
@@ -952,7 +949,7 @@ Tree* _find_connection_components_coarse(
     rect->width = *(right_index + rid) - rect->x + 1;
 #endif
 #ifdef BLOB_BARYCENTER
-    /* The barycenter will not set here, but in eval_barycenters(...) */
+    /* The barycenter will not set here, but in blobtree_eval_barycenters(...) */
     //curdata->barycenter[0] = *(pixel_sum_X + rid) / *(comp_same + rid);
     //curdata->barycenter[1] = *(pixel_sum_Y + rid) / *(comp_same + rid);
 #endif
@@ -964,7 +961,7 @@ Tree* _find_connection_components_coarse(
     if( tmp_id == DUMMY_ID ){
       /* Use root as parent node. */
       //cur->parent = root;
-      add_child(root, cur );
+      tree_add_child(root, cur );
     }else{
       //find real id of parent id.
 #if 1
@@ -980,7 +977,7 @@ Tree* _find_connection_components_coarse(
 
       /*Now, tmp_id is in real_id array. And real_ids_inv is defined. */
       //cur->parent = root + 1/*root pos shift*/ + *(real_ids_inv+tmp_id );
-      add_child( root + 1/*root pos shift*/ + *(real_ids_inv+tmp_id ),
+      tree_add_child( root + 1/*root pos shift*/ + *(real_ids_inv+tmp_id ),
           cur );
     }
 
@@ -990,7 +987,7 @@ Tree* _find_connection_components_coarse(
    *
    */
 #ifdef BLOB_BARYCENTER
-  eval_barycenters(root, comp_size, pixel_sum_X, pixel_sum_Y);
+  blobtree_eval_barycenters(root, comp_size, pixel_sum_X, pixel_sum_Y);
 #define SUM_AREAS_IS_REDUNDANT
 #endif
 
@@ -1005,7 +1002,7 @@ Tree* _find_connection_components_coarse(
     sum_areas(root->child, comp_size);
 #endif
   }else{
-    approx_areas(tree, root->child, comp_size, stepwidth, stepheight);
+    blobtree_approx_areas(tree, root->child, comp_size, stepwidth, stepheight);
     //replace estimation with exact value for full image area
     Blob* img = (Blob*)root->child->data;
     img->area = img->roi.width * img->roi.height;
@@ -1038,6 +1035,5 @@ Tree* _find_connection_components_coarse(
   free(tree_id_relation);
 
   //set output parameter
-  *tree_data = blobs;
   return tree;
 }

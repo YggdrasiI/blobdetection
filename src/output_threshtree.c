@@ -5,13 +5,13 @@
 #include "output_threshtree.h"
 
 char *sprint_threshtree_areas(
-        const unsigned char* data,
+        const uint8_t* data,
         Blobtree *frameblobs,
         const BlobtreeRect *pprint_roi,
         ThreshtreeWorkspace *pworkspace,
-        const int display_filtered_areas)
+        const int32_t display_filtered_areas)
 {
-    int _term_color_mode = term_color_mode;
+    int32_t _term_color_mode = term_color_mode;
     term_color_mode = COLOR_SW_MODE;
     char *ret = sprint_coloured_threshtree_areas(
             data, frameblobs, pprint_roi, pworkspace,
@@ -21,16 +21,16 @@ char *sprint_threshtree_areas(
     return ret;
 }
 
-int print_threshtree_areas(
-        const unsigned char* data,
+int32_t print_threshtree_areas(
+        const uint8_t* data,
         Blobtree *frameblobs,
         const BlobtreeRect *pprint_roi,
         ThreshtreeWorkspace *pworkspace,
-        const int display_filtered_areas)
+        const int32_t display_filtered_areas)
 {
-    int _term_color_mode = term_color_mode;
+    int32_t _term_color_mode = term_color_mode;
     term_color_mode = COLOR_SW_MODE;
-    int ret = print_coloured_threshtree_areas(
+    int32_t ret = print_coloured_threshtree_areas(
             data, frameblobs, pprint_roi, pworkspace,
             display_filtered_areas);
 
@@ -39,12 +39,12 @@ int print_threshtree_areas(
 }
 
 char *sprint_coloured_threshtree_ids(
-        unsigned char* data,
+        uint8_t* data,
         Blobtree *frameblobs,
         const BlobtreeRect *pprint_roi,
         ThreshtreeWorkspace *pworkspace,
-        const int display_filtered_areas,
-        const int background_id,
+        const int32_t display_filtered_areas,
+        const int32_t background_id,
         const char *char_map
         )
 {
@@ -64,24 +64,24 @@ char *sprint_coloured_threshtree_ids(
         // Setup filtered ids ( = pworkspace->blob_id_filtered)
         threshtree_filter_blobs(frameblobs, pworkspace);
     }
-    const unsigned int *bif = pworkspace->blob_id_filtered;
-    unsigned int col[3] = {0, 0, 0};
-    unsigned int prev_col[3];
+    const uint32_t *bif = pworkspace->blob_id_filtered;
+    uint32_t col[3] = {0, 0, 0};
+    uint32_t prev_col[3];
 
     //printf("Roi: (%i %i %i %i)\n", output_roi.x, output_roi.y, output_roi.width, output_roi.height);
     size_t buf_len = output_roi.width * output_roi.height * 4;
     size_t used_buf_size = 0;
     char *buf = malloc(buf_len);
 
-    const int bg = CHANGE_BACKGROUND_PLUS;
-    int consumed_chars = 0; // set by sprintf calls
-    unsigned int id;
+    const int32_t bg = CHANGE_BACKGROUND_PLUS;
+    int32_t consumed_chars = 0; // set by sprintf calls
+    uint32_t id;
 
-    for( unsigned int y=0, H=output_roi.height; y<H; ++y){
+    for( uint32_t y=0, H=output_roi.height; y<H; ++y){
         //restrict on grid pixels.
         if( y % frameblobs->grid.height != 0 && y != H-1 ) continue;
 
-        for( unsigned int x=0, W=output_roi.width; x<W; ++x) {
+        for( uint32_t x=0, W=output_roi.width; x<W; ++x) {
             //restrict on grid pixels.
             if( x % frameblobs->grid.width != 0 && x != W-1 ) continue;
 
@@ -95,7 +95,7 @@ char *sprint_coloured_threshtree_ids(
                 id = threshtree_get_id_roi(output_roi, x, y, pworkspace); //+ 1;
             }
 
-            //unsigned char d = *(data + y * pworkspace->w + x);
+            //uint8_t d = *(data + y * pworkspace->w + x);
             prev_col[0] = col[0]; prev_col[1] = col[1]; prev_col[2] = col[2];
             ID_TO_RGB_B(id, col);
 
@@ -109,7 +109,7 @@ char *sprint_coloured_threshtree_ids(
                     used_buf_size += sprintf(buf+used_buf_size, RESETCOLOR);
 
                 }else{
-                    // Prepend next char with new color information
+                    // Prepend next int8_t with new color information
                     consumed_chars = sprintf_color(buf+used_buf_size,
                             bg, col[0], col[1], col[2],
                             NULL);
@@ -147,29 +147,29 @@ char *sprint_coloured_threshtree_ids(
     return buf;
 }
 
-int print_coloured_threshtree_ids(
-        unsigned char* data,
+int32_t print_coloured_threshtree_ids(
+        uint8_t* data,
         Blobtree *frameblobs,
         const BlobtreeRect *pprint_roi,
         ThreshtreeWorkspace *pworkspace,
-        const int display_filtered_areas,
-        const int background_id,
+        const int32_t display_filtered_areas,
+        const int32_t background_id,
         const char *char_map
         )
 {
   char *out = sprint_coloured_threshtree_ids(data, frameblobs, pprint_roi, pworkspace,
           display_filtered_areas, background_id, char_map);
-  int ret = printf("%s\n", out);
+  int32_t ret = printf("%s\n", out);
   free(out);
   return ret;
 }
 
 char *sprint_coloured_threshtree_areas(
-        const unsigned char* data,
+        const uint8_t* data,
         Blobtree *frameblobs,
         const BlobtreeRect *pprint_roi,
         ThreshtreeWorkspace *pworkspace,
-        const int display_filtered_areas)
+        const int32_t display_filtered_areas)
 {
     if( term_color_mode < 0 && set_term_color_mode()){
         fprintf(stderr, "Can't detect color capabilities of terminal.");
@@ -183,9 +183,9 @@ char *sprint_coloured_threshtree_areas(
         // Setup filtered ids ( = pworkspace->blob_id_filtered)
         threshtree_filter_blobs(frameblobs, pworkspace);
     }
-    const unsigned int *bif = pworkspace->blob_id_filtered;
-    unsigned int col[3] = {0, 0, 0};
-    unsigned int prev_col[3];
+    const uint32_t *bif = pworkspace->blob_id_filtered;
+    uint32_t col[3] = {0, 0, 0};
+    uint32_t prev_col[3];
 
     //printf("Roi: (%i %i %i %i)\n", output_roi.x, output_roi.y, output_roi.width, output_roi.height);
     size_t buf_len = output_roi.width * output_roi.height * 4;
@@ -193,15 +193,15 @@ char *sprint_coloured_threshtree_areas(
     //char *buf = malloc(buf_len);
     char *buf = calloc(1, buf_len);
 
-    const int bg = CHANGE_FOREGROUND;
-    int consumed_chars = 0; // set by sprintf calls
-    unsigned int id;
+    const int32_t bg = CHANGE_FOREGROUND;
+    int32_t consumed_chars = 0; // set by sprintf calls
+    uint32_t id;
 
-    for( unsigned int y=0, H=output_roi.height; y<H; ++y){
+    for( uint32_t y=0, H=output_roi.height; y<H; ++y){
         //restrict on grid pixels.
         if( y % frameblobs->grid.height != 0 && y != H-1 ) continue;
 
-        for( unsigned int x=0, W=output_roi.width; x<W; ++x) {
+        for( uint32_t x=0, W=output_roi.width; x<W; ++x) {
             //restrict on grid pixels.
             if( x % frameblobs->grid.width != 0 && x != W-1 ) continue;
 
@@ -213,14 +213,14 @@ char *sprint_coloured_threshtree_areas(
                 id = threshtree_get_id_roi(output_roi, x, y, pworkspace); //+ 1;
             }
 
-            unsigned char d = *(data + y * pworkspace->w + x);
+            uint8_t d = *(data + y * pworkspace->w + x);
             prev_col[0] = col[0]; prev_col[1] = col[1]; prev_col[2] = col[2];
             ID_TO_RGB_B(id, col);
 
             expand_buf_if_required(&buf_len, &buf, used_buf_size, 50, 100);
 
             if( col[0] != prev_col[0] || col[1] != prev_col[1] || col[2] != prev_col[2]){
-                // Prepend next char with new color information
+                // Prepend next int8_t with new color information
                 consumed_chars = sprintf_color(buf+used_buf_size,
                         bg, col[0], col[1], col[2],
                         d!=0?"█":"░");
@@ -251,15 +251,15 @@ char *sprint_coloured_threshtree_areas(
     return buf;
 }
 
-int print_coloured_threshtree_areas(
-        const unsigned char* data,
+int32_t print_coloured_threshtree_areas(
+        const uint8_t* data,
         Blobtree *frameblobs,
         const BlobtreeRect *pprint_roi,
         ThreshtreeWorkspace *pworkspace,
-        const int display_filtered_areas)
+        const int32_t display_filtered_areas)
 {
   char *out = sprint_coloured_threshtree_areas(data, frameblobs, pprint_roi, pworkspace, display_filtered_areas);
-  int ret = printf("%s\n", out);
+  int32_t ret = printf("%s\n", out);
   free(out);
   return ret;
 }

@@ -2,6 +2,7 @@
 #define OUTPUT_H
 
 #include <stdlib.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -42,15 +43,15 @@
 #define _BUFSIZE 128
 
 
-extern int term_color_mode;
-extern int term_num_colors;
+extern int32_t term_color_mode;
+extern int32_t term_num_colors;
 
 
-int set_term_color_mode(void);
+int32_t set_term_color_mode(void);
 
-int sprintf_color(char *buf,
-        int set_background,
-        int r, int g, int b,
+int32_t sprintf_color(char *buf,
+        int32_t set_background,
+        int32_t r, int32_t g, int32_t b,
         const char *pextra_str);
 
 void expand_buf_if_required(

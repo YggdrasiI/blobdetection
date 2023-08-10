@@ -29,8 +29,8 @@
 #include "tree.h"
 
 typedef struct {
-  unsigned int width;
-  unsigned int height;
+  uint32_t width;
+  uint32_t height;
 } Grid;
 
 typedef enum {
@@ -50,25 +50,25 @@ typedef enum {
  * 1 -  The node will filtered out. Algorithm continues with child, if existing.
  * 2 -  The node will filtered out and all children, too.
  *       All children will be skiped during tree cycle.
- * >2 -  The node will filtered out and all children and all silbings
+ * >2 -  The node will filtered out and all children and all siblings
  *       will be skiped.
  * */
-typedef int (FilterNodeHandler)(Node *node);
+typedef int32_t (FilterNodeHandler)(Node *node);
 
 typedef struct {
-  unsigned int tree_depth_min;
-  unsigned int tree_depth_max;
-  unsigned int min_area;
-  unsigned int max_area;
-  unsigned char only_leafs; /*0 or 1*/
-  unsigned char area_depth_min;
-  unsigned char area_depth_max;
+  uint32_t tree_depth_min;
+  uint32_t tree_depth_max;
+  uint32_t min_area;
+  uint32_t max_area;
+  uint8_t only_leafs; /*0 or 1*/
+  uint8_t area_depth_min;
+  uint8_t area_depth_max;
   FilterNodeHandler* extra_filter;
 } Filter;
 
 typedef struct {
   Node *node;
-  int depth;
+  int32_t depth;
 } Iterator;
 
 typedef struct {
@@ -86,12 +86,12 @@ void blobtree_create(Blobtree **blob);
 void blobtree_destroy(Blobtree **blob );
 
 /* Set one of the default filter values */
-void blobtree_set_filter( Blobtree *blob, const FILTER f, const unsigned int val);
+void blobtree_set_filter( Blobtree *blob, const FILTER f, const uint32_t val);
 /* Add own node filter function */
 void blobtree_set_extra_filter(Blobtree *blob, FilterNodeHandler* extra_filter);
 
 /* Set difference between compared pixels. Could ignore small blobs. */
-void blobtree_set_grid(Blobtree *blob, const unsigned int gridwidth, const unsigned int gridheight );
+void blobtree_set_grid(Blobtree *blob, const uint32_t gridwidth, const uint32_t gridheight );
 
 /* Returns first node which is matching
  * the filter criteria or NULL. */
@@ -101,5 +101,48 @@ Node *blobtree_first( Blobtree *blob);
  * or NULL */
 Node *blobtree_next( Blobtree *blob);
 
+/* Returns node with given id
+ * or NULL */
+Node *blobtree_find_id(Blobtree *blob, uint32_t id, int32_t respect_filter);
+
+
+/* Textual output of tree with blob-Data. Shift defines number of spaces at line beginning. */
+void blobtree_print(
+        Blobtree *blob,
+        int32_t shift);
+
+/* Print only nodes with area>=minA */
+void blobtreetree_print_filtered(
+        Blobtree *blob,
+        int32_t shift,
+        uint32_t minA);
+
+/* For trees with data type Blob */
+#ifdef BLOB_COUNT_PIXEL
+uint32_t blobtree_sum_areas(
+        Node * const root,
+        const uint32_t * const comp_size);
+#ifdef BLOB_DIMENSION
+void blobtree_approx_areas(
+        const Tree * const tree,
+        Node * const startnode,
+        const uint32_t * const comp_size,
+        const uint32_t stepwidth,
+        const uint32_t stepheight);
+#endif
+#endif
+
+#ifdef BLOB_BARYCENTER
+void blobtree_eval_barycenters(
+    Node * const root,
+    const uint32_t * const comp_size,
+    BLOB_BARYCENTER_TYPE * const pixel_sum_X,
+    BLOB_BARYCENTER_TYPE * const pixel_sum_Y);
+#endif
+
+#ifdef BLOB_DIMENSION
+void blobtree_set_area_prop(
+        Node *root);
+#endif
 
 #endif

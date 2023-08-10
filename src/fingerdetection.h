@@ -10,6 +10,9 @@
  *
  * */
 
+#include <stdint.h>
+#include <sys/types.h>
+#include <stdlib.h>
 
 typedef struct {
   //Node *childroot; //root of tree of children relation.
@@ -47,7 +50,7 @@ Subblobtree* subblobtree_create(){
 }
 
 void subblobtree_clear(Subblobtree *sub){
-        int i=sub->subblobs_length;
+        int32_t i=sub->subblobs_length;
         while( i-- ){
             blobtree_destroy( sub->subblobs[i] );
             sub->subblobs[i] = NULL; 
@@ -66,12 +69,12 @@ void subblobtree_destroy(Subblobtree *sub){
 }
 
 void subblobtree_eval( Subblobtree *sub,
-    const unsigned char *data, 
-    const int w, const int h,
+    const uint8_t *data, 
+    const int32_t w, const int32_t h,
         const Blobtree *blobs,
         const Blob *baseblob,
     //const BlobtreeRect subroi,
-    const unsigned char startthresh  /* should be thresh of blobs. */
+    const uint8_t startthresh  /* should be thresh of blobs. */
         ){
 
     BlobtreeRect *subroi = baseblob->roi;
@@ -83,8 +86,8 @@ void subblobtree_eval( Subblobtree *sub,
 
     //Eval Blobs for each thresh>startthresh
     //Break, if no subblobs found.
-    int i=0;
-    unsigned char thresh = startthresh;
+    int32_t i=0;
+    uint8_t thresh = startthresh;
     for( ; i<sub->subblobs_length; i++ ){
         Blobtree *blob = blobtree_create();
         blobtree_set_grid(blob, 1,1);
@@ -101,7 +104,7 @@ void subblobtree_eval( Subblobtree *sub,
 
         sub->subblobs[i] = blob; 
     }
-    const unsigned char endthresh = thresh;//index behind the end...
+    const uint8_t endthresh = thresh;//index behind the end...
 
     //Connect subblobs of the array list.
 
