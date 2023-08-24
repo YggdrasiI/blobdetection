@@ -255,11 +255,10 @@ int parent_compare_func2(const Node *n1, const Node *n2, void *compare_data) {
   // Update node order in both trees to canonical form.
   Node **pn1 = cmp->sorting_siblings1;
   Node **pn2 = cmp->sorting_siblings2;
-  for(idx = 0; idx<num_nodes; ++idx){
+  for(idx = 1 /* not 0 */; idx<num_nodes; ++idx){
     (*pn1)->sibling = *(pn1+1);
     (*pn2)->sibling = *(pn2+1);
     ++pn1; ++pn2;
-    ++idx;
   }
   (*pn1)->sibling = NULL;
   (*pn2)->sibling = NULL;

@@ -65,42 +65,64 @@ void tree_destroy(
 }
 
 
+#ifdef TREE_REDUNDANT_INFOS
 /* Eval height and number of children for each Node */
 void tree_gen_redundant_information(
-    Node * const root,
-    uint32_t *pheight,
-    uint32_t *psiblings)
+    Node * const root)
 {
+  // Remove height information about this subtree from parent
   Node *node = root;
+  if( node->parent ){
+      --node->parent->width; // Will be increased again later.
+  }
+  while( node->parent ){
+    node->parent->height = 1; // Not 0… node is still present.
+    Node *cur = node->parent->child;
+    while(cur){
+      if(cur!= node){
+        if( node->parent->height < cur->height+1 ){
+          node->parent->height = cur->height+1;
+        }
+      }
+      cur = cur->sibling;
+    }
+    node = node->parent;
+  }
+
+  // Now handle this subtree.
+  node = root;
   do{
     /* Reset values */
     node->height = 0;
     node->width = 0;
 
-    /* To to next node. update parent node if possible */
-    if( node->child != NULL ){
-      node->width++;
-      //node->height++;
-      node = node->child;
-      continue;
-    }else if( node->sibling != NULL ){
+    if( node->parent ){
+      ++node->parent->width;
       if( node->parent->height < node->height+1 ){
         node->parent->height = node->height+1;
       }
-      node->parent->width++;
+    }
+
+    /* To to next node. update parent node if possible */
+    if( node->child != NULL ){
+      node = node->child;
+      continue;
+    }
+    if( node->sibling != NULL ){
       node = node->sibling;
       continue;
-    }else{
-      while( node->parent != NULL ){
+    } 
+    while( node->parent != NULL ){
+      node = node->parent;
+      if( node->parent ){
         if( node->parent->height < node->height+1 ){
           node->parent->height = node->height+1;
         }
-        node = node->parent;
-        if( node->sibling != NULL ){
-          node->parent->width++;
-          node = node->sibling;
-          break;
-        }
+      }
+      if( node == root) break;
+      if( node->sibling != NULL ){
+        node = node->sibling;
+        break;
       }
     }
   }while( node != root );
@@ -108,23 +130,39 @@ void tree_gen_redundant_information(
 }
 
 
+void _tree_gen_redundant_information_recursive(
+    Node* root,
+    uint32_t *pheight,
+    uint32_t *psiblings);
+
 /* Eval height and number of children for each Node */
 void tree_gen_redundant_information_recursive(
+    Node* root)
+{
+    _tree_gen_redundant_information_recursive(root, NULL, NULL);
+}
+
+void _tree_gen_redundant_information_recursive(
     Node* root,
     uint32_t *pheight,
     uint32_t *psiblings)
 {
   root->width = 0;
+  if ( psiblings != NULL ){
+    (*psiblings)++; //update number of children for parent node
+  }
   if( root->child != NULL ){
     uint32_t height2=0;
-    tree_gen_redundant_information(root->child, &height2, &root->width);
-    if( *pheight < height2+1 ) *pheight = height2+1; //update height of parent node
+    _tree_gen_redundant_information_recursive(root->child, &height2, &root->width);
+    if( pheight != NULL) { 
+      if( *pheight < height2+1 ) *pheight = height2+1; //update height of parent node
+    }
   }
   if( root->sibling != NULL ){
-    (*psiblings)++; //update number of children for parent node
-    tree_gen_redundant_information(root->sibling, pheight, psiblings);
+    _tree_gen_redundant_information_recursive(root->sibling, pheight, psiblings);
   }
 }
+#endif
 
 // Update of height after one branch grows
 // Here, c has to be new/updated child of p!
@@ -173,6 +211,7 @@ int tree_add_child(
 {
   if (parent == NULL) return -2;
   if (node == NULL) return -1;
+  assert(node->sibling == NULL);
 
   if( parent->child == NULL ){
     parent->child = node;

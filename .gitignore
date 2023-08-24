@@ -6,3 +6,4 @@
 *.bin
 build
 debug
+tests/*.html

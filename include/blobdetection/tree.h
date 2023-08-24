@@ -94,17 +94,15 @@ Tree *tree_create(
 void tree_destroy(
         Tree **tree);
 
+#ifdef TREE_REDUNDANT_INFOS
 /* Eval height and number of children for each Node */
 void tree_gen_redundant_information(
-        Node * const root,
-        uint32_t *pheight,
-        uint32_t *psiblings);
+        Node * const root);
 
 /* Eval height and number of children for each Node */
 void tree_gen_redundant_information_recursive(
-        Node* root,
-        uint32_t *pheight,
-        uint32_t *psiblings);
+        Node* root);
+#endif
 
 /* ===  Consistent tree operations ===
  *

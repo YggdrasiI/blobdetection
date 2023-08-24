@@ -1,3 +1,3 @@
+LIST(APPEND TESTS_BLACKLIST "none")
 
-add_subdirectory(general)
-add_subdirectory(compare)
+loop_over_test_dirs(${CMAKE_CURRENT_SOURCE_DIR} ${TESTS_BLACKLIST})

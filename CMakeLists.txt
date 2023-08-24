@@ -8,6 +8,7 @@ OPTION(WITH_EXAMPLES "Compile examples" ON)
 
 include_directories(
 	${CMAKE_SOURCE_DIR}/include/blobdetection
+	${CMAKE_SOURCE_DIR}/src
 	)
 
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -fpic -O3" )

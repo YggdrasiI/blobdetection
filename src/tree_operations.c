@@ -13,8 +13,13 @@ Tree *tree_clone(
         const void * data,
         const void * cloned_data)
 {
-  if (data == NULL && cloned_data != NULL){
-    //Without knowlege about the data we cannot duplicate it ourself.
+  if(!source) return NULL;
+
+  // Without knowlege about the data we cannot duplicate it ourself.
+  // Clone data yourself. This method will just update the pointers.
+  if ((data == NULL && cloned_data != NULL) ||
+      (data != NULL && cloned_data == NULL))
+  {
     return NULL;
   }
   Tree *clone = tree_create(source->size, 0);
@@ -22,6 +27,7 @@ Tree *tree_clone(
 
   assert(source->size == clone->size);
   memcpy(clone->nodes, source->nodes, clone->size*sizeof(Node));
+  clone->root = source->root;
 
   // Fixing pointer by adding offsets.
   ptrdiff_t d_tree = clone->nodes - source->nodes;

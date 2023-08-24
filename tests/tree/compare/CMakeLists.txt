@@ -1,9 +1,7 @@
 set(TEST_APP_NAME tree_compare)
+set(TEST_APP_SOURCES test_tree_compare.cpp)
+set(TEST_APP_LIBS _tree)
 
-add_executable(${TEST_APP_NAME} test_tree_compare.cpp )
-target_link_libraries(${TEST_APP_NAME} _tree ${CPPUTEST_LDFLAGS}) 
+build_and_run_test(${TEST_APP_NAME} "${TEST_APP_SOURCES}" "${TEST_APP_LIBS}")
 
-
-#Run the test once the build is done
-#add_custom_command(TARGET ${TEST_APP_NAME} COMMAND ./${TEST_APP_NAME} POST_BUILD)
 
