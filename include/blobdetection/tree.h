@@ -26,7 +26,7 @@
 
 #include "enums.h"
 
-// Like opencvs Rect_<int32_t>
+// Like opencvs Rect_<int> (but unsigned…)
 typedef struct BlobtreeRect BlobtreeRect;
 struct BlobtreeRect{
   uint32_t x, y, width, height;
@@ -48,9 +48,9 @@ typedef struct Node {
 } Node;
 static const struct Node Leaf = { NULL, NULL, NULL,
 #ifdef TREE_REDUNDANT_INFOS
-    0, 0,
+  0, 0,
 #endif
-    NULL };
+  NULL };
 
 /* The data struct for both algorithms.
  * Some functions, which operates on a tree
@@ -87,27 +87,127 @@ struct Tree{
  *             e.g. with ``nodes[i] = Leaf``.
  * */
 Tree *tree_create(
-        uint32_t size,
-        int init_nodes);
+    uint32_t size,
+    int init_nodes);
 
 /* Dealloc tree. Attention, target of data pointer is not free'd. */
 void tree_destroy(
-        Tree **tree);
+    Tree **tree);
 
 #ifdef TREE_REDUNDANT_INFOS
 /* Eval height and number of children for each Node */
 void tree_gen_redundant_information(
-        Node * const root);
+    Node * const root);
 
 /* Eval height and number of children for each Node */
 void tree_gen_redundant_information_recursive(
-        Node* root);
+    Node* root);
 #endif
+
+/* === Read-only operations ===
+*/
+static inline Node * tree_right_sibling(
+    Node *n)
+{
+  return n->sibling;
+}
+
+/* Returns left sibling of node or NULL. */
+Node * tree_left_sibling(
+    Node *n);
+
+/* Going upwards from 'successor' until child of descendant is reached.
+ *
+ * Note: Returns NULL if successor is direct child.
+ */
+static inline Node * node_get_node_before_descendant(const Node *descendant, const Node *successor)
+{
+  Node * s = successor->parent;
+  while(s){
+    if(s->parent == descendant) return s; 
+    s = s->parent;
+  }
+  return NULL;
+}
+
+/* Returns:
+ *    1: If subtree(descendant) contains successor.
+ *    0: Otherwise.
+ */
+static inline int node_is_descendant(const Node *descendant, const Node *successor)
+{
+  while(successor->parent){
+    if(successor == descendant) return 1; 
+    successor = successor->parent;
+  }
+  return 0;
+}
+static inline int node_is_successor(const Node *successor, const Node *descendant)
+{
+ return node_is_descendant(descendant, successor);
+}
+
+static inline int node_is_parent(const Node *parent, const Node *child){
+  return (child->parent == parent)?1:0;
+}
+
+static inline int node_is_child(const Node *child, const Node *parent){
+  return node_is_parent(parent, child);
+}
+
+uint32_t tree_number_of_nodes(
+    const Tree * const tree);
+
+uint32_t node_number_of_successors(
+    const Node * node);
+
+static inline uint32_t node_number_of_descendants(
+    const Node * node){
+  uint32_t r=0;
+  while(node->parent){
+    ++r;
+    node = node->parent;
+  }
+  return r;
+}
+static inline uint32_t node_get_depth(
+    const Node * node){
+  return node_number_of_descendants(node);
+}
+
+static inline uint32_t node_get_height(
+    const Node * node){
+#ifdef TREE_REDUNDANT_INFOS
+  return node->height;
+#else
+#error("Not implemented")
+  return -1;
+#endif
+}
+
+static inline Node * node_get_root(
+    Node *node)
+{
+  while(node->parent) {
+    node = node->parent;
+  }
+  return node;
+}
+
+static inline Node * tree_get_root(
+    Tree *tree)
+{
+  return tree->root;
+}
 
 /* ===  Consistent tree operations ===
  *
- * This functions are more conservative and preserving a consistent state of tree.
+ * This functions should preserve a consistent state of tree.
  */
+int tree_set_root(
+    Tree *tree,
+    Node *node);
+
 /* Adding node (and it's siblings) to parent node.
  *
  * Note that you will also transfer the siblings of 'child'.
@@ -115,26 +215,67 @@ void tree_gen_redundant_information_recursive(
  * if you want just transfer a single node.
  */
 int tree_add_siblings(
-        Node * const parent,
-        Node * const child);
+    Node * const parent,
+    Node * const child);
 
 /* Release child from its parent. After this child
- * is like a root node, but shares the memory of same Tree struct.
+ * is like a root node (no parent and no siblings), but is 
+ * not connected to the main tree.
  *
+ * It still shares the memory of Tree struct.
  */
 int tree_release_child(
-        Node * const child,
-        int leaf_only);
+    Node * const child,
+    int leaf_only);
 
-/* Swap positions of two children of the same parent. */
-int tree_swap_siblings(
-        Node * const child1,
-        Node * const child2);
 
-/* Replaces node1 by node2 and vice versa. */
+/* Swap data pointers of nodes.
+ *
+ * This operation is cheaper then tree_swap_nodes(node1, node2, 1, 1).
+ * but has alsmost the same effect.
+ * */
+int tree_swap_data(
+    Node * const node1,
+    Node * const node2);
+
+/* Replaces node1 by node2 and vice versa.
+ *
+ * The children of the nodes will be swapped. To keep them
+ * use tree_swap_subtrees(…).
+ *
+ * If node_i is child of node_(1-i), the set of childs can
+ * not be keept:
+ *
+ * child_node_rule == 0: Reject swap of nodes if one node is parent of the other. 
+ * child_node_rule == 1: Allow change of childs.
+ *
+ *
+ * TODO: Define names in enums.h
+ * */
 int tree_swap_nodes(
-        Node * const node1,
-        Node * const node2);
+    Node * const node1,
+    Node * const node2,
+    int child_node_rule,
+    int data_pointer_swap);
+
+/* Replaces node1 by node2 and vice versa, but both nodes
+ * keeping its children.
+ *
+ * If subtree(node_i) is containing node_(1-i), the path between
+ * both nodes has to be excluded from the swap and has to be 
+ * handled differently:
+ *
+ * descendant_node_rule == 0: Reject swap of nodes 
+ * descendant_node_rule == 1: Keep order of nodes between both nodes.
+ * descendant_node_rule == 2: Reverse order of nodes between both nodes.
+ *
+ * TODO: Define names in enums.h
+ * */
+int tree_swap_subtrees(
+    Node * const node1,
+    Node * const node2,
+    int descendant_node_rule,
+    int data_pointer_swap);
 
 /* == Dangerous tree operations ===
  *
@@ -147,20 +288,9 @@ int tree_swap_nodes(
  *   b) Already owns a sibling.
  */
 int tree_add_child(
-        Node * const parent,
-        Node * const node);
+    Node * const parent,
+    Node * const node);
 
-static inline Node * tree_right_sibling(
-        Node *n)
-{
-    return n->sibling;
-}
-
-Node * tree_left_sibling(
-        Node *n);
-
-uint32_t tree_number_of_nodes(
-        Node *root);
 
 /* Copy tree
  *
@@ -176,9 +306,9 @@ uint32_t tree_number_of_nodes(
  *    New tree with same structure as origin. 
  */
 Tree *tree_clone(
-        const Tree * source,
-        const void * data,
-        const void * cloned_data);
+    const Tree * source,
+    const void * data,
+    const void * cloned_data);
 
 
 /* ======  For traversal over trees ================= */
@@ -215,11 +345,11 @@ typedef node2_func_t child_node2_func_t;
 
 //=======================================================
 /* Compare trees with different metrics.
- */
+*/
 int tree_cmp(
-        const Tree * const tree1,
-        const Tree * const tree2,
-        enum tree_compare_types compare_type);
+    const Tree * const tree1,
+    const Tree * const tree2,
+    enum tree_compare_types compare_type);
 
 //=======================================================
 
@@ -238,54 +368,13 @@ void tree_print(
  * TODO: FIX THIS STUFF
  * */
 void tree_sort(
-        Node *root);
-
-/* Generate unique id for sorting trees.
- * [DE] Wird ein Baum durchlaufen und für jeden Schritt angegeben, ob als nächstes ein
- * Kindknoten oder der nächste Geschwisterknoten auf x-ter Ebene ist, so entsteht eine
- * eindeutige Id eines Baumes. Diese kann später für vergleiche genutzt werdne.
- * Kann man das noch komprimieren, wenn man als Basis die maximale Tiefe wählt?!
- *
- * */
-void _gen_tree_id(
-        Node *root,
-        uint32_t **id,
-        uint32_t *d);
-
-
-/* Generate Unique Number [xyz...] for node
- * Preallocate id-array with #nodes(root).
- * */
-void tree_generate_id(
-        Node *root,
-        uint32_t* id,
-        uint32_t size);
-
-// Debug/Helper-Functions
-int8_t * debug_getline(void);
-void debug_print_matrix(
-        uint32_t* data,
-        uint32_t w, uint32_t h,
-        BlobtreeRect roi,
-        uint32_t gridw, uint32_t gridh);
-void debug_print_matrix2(
-        uint32_t* ids,
-        uint32_t* data,
-        uint32_t w, uint32_t h,
-        BlobtreeRect roi,
-        uint32_t gridw, uint32_t gridh,
-        int8_t twice);
-void debug_print_matrix_char(
-        uint8_t * data,
-        uint32_t w, uint32_t h,
-        BlobtreeRect roi,
-        uint32_t gridw, uint32_t gridh);
+    Node *root);
 
 
 /* => see enums.h
-typedef enum {
-  TREE_ERROR_ROOT_HAS_SIBLING=-1,
-  //…
+   typedef enum {
+   TREE_ERROR_ROOT_HAS_SIBLING=-1,
+//…
 } TREE_ERROR_CONSISTENT_CHECKS;
 */
 
@@ -301,7 +390,7 @@ typedef enum {
  *
  * */
 int tree_integrity_check(
-        Node *root);
+    Node *root);
 
 void tree_print_integrity_check(
     Node *root);

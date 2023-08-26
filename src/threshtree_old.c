@@ -4,11 +4,12 @@
 #include <time.h>
 #include <string.h> //for memset
 
+#include "tree_intern.h"
 #include "threshtree.h"
 #include "threshtree_old.h"
-
 #include "threshtree_macros.h"
 #include "threshtree_macros_old.h"
+
 
 Tree* find_connection_components_coarse(
     const uint8_t *data,

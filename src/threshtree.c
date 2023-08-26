@@ -8,9 +8,8 @@
 
 #include <assert.h>
 
-#include "threshtree.h"
 #include "tree_intern.h"
-
+#include "threshtree.h"
 #include "threshtree_macros.h"
 //#include "threshtree_macros_old.h"
 

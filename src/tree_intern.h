@@ -116,9 +116,33 @@ int32_t successor(Node *parent, Node *child)
 }
 
 void *quicksort_siblings(Node **begin, Node **end);
+/*
+ * END Helper functions for sorting
+ * */
 
 /*
- * End Helper functions for sorting
+ * Helper functions for printing images on terminal 
+ * */
+uint8_t * debug_getline(void);
+void debug_print_matrix(
+        uint32_t* data,
+        uint32_t w, uint32_t h,
+        BlobtreeRect roi,
+        uint32_t gridw, uint32_t gridh);
+void debug_print_matrix2(
+        uint32_t* ids,
+        uint32_t* data,
+        uint32_t w, uint32_t h,
+        BlobtreeRect roi,
+        uint32_t gridw, uint32_t gridh,
+        int8_t twice);
+void debug_print_matrix_char(
+        uint8_t * data,
+        uint32_t w, uint32_t h,
+        BlobtreeRect roi,
+        uint32_t gridw, uint32_t gridh);
+/*
+ * END Helper functions for printing images on terminal 
  * */
 
 

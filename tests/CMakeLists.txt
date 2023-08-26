@@ -12,14 +12,7 @@ endif()
 include_directories(${CPPUTEST_INCLUDE_DIRS})
 link_directories(${CPPUTEST_LIBRARIES})
 
-#include_directories(
-#	${CMAKE_SOURCE_DIR}/include/blobdetection
-#	${CMAKE_SOURCE_DIR}/src
-#	)
-#link_directories (
-#	${CMAKE_BINARY_DIR}
-#	)
-
+# (2) Macro for tests
 macro(build_and_run_test TEST_NAME SOURCE_FILES LIBS)
 
 	add_executable(${TEST_NAME} ${SOURCE_FILES})
@@ -63,6 +56,7 @@ macro(build_and_run_test TEST_NAME SOURCE_FILES LIBS)
 		)
 endmacro()
 
+# Helper for CMake's add_subdirectory() call for every test
 function(loop_over_test_dirs PARENT_FOLDER BLACKLIST)
 	# message(STATUS "Parent folder: ${PARENT_FOLDER}")
 	# message(STATUS "Blacklist: ${BLACKLIST}")
@@ -82,8 +76,9 @@ function(loop_over_test_dirs PARENT_FOLDER BLACKLIST)
   ENDFOREACH()
 endfunction()
 
-LIST(APPEND TESTGROUPS_BLACKLIST "none")
+#############################################
 
+LIST(APPEND TESTGROUPS_BLACKLIST "none")
 message(STATUS "Tests:")
 list(APPEND CMAKE_MESSAGE_INDENT "  ")
 

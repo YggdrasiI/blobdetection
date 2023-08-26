@@ -115,6 +115,7 @@ void print_matrix_char( uint8_t* data, uint32_t w, uint32_t h){
 }
 
 
+#if OLD_STUFF 
 void test(Node* root, uint32_t tree_size){
   /* Allocate space for 'name' of tree */
   uint32_t* tree_name = (uint32_t*) malloc( tree_size*sizeof(uint32_t) );
@@ -128,6 +129,7 @@ void test(Node* root, uint32_t tree_size){
 
   free(tree_name);
 }
+#endif
 
 
 void gen_image_data(uint8_t* sw, uint32_t w, uint32_t h){

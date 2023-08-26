@@ -10,7 +10,7 @@
 
 #include "blob.h"
 #include "depthtree.h"
-#define INLINE static inline
+//#define INLINE static inline
 #include "tree_intern.h" // _reallocarray_or_free()
 
 #include "depthtree_macros.h"

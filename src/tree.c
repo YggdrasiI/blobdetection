@@ -139,7 +139,28 @@ void _tree_gen_redundant_information_recursive(
 void tree_gen_redundant_information_recursive(
     Node* root)
 {
+  if(root->parent == NULL){
     _tree_gen_redundant_information_recursive(root, NULL, NULL);
+  }else{
+    // Remove height information about this subtree from parent
+    Node *node = root;
+    --node->parent->width; // Will be increased again later.
+    while( node->parent ){
+      node->parent->height = 1; // Not 0… node is still present.
+      Node *cur = node->parent->child;
+      while(cur){
+        if(cur!= node){
+          if( node->parent->height < cur->height+1 ){
+            node->parent->height = cur->height+1;
+          }
+        }
+        cur = cur->sibling;
+      }
+      node = node->parent;
+    }
+    _tree_gen_redundant_information_recursive(root,
+        &root->parent->height, &root->parent->width);
+  }
 }
 
 void _tree_gen_redundant_information_recursive(
@@ -232,6 +253,18 @@ int tree_add_child(
   return 0;
 }
 
+int tree_set_root(
+    Tree *tree,
+    Node *node){
+  ptrdiff_t d = node - tree->nodes;
+  if (d >= tree->size) return -1;
+  if (d < 0) return -2;
+  if (node->parent != NULL) return -3;
+  if (node->sibling != NULL) return -4;
+
+  tree->root = node;
+  return 0;
+}
 
 int tree_add_siblings(
     Node * const parent,
@@ -371,40 +404,61 @@ int tree_release_child(
   return 0;
 }
 
-int tree_swap_siblings(
-    Node * const child1,
-    Node * const child2)
+#define SWAP(A, B) {\
+  typeof(A) _t = A;\
+  A = B;\
+  B = _t;\
+}
+
+/* Swapping position of two nodes under the condition that
+ * node1 is sibling of node2.
+ * We assume here that the root node never owns a sibling. Thus
+ * both input nodes will have a parent.
+ */
+int _tree_swap_siblings(
+    Node * const node1,
+    Node * const node2,
+    int children_swap,
+    int data_pointer_swap)
 {
-  if (child1 == NULL) return -4; // use tree_release_child()
-  if (child2 == NULL) return -3; // use tree_release_child()
-  Node *parent = child1->parent;
+  /*
+  if (node1 == NULL) return -4; // use tree_release_child()
+  if (node2 == NULL) return -3; // use tree_release_child()
+  Node *parent = node1->parent;
   if (parent == NULL) return -2;
-  if (parent != child2->parent) return -1; // not the same parent.
+  if (parent != node2->parent) return -1; // not the same parent.
+  */
+  Node *parent = node1->parent;
+  assert(node1 != node2);
+  assert (node1->parent == node2->parent);
+  assert (node1->parent != NULL);
 
-  if (child1 == child2) return 0; // Avoids checks for some cycle references
+  if (node1 == node2) return 0; // Avoids checks for some cycle references below
 
-  // Search left siblings. If NULL after serach childX is leftmost node
+  // Search left siblings. If NULL after search childX is leftmost node
 #if 0
-  Node *left_sib1=left_sibling(child1);
-  Node *left_sib2=left_sibling(child2);
+  Node *left_sib1=left_sibling(node1);
+  Node *left_sib2=left_sibling(node2);
 #else
   Node *left_sib1 = NULL, *left_sib2 = NULL;
-  Node *sib = child1->parent->child;
+  Node *sib = node1->parent->child;
   Node *ref, **refB;
   while (sib){
-    if (sib->sibling == child1){
+    // Search for node1 and node2
+    if (sib->sibling == node1){
       left_sib1=sib;
-      ref=child2; refB=&left_sib2;
+      ref=node2; refB=&left_sib2; // References for second search
       break;
     }
-    if (sib->sibling == child2){
+    if (sib->sibling == node2){
       left_sib2=sib;
-      ref=child1; refB=&left_sib1;
+      ref=node1; refB=&left_sib1; // References for second search
       break;
     }
     sib = sib->sibling;
   }
   while (sib){
+    // Search for the other element
     if (sib->sibling == ref){
       *refB=sib;
       break;
@@ -413,56 +467,369 @@ int tree_swap_siblings(
   }
 #endif
 
-  // Swap right siblings;
-  Node *tmp = child1->sibling;
-  child2->sibling = child1->sibling;
-  child1->sibling = tmp;
+  // Swap right siblings, which also can be NULL
+  if (node1->sibling == node2) {       /* (1) */
+    //    <node1> —> <node2> —> <right_c2>
+    // => <node2> —> <node1> —> <right_c2>
+    node1->sibling = node2->sibling;
+    node2->sibling = node1;
+  }else if (node2->sibling == node1) { /* (2) */
+    //    <node2> —> <node1> —> <right_c1>
+    // => <node1> —> <node2> —> <right_c1>
+    node2->sibling = node1->sibling;
+    node1->sibling = node2;
+  }else {
+    //    <node1> —> <right_c1> + <node2> —> <right_c2>
+    // => <node1> —> <right_c2> + <node2> —> <right_c1>
+    SWAP(node1->sibling, node2->sibling);
+  }
 
   // Swap references in left siblings/parent
   if (left_sib1){
-    left_sib1->sibling = child2;
+    if (left_sib1 != node2) { // Otherwise it would be a self reference 
+                               // This case was already handled in (2)
+      left_sib1->sibling = node2;
+    }
   }else{
-    parent->child = child2;
+    parent->child = node2;
   }
   if (left_sib2){
-    left_sib2->sibling = child1;
+    if (left_sib2 != node1) { // Otherwise it would be a self reference 
+                               // This case was already handled in (1)
+      left_sib2->sibling = node1;
+    }
   }else{
-    parent->child = child1;
+    parent->child = node1;
   }
 
+  if (children_swap){
+    //Anchors on first child.
+    Node *c1 = node1->child;
+    Node *c2 = node2->child;
+
+    // Swap Children
+    node1->child=c2;
+    node2->child=c1;
+
+    // Swap parent relation of children
+    while (c1) {
+      c1->parent = node2;
+      c1 = c1->sibling;
+    }
+    while (c2) {
+      c2->parent = node1;
+      c2 = c2->sibling;
+    }
+  }
+
+  if (data_pointer_swap) {
+    SWAP(node1->data, node2->data);
+  }
 #ifdef TREE_REDUNDANT_INFOS
   // Nothing to do in this case/operation.
 #endif
   return 0;
 }
 
-/* Replaces node1 by node2 and vice versa. */
-int tree_swap_nodes(
-    Node * const node1,
-    Node * const node2)
+/* Swapping position of two nodes under the condition that
+ * node1 is parent of node2.
+ *
+ * Valid input has following structure:
+ *    <parent1> —> <node1> —> <node2> —> CN2:= {children node2}
+ *                         —> CN1' := {other children node1}
+ *              —> CP1':= {other children parent1}
+ *
+ * Target is following structure:
+ *    <parent1> —> <node2> —> <node1> -> CN2
+ *                         —> CN1'
+ *              —> CP1'
+ *
+ */
+int  _tree_swap_parent_child_tuple(
+    Node *node1,
+    Node *node2,
+    int data_pointer_swap)
 {
-  if (node1 == NULL) return -2; // use tree_release_child()
-  if (node2 == NULL) return -3; // use tree_release_child()
+  assert(node1 != NULL);
+  assert(node2 != NULL);
+  assert(node1 != node2);
+  assert(node2->parent == node1);
 
-  // Swap parents
+  Node *parent1 = node1->parent;
+
+  // Search left siblings of both nodes
+  Node *left_sib1 = tree_left_sibling(node1); // Element of CP1' or NULL
+  Node *left_sib2 = tree_left_sibling(node2); // Element of CN1' or NULL
+
+  // Change parent relation of CN1' ⋃ {node2}
+  // (Change of node2 will be fixed later (**))
+  Node *c1 = node1->child;
+  while (c1) {
+    c1->parent = node2;
+    c1 = c1->sibling;
+  }
+
+  // Change parent relation of CN2
+  Node *c2 = node2->child;
+  while (c2) {
+    c2->parent = node1;
+    c2 = c2->sibling;
+  }
+
+  // Change parents
+  node1->parent = node2;
+  node2->parent = parent1; // Fixes (**)
+
+  // Swap child relations
+  Node *tmp = node1->child;
+  node1->child=node2->child;
+  node2->child=tmp; // (***) Will be fixed later if tmp==node2.
+
+
+  // Change left siblings or child anchor in it's parents
+  if(left_sib1){
+    left_sib1->sibling = node2;
+  }else{
+    if (parent1) {
+      parent1->child = node2;
+    }
+  }
+  if(left_sib2){
+    left_sib2->sibling = node1;
+  }else{
+    node2->child = node1; // Fixes (***)
+  }
+
+  // Swap right siblings. No interleaving possible.
+  SWAP(node1->sibling, node2->sibling);
+
+  if (data_pointer_swap) {
+    SWAP(node1->data, node2->data);
+  }
+
+ return 0;
+}
+
+/* Swapping subtrees of two nodes under the condition that
+ * node1 is parent of node2.
+ *
+ * Valid input has following structure:
+ *    <parent1> —> <node1> —> <node2> —> CN2:= {children node2}
+ *                         —> CN1' := {other children node1}
+ *              —> CP1':= {other children parent1}
+ *
+ * Target is following structure:
+ *    <parent1> —> <node2> —> <node1> -> CN1'
+ *                         —> CN2
+ *              —> CP1'
+ *
+ */
+int  _tree_swap_parent_child_tupleB(
+    Node *node1,
+    Node *node2,
+    int data_pointer_swap)
+{
+  assert(node1 != NULL);
+  assert(node2 != NULL);
+  assert(node1 != node2);
+  assert(node2->parent == node1);
+
+  Node *parent1 = node1->parent;
+
+  // Search left siblings of both nodes
+  Node *left_sib1 = tree_left_sibling(node1); // Element of CP1' or NULL
+  Node *left_sib2 = tree_left_sibling(node2); // Element of CN1' or NULL
+
+  /* Change of siblings:
+   * 1. Remove node2 from CN1
+   * 2. Replace node1 in CP1' by node2
+   * 3. Add node1 to CN2 as leftmost sibling
+   * Order of this three operations is important!
+   */
+
+  // 1) Remove node2 from CN1
+  if(left_sib2){
+    left_sib1->sibling = node2->sibling;
+  }else{
+    assert(node1->child == node2);
+    node1->child = node2->sibling;
+  }
+  // Final 'node2->sibling = ...' done in (2).
+
+  // 2) Replace node1 in CP1' by node2
+  if(left_sib1){
+    left_sib1->sibling = node2;
+  }else{
+    if (parent1) {
+      parent1->child = node2;
+    }
+  }
+  node2->sibling = node1->sibling;
+  // Final 'node1->sibling = ...' done in (3).
+
+  // 3) Add node1 to CN2 as leftmost sibling
+  node1->sibling = node2->child;
+  node2->child = node1;
+
+
+  // Change parents
+  node1->parent = node2;
+  node2->parent = parent1;
+
+  // Child relation need no further changes except above in this variant.
+
+  if (data_pointer_swap) {
+    SWAP(node1->data, node2->data);
+  }
+
+ return 0;
+}
+
+/* Swapping position of two subtrees under the condition that
+ * subtree(node1) containing subtree(node2)
+ *
+ * Valid input has following structure:
+ *    <parent1> —> <node1> —> … —> <parent2> —> <node2> —> CN2:= {children node2}
+ *                                           —> CP2' := {other children parent1}
+ *                         —> CN1' := {other children node1}
+ *              —> CP1':= {other children parent1}
+ *
+ * Target is following structure:
+ *    <parent1> —> <node2> —>(… —> <parent2>)—> <node1> -> CN1'
+ *                            ‾‾‾‾‾‾‾‾‾‾‾‾‾‾ —> CP2'
+ *                         —> CN2
+ *              —> CP2'
+ *              
+ *
+ * flip_direction:
+ *   0: Nodes on path between node1 and node2 will not be changed.
+ *   1: The order of nodes in bath will be inverted. (_-range in sketch)
+ *
+ */
+int  _tree_swap_parent_successor_tuple(
+    Node *node1,
+    Node *node2,
+    int flip_direction,
+    int data_pointer_swap)
+{
+  assert(node1 != NULL);
+  assert(node2 != NULL);
+  assert(node1 != node2);
+
+  if (node2->parent == node1) {
+    return _tree_swap_parent_child_tupleB(node1, node2, data_pointer_swap);
+  }
+
+  assert(node2->parent != node1);
   Node *parent1 = node1->parent;
   Node *parent2 = node2->parent;
-  if (parent1 == parent2
-    /* swapping siblings just works for non-root nodes! */
-    && parent1 != NULL ){
-    return tree_swap_siblings(node1, node2);
+  // At this point, we know already that node1, node2, parent1,
+  // and parent2 all differs.
+  // Thus, node_get_node_before_descendant() should not return NULL
+  // tl_node2 := top level node on the branch from node1 to node2.
+  Node *tl_node2 = node_get_node_before_descendant(node1, node2);
+  assert(tl_node2 != NULL);
+  assert(tl_node2->parent == node1);
+
+  // Search left siblings of both nodes
+  Node *left_sib1 = tree_left_sibling(node1); // Element of CP1' or NULL
+  Node *left_tl_node2 = tree_left_sibling(tl_node2); // Element of CN1' or NULL
+  Node *left_sib2 = tree_left_sibling(node2); // Element of CP2' or NULL
+
+  /* Change of siblings:
+   * 1. Remove tl_node2 from CN1
+   * 2. Replace node1 by node2 in CP1
+   * 3. Replace node2 by node1 in CP2
+   * 4. Add tl_node2 to CN2 as leftmost sibling
+   * Order of this three operations is important!
+   */
+
+  // 1) Remove node2 from CN1
+  if(left_tl_node2){
+    left_tl_node2->sibling = tl_node2->sibling;
+  }else{
+    assert(node1->child == left_tl_node2);
+    node1->child = tl_node2->sibling;
   }
+  // Final 'tl_node2->sibling = ...' done in (4).
+
+  // 2) Replace node1 by node2 in CP1
+  //  and 3) Replace node2 by node1 in CP2
+  if(left_sib1){
+    left_sib1->sibling = node2;
+  }else{
+    if (parent1) {
+      parent1->child = node2;
+    }
+  }
+  if(left_sib2){
+    left_sib2->sibling = node1;
+  }else{
+    parent2->child = node1;
+  }
+  SWAP(node2->sibling, node1->sibling);
+
+  // 4) Add tl_node2 to CN2 as leftmost sibling
+  tl_node2->sibling = node2->child;
+  node2->child = node1;
+  tl_node2->parent = node2;
+
+
+  // Change parents
   node1->parent = parent2;
   node2->parent = parent1;
+
+
+  if (data_pointer_swap) {
+    SWAP(node1->data, node2->data);
+  }
+
+  if( flip_direction ) {
+    if( parent2 == node1){ // Directly connected.
+    }
+    else if ( parent2 == tl_node2) {
+      // <node1> —> <lt_node2> —> <node2>  => No flipping of paths needed.
+    }else{
+      // At least two nodes between input nodes. Recurivly flipping them.
+      int _ret = _tree_swap_parent_successor_tuple(
+          tl_node2, parent2,
+          1 /*flip_direction*/, data_pointer_swap); 
+      if(_ret) {
+        assert(0);
+        return _ret;
+      }
+    }
+  }
+
+ return 0;
+}
+
+/* The uncritical case:
+ * Nodes are not on the same branch and no siblings.
+ *
+ * Without the possibility of interleaving we could just swap all
+ * reference pointers.
+ */
+int _tree_swap_unconnected_nodes(
+    Node * const node1,
+    Node * const node2,
+    int children_swap,
+    int data_pointer_swap)
+{
+  // Check parents
+  Node *parent1 = node1->parent;
+  Node *parent2 = node2->parent;
 
   // Search left siblings of both nodes
   Node *left_sib1 = tree_left_sibling(node1);
   Node *left_sib2 = tree_left_sibling(node2);
 
-  // Swap right siblings;
-  Node *tmp = node1->sibling;
-  node2->sibling = node1->sibling;
-  node1->sibling = tmp;
+  // Swap parents
+  node1->parent = parent2;
+  node2->parent = parent1;
+
+  // Swap right siblings, no interleaving possible
+  SWAP(node1->sibling, node2->sibling);
 
   // Swap references in left siblings/parent
   if (left_sib1){
@@ -476,37 +843,169 @@ int tree_swap_nodes(
     parent2->child = node1;
   }
 
+  if (children_swap) {
+    //Anchors on first child.
+    Node *c1 = node1->child;
+    Node *c2 = node2->child;
+
+    // Swap Children
+    node1->child=c2;
+    node2->child=c1;
+
+    // Swap parent relation of children
+    while (c1) {
+      c1->parent = node2;
+      c1 = c1->sibling;
+    }
+    while (c2) {
+      c2->parent = node1;
+      c2 = c2->sibling;
+    }
+  }
+
+  if (data_pointer_swap) {
+    SWAP(node1->data, node2->data);
+  }
 #ifdef TREE_REDUNDANT_INFOS
   //update redundant information
-  if( node1->height < node2->height ){
-    _update_heights_after_add(parent1, node2->height);
-    _update_heights_after_shrink(parent2, node2->height);
-  }
-  if( node1->height > node2->height ){
-    _update_heights_after_shrink(parent1, node1->height);
-    _update_heights_after_add(parent2, node1->height);
+  if (!children_swap) {
+    if( node1->height < node2->height ){
+      _update_heights_after_add(parent1, node2->height);
+      _update_heights_after_shrink(parent2, node2->height);
+    }
+    else if( node1->height > node2->height ){
+      _update_heights_after_shrink(parent1, node1->height);
+      _update_heights_after_add(parent2, node1->height);
+    }
+  }else{
+    SWAP(node1->width, node2->width);
+    SWAP(node1->height, node2->height);
   }
 #endif
 
   return 0;
 }
 
-uint32_t tree_number_of_nodes(
-    Node *root)
+int tree_swap_data(
+    Node * const node1,
+    Node * const node2)
 {
- uint32_t n = 1;
- Node *cur = root->child;
- while( cur != NULL ){
-   n++;
-   if( cur->child != NULL ) cur = cur->child;
-   else if( cur->sibling != NULL ) cur = cur->sibling;
-   else{
-     cur = cur->parent;
-     while(cur != root && cur->sibling == NULL) cur = cur->parent;
-     cur = cur->sibling;
-   }
- }
- return n;
+  SWAP(node1->data, node2->data);
+  return 0;
+}
+
+/* Replaces node1 by node2 and vice versa. */
+int tree_swap_nodes(
+    Node * const node1,
+    Node * const node2,
+    int child_node_rule,
+    int data_pointer_swap)
+{
+  if (node1 == NULL) return -2; // use tree_release_child()
+  if (node2 == NULL) return -3; // use tree_release_child()
+  if (node1 == node2) return 0; // Nothing to do
+
+  // Check parents
+  Node *parent1 = node1->parent;
+  Node *parent2 = node2->parent;
+  if (parent1 == parent2
+    /* swapping siblings just works for non-root nodes! */
+    && parent1 != NULL ){
+    return _tree_swap_siblings(node1, node2, 1, data_pointer_swap);
+  }
+
+  if (node_is_parent(node1, node2)){
+    if (child_node_rule == 1){
+      return _tree_swap_parent_child_tuple(node1, node2, data_pointer_swap);
+    }
+    return -1; // Operation not allowed
+  }
+  else if (node_is_parent(node2, node1)){
+    if (child_node_rule == 1){
+      return _tree_swap_parent_child_tuple(node2, node1, data_pointer_swap);
+    }
+    return -1; // Operation not allowed
+  }
+
+  // Here, we know that nodes are not directly connected
+  // and no siblings. This eliminates most corner cases.
+  return _tree_swap_unconnected_nodes(node1, node2, 1, data_pointer_swap);
+}
+
+int tree_swap_subtrees(
+    Node * const node1,
+    Node * const node2,
+    int descendant_node_rule,
+    int data_pointer_swap)
+{
+  if (node1 == NULL) return -2; // use tree_release_child()
+  if (node2 == NULL) return -3; // use tree_release_child()
+
+  // Check parents
+  Node *parent1 = node1->parent;
+  Node *parent2 = node2->parent;
+
+  if (parent1 == parent2
+      /* swapping siblings just works for non-root nodes! */
+      && parent1 != NULL ){
+    return _tree_swap_siblings(node1, node2, 0, data_pointer_swap);
+  }
+
+  if (node_is_descendant(node1, node2)){
+    if (descendant_node_rule == 1){
+      return _tree_swap_parent_successor_tuple(node1, node2, 0, data_pointer_swap);
+    }
+    if (descendant_node_rule == 2){
+      return _tree_swap_parent_successor_tuple(node1, node2, 1, data_pointer_swap);
+    }
+    return -1; // Operation not allowed
+  }
+  else if (node_is_descendant(node2, node1)){
+    if (descendant_node_rule == 1){
+      return _tree_swap_parent_successor_tuple(node2, node1, 0, data_pointer_swap);
+    }
+    if (descendant_node_rule == 2){
+      return _tree_swap_parent_successor_tuple(node2, node1, 1, data_pointer_swap);
+    }
+    return -1; // Operation not allowed
+  }
+
+  // Here, we know that nodes are in different branches.
+  // This eliminates most corner cases.
+  // We can handle it like the uncritical case of
+  // tree_swap_nodes, without applying changes on children.
+  return _tree_swap_unconnected_nodes(node1, node2, 0, data_pointer_swap);
+}
+
+uint32_t tree_number_of_nodes(
+    const Tree * const tree)
+{
+  // TODO: Caching number(?)
+  return node_number_of_successors(tree->root);
+}
+
+uint32_t node_number_of_successors(
+        const Node * node)
+{
+  uint32_t n = 1;
+  Node *cur = node->child;
+  while (cur != NULL) {
+    n++;
+    if( cur->child != NULL ) cur = cur->child;
+    else if( cur->sibling != NULL ) cur = cur->sibling;
+    else{
+      cur = cur->parent;
+      while (cur != NULL) {
+        if (cur==node) return n;
+        if (cur->sibling) {
+          cur=cur->sibling;
+          break;
+        }
+        cur = cur->parent;
+      }
+    }
+  }
+  return n;
 }
 
 
@@ -519,16 +1018,21 @@ void _tree_print(
   int32_t i;
   int32_t shift2=0;
   // Gen unique and stable id for nodes in tree-struct array
-  int32_t id = (node>=tree->root)?
-    ((node - tree->root)% tree->size):
-    ((tree->root - node)% tree->size + tree->size);
+  int32_t id = (node>=tree->nodes)?
+    ((node - tree->nodes)% tree->size):
+    ((tree->nodes - node)% tree->size + tree->size);
 #ifdef TREE_REDUNDANT_INFOS
 #if 0
   printf("%3i• (w:%2i, h:%2i) ", id, node->width, node->height);
   shift2+=19;
 #else
-  printf("%3i• ", id);
-  shift2+=5;
+  //printf(id>99?"<%3i> ":" <%2i>", id);
+  //shift2+=6;
+  printf(id>99?"◖%3i◗ ":(id>9?"◖■%2i◗":" ◖■%1i■◗"), id);
+  shift2+=7;
+
+  // More ident for higher ids(?!)
+  if(id>999) shift2 += ((int)log10(id)) - 3;
 #endif
 #else
   printf("%3i• ", id);
@@ -563,325 +1067,6 @@ void tree_print(
   _tree_print(tree, subtree_root?subtree_root:tree->root, shift);
 }
 
-
-
-/* Generate unique id for sorting trees.
- * [DE] Wird ein Baum durchlaufen und für jeden Schritt angegeben, ob als nächstes ein
- * Kindknoten oder der nächste Geschwisterknoten auf x-ter Ebene ist, so entsteht eine
- * eindeutige Id eines Baumes. Diese kann später für vergleiche genutzt werdne.
- * Kann man das noch komprimieren, wenn man als Basis die maximale Tiefe wählt?!
- *
- * */
-void _gen_tree_id(
-    Node *root,
-    uint32_t **id,
-    uint32_t *d)
-{
-  if( root->child != NULL ){
-    //printf("o ");
-    **id = 0;
-    (*id)++; //set pointer to next array element
-    _gen_tree_id(root->child, id, d);
-  }else{
-    *d = root->height; //store height of leaf.
-  }
-  if( root->sibling != NULL ){
-    //print difference from last leaf and this node and add 1
-    //printf("%u ", root->height -*d +1 );
-    **id = (root->height - *d + 1);
-    (*id)++; //set pointer to next array element
-    *d=root->height;
-    _gen_tree_id(root->sibling, id, d);
-  }
-}
-
-
-/* Generate Unique Number [xyz...] for node
- * Preallocate id-array with #nodes(root).
- * */
-void tree_generate_id(
-    Node *root,
-    uint32_t* id,
-    uint32_t size)
-{
- uint32_t last_height=0;
- //store size of array in first element
- *id = size;
- id++;
- _gen_tree_id(root, &id, &last_height);
- printf("\n");
-}
-
-
-#if 0
-/* tree_hashval, (NEVER FINISHED)
- * Berechnet für einen Baum eine Id, die eindeutig ist,
- * wenn die Bäume eine bestimmte Struktur einhalten.
- * Die Struktur der Bäume (z.B. max. Anzahl der Kinder)
- *  ist grob einstellbar.
- */
-static const uint32_t TREE_CHILDREN_MAX = 5;
-static const uint32_t TREE_DEPTH_MAX = 5; //height of root is 0.
-
-static uint32_t tree_hashval( Node *root){
-  return -1;
-}
-#endif
-
-
-
-
-
-// Debug/Helper-Functions
-
-int8_t * debug_getline(void) 
-{
-    int8_t * line = (int8_t*) malloc(100), * linep = line;
-    size_t lenmax = 100, len = lenmax;
-    int32_t c;
-
-    if(line == NULL)
-        return NULL;
-
-    for(;;) {
-        c = fgetc(stdin);
-        if(c == EOF)
-            break;
-
-        if(--len == 0) {
-            size_t dist = (line - linep);
-            int8_t * linen = (int8_t*) realloc(linep, lenmax *= 2);
-            len = lenmax;
-
-            if(linen == NULL) {
-                free(linep);
-                return NULL;
-            }
-            line = linen + dist;
-            linep = linen;
-        }
-
-        if((*line++ = c) == '\n')
-            break;
-    }
-    *line = '\0';
-    return linep;
-}
-
-
-void debug_print_matrix(
-    uint32_t* data,
-    uint32_t w, uint32_t h,
-    BlobtreeRect roi,
-    uint32_t gridw, uint32_t gridh)
-{
-  uint32_t i, j, wr, hr, w2, h2;
-  uint32_t d;
-  wr = (roi.width-1) % gridw;
-  hr = (roi.height-1) % gridh;
-  w2 = roi.width - wr;
-  h2 = roi.height - hr;
-  for(i=roi.y; i<roi.y+h2; i+=gridh){
-    for(j=roi.x; j<roi.x+w2; j+=gridw){
-      d = *(data+i*w+j);
-      //printf("%u ", d);
-      //printf("%s", d==0?"■⬛":"□");
-      //printf("%s", d==0?"✘":" ");
-      if(d>0){
-        printf("%3u", d);
-      }else{
-        printf("   ");
-      }
-    }
-    j-=gridw-wr;
-
-    if(w2<roi.width){
-      for(; j<roi.x+roi.width; j+=1){
-        d = *(data+i*w+j);
-        if(d>0){
-          printf("%3u", d);
-        }else{
-          printf("   ");
-        }
-      }
-    }
-
-    printf("\n");
-  }
-
-  i-=gridh-hr;
-  if( h2 < roi.height ){
-    for(; i<roi.y+roi.height; i+=1){
-      for(j=roi.x; j<roi.x+w2; j+=gridw){
-        d = *(data+i*w+j);
-        if(d>0){
-          printf("%3u", d);
-        }else{
-          printf("   ");
-        }
-      }
-      j-=gridw-wr;
-
-      if(w2<roi.width){
-        for(; j<roi.x+roi.width; j+=1){
-          d = *(data+i*w+j);
-          if(d>0){
-            printf("%3u", d);
-          }else{
-            printf("   ");
-          }
-        }
-      }
-      printf("\n");
-    }
-  }
-  printf("\n");
-}
-
-
-void debug_print_matrix2(
-    uint32_t* ids,
-    uint32_t* data,
-    uint32_t w, uint32_t h,
-    BlobtreeRect roi,
-    uint32_t gridw, uint32_t gridh,
-    int8_t b_twice)
-{
-  uint32_t i, j, wr, hr, w2, h2;
-  uint32_t d;
-  wr = (roi.width-1) % gridw;
-  hr = (roi.height-1) % gridh;
-  w2 = roi.width - wr;
-  h2 = roi.height - hr;
-  for(i=roi.y; i<roi.y+h2; i+=gridh){
-    for(j=roi.x; j<roi.x+w2; j+=gridw){
-      if( *(ids+i*w+j) > 0 ){
-        d = *(data+*(ids+i*w+j));
-        if(b_twice) d=*(data+d);
-        //printf("%s%u", d<10&&d>=0?" ":"", d);
-        printf("%3u", d);
-      }else{
-        //printf("  ");
-        printf("   ");
-      }
-    }
-    j-=gridw-wr;
-
-    if(w2<roi.width){
-      for(; j<roi.x+roi.width; j+=1){
-        if( *(ids+i*w+j) > 0 ){
-          d = *(data+*(ids+i*w+j));
-          if(b_twice) d=*(data+d);
-          //printf("%s%u", d<10&&d>=0?" ":"", d);
-          printf("%3u", d);
-        }else{
-          printf("   ");
-        }
-      }
-    }
-
-    printf("\n");
-  }
-
-  i-=gridh-hr;
-  if( h2 < roi.height ){
-    for(; i<roi.y+roi.height; i+=1){
-      for(j=roi.x; j<roi.x+w2; j+=gridw){
-        if( *(ids+i*w+j) > 0 ){
-          d = *(data+*(ids+i*w+j));
-          //printf("%s%u", d<10&&d>=0?" ":"", d);
-          printf("%3u", d);
-        }else{
-          printf("   ");
-        }
-      }
-      j-=gridw-wr;
-
-      if(w2<roi.width){
-        for(; j<roi.x+roi.width; j+=1){
-          if( *(ids+i*w+j) > 0 ){
-            d = *(data+*(ids+i*w+j));
-            printf("%s%u", d<10&&d>=0?" ":"", d);
-          }else{
-            printf("  ");
-          }
-        }
-      }
-      printf("\n");
-    }
-  }
-  printf("\n");
-}
-
-
-void debug_print_matrix_char(
-    uint8_t * data,
-    uint32_t w, uint32_t h,
-    BlobtreeRect roi,
-    uint32_t gridw, uint32_t gridh)
-{
-  uint32_t i, j, wr, hr, w2, h2;
-  uint32_t d;
-  wr = (roi.width-1) % gridw;
-  hr = (roi.height-1) % gridh;
-  w2 = roi.width - wr;
-  h2 = roi.height - hr;
-  for(i=roi.y; i<roi.y+h2; i+=gridh){
-    for(j=roi.x; j<roi.x+w2; j+=gridw){
-      d = *(data+i*w+j);
-      //printf("%u ", d);
-      //printf("%s", d==0?"■⬛":"□");
-      //printf("%s", d==0?"✘":" ");
-      if(d>0)
-        //printf("%s%u", d<10&&d>=0?" ":"", d);
-        printf("%2u", d);
-      else
-        printf("  ");
-    }
-    j-=gridw-wr;
-
-    if(w2<roi.width){
-      for(; j<roi.x+roi.width; j+=1){
-        d = *(data+i*w+j);
-        if(d>0)
-          //printf("%s%u", d<10&&d>=0?" ":"", d);
-          printf("%2u", d);
-        else
-          printf("  ");
-      }
-    }
-
-    printf("\n");
-  }
-
-  i-=gridh-hr;
-  if( h2 < roi.height ){
-    for(; i<roi.y+roi.height; i+=1){
-      for(j=roi.x; j<roi.x+w2; j+=gridw){
-        d = *(data+i*w+j);
-        if(d>0)
-          //printf("%s%u", d<10&&d>=0?" ":"", d);
-          printf("%2u", d);
-        else
-          printf("  ");
-      }
-      j-=gridw-wr;
-
-      if(w2<roi.width){
-        for(; j<roi.x+roi.width; j+=1){
-          d = *(data+i*w+j);
-          if(d>0)
-            //printf("%s%u", d<10&&d>=0?" ":"", d);
-            printf("%2u", d);
-          else
-            printf("  ");
-        }
-      }
-      printf("\n");
-    }
-  }
-  printf("\n");
-}
 
 Node * tree_left_sibling(
     Node *n)

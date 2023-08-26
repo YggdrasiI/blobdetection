@@ -32,8 +32,11 @@ gen_coverage_report_%:
 	cd "./$*" \
 		&& gcovr -r .. -o covr-report.html --html-details \
 		--filter "../src/*" --filter "../include/*" \
-		--exclude-directories tests \
-		&& nohup sh -c 'sleep 2; firefox http://localhost:8001/covr-report.html' 2>/dev/null \
+		--exclude-directories tests
+
+show_coverage_report_%:
+	cd "./$*" \
+		&& nohup sh -c 'sleep 2; xdg-open "http://127.0.0.1:8001/covr-report.html"' 2>/dev/null \
 		&& python -m http.server 8001
 
 

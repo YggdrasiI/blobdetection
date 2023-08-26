@@ -2,7 +2,7 @@ set(TREE_INLINE_SOURCES tree_intern.c)  # Code just added if some function calls
 add_library(_tree_inline
 	STATIC ${TREE_INLINE_SOURCES})
 
-set(TREE_SOURCES tree.c tree_intern.c enums.c tree_operations.c tree_compare.c tree_hash.c)
+set(TREE_SOURCES tree.c tree_intern.c enums.c tree_operations.c tree_compare.c tree_hash.c io_for_debugging.c)
 add_library(_tree SHARED ${TREE_SOURCES})
 #add_library(_tree STATIC ${TREE_SOURCES})
 target_link_libraries(_tree _tree_inline)
