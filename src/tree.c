@@ -1067,6 +1067,37 @@ void tree_print(
   _tree_print(tree, subtree_root?subtree_root:tree->root, shift);
 }
 
+/* Generate trees from strings like tree_print(…). 
+ *
+ * Example input strings:
+ *
+ * 0 -> 3
+ * -------------------------
+ * 0 —> 1 —> 2 —> 3 —> 4 —> 5
+ *                  —> 8
+ *   —> 6 —> 7
+ *   —> 9
+ * -------------------------
+ * ◖■0■◗→ ◖■5■◗→ ◖■2■◗→ ◖■1■◗→ ◖■3■◗→ ◖■4■◗
+ *      ↘ ◖■6■◗→ ◖■7■◗          
+ *      ↘ ◖■8■◗                 
+ *      ↘ ◖■9■◗
+ */
+Tree *tree_loads(
+        const char *tree_input,
+        const char **node_formats,
+        const char **arrow_formats)
+{
+  /* Parsing rules:
+   *   0)  Indention of leftmost arrow defines parent node.
+   *   1)  Nodes with same parent orderd from top to bottom.
+   *   2a) Everything betweeen detected arrow is a node.
+   *   2b) Node can contain at most one id.
+   *   3)  If more than one root node is given, an extra layer will be added.
+   */
+  return NULL;
+}
+
 
 Node * tree_left_sibling(
     Node *n)

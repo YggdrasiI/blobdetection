@@ -5,9 +5,7 @@
 #include <CppUTest/TestHarness.h>
 #include <CppUTest/CommandLineTestRunner.h>
 
-extern "C" {
-#include "tree.h"
-}
+#include "../tree_test_setup.hpp"
 
 
 TEST_GROUP(TestTreeCompare) {
@@ -24,173 +22,7 @@ TEST_GROUP(TestTreeCompare) {
 		tree_destroy(&t1);
 		tree_destroy(&t2);
 	}
-
-	void gen_tree_structure1(Tree *t){
-		/* 0 —> 9
-		 */
-		tree_add_child(&t->nodes[0], &t->nodes[9]);
-	}
-
-	void gen_tree_structure2(Tree *t){
-		/* 0 —> 1
-		 * |
-		 *  ——> 2
-		 */
-		tree_add_child(&t->nodes[0], &t->nodes[1]);
-		tree_add_child(&t->nodes[0], &t->nodes[2]);
-	}
-
-	void gen_tree_structure3(Tree *t){
-		/* 0 —> 2
-		 * |
-		 *  ——> 1
-		 */
-		tree_add_child(&t->nodes[0], &t->nodes[2]);
-		tree_add_child(&t->nodes[0], &t->nodes[1]);
-	}
-
-	void gen_tree_structure4(Tree *t){
-		/* 0 —> 1 —> 2
-		 * |
-		 *  ——> 3 —> 4
-		 *      |
-		 *       ——> 5
-		 */
-		tree_add_child(&t->nodes[0], &t->nodes[1]);
-		tree_add_child(&t->nodes[0], &t->nodes[3]);
-		tree_add_child(&t->nodes[1], &t->nodes[2]);
-		tree_add_child(&t->nodes[3], &t->nodes[4]);
-		tree_add_child(&t->nodes[3], &t->nodes[5]);
-	}
-
-	void gen_tree_structure5(Tree *t){
-		/* 0 —> 1 —> 2
-		 * |    |
-		 * |     ——> 3
-		 * |
-		 *  ——> 4 —> 5
-		 */
-		tree_add_child(&t->nodes[0], &t->nodes[1]);
-		tree_add_child(&t->nodes[0], &t->nodes[4]);
-		tree_add_child(&t->nodes[1], &t->nodes[2]);
-		tree_add_child(&t->nodes[1], &t->nodes[3]);
-		tree_add_child(&t->nodes[4], &t->nodes[5]);
-
-	}
-
-	void gen_tree_structure6(Tree *t){
-		/* 0 —> 1 —> 2
-		 * |    |
-		 * |     ——> 3
-		 * |
-		 *  ——> 4 —> 5
-		 *      |
-		 *       ——> 6
-		 */
-		tree_add_child(&t->nodes[0], &t->nodes[1]);
-		tree_add_child(&t->nodes[0], &t->nodes[4]);
-		tree_add_child(&t->nodes[1], &t->nodes[2]);
-		tree_add_child(&t->nodes[1], &t->nodes[3]);
-		tree_add_child(&t->nodes[4], &t->nodes[5]);
-		tree_add_child(&t->nodes[4], &t->nodes[6]);
-	}
-
-	void gen_tree_structure7(Tree *t){
-		/* 0 —> 1 —> 2 -> 8
-		 * |    |
-		 * |     ——> 3
-		 * |
-		 *  ——> 4 —> 5
-		 *      |
-		 *       ——> 6
-		 *      |
-		 *       ——> 7
-		 */
-		tree_add_child(&t->nodes[0], &t->nodes[1]);
-		tree_add_child(&t->nodes[0], &t->nodes[4]);
-		tree_add_child(&t->nodes[1], &t->nodes[2]);
-		tree_add_child(&t->nodes[1], &t->nodes[3]);
-		tree_add_child(&t->nodes[4], &t->nodes[5]);
-		tree_add_child(&t->nodes[4], &t->nodes[6]);
-		tree_add_child(&t->nodes[4], &t->nodes[7]);
-		tree_add_child(&t->nodes[2], &t->nodes[8]);
-	}
-
-	void gen_tree_structure8(Tree *t){
-		/* 0 —> 1 —> 2 -> 8
-		 * |    |
-		 * |     ——> 3
-		 * |
-		 *  ——> 4 —> 5
-		 * |    |
-		 * |     ——> 6
-		 * |    |
-		 * |     ——> 7
-		 * |
-		 *  ——> 9
-		 */
-		tree_add_child(&t->nodes[0], &t->nodes[1]);
-		tree_add_child(&t->nodes[0], &t->nodes[4]);
-		tree_add_child(&t->nodes[1], &t->nodes[2]);
-		tree_add_child(&t->nodes[1], &t->nodes[3]);
-		tree_add_child(&t->nodes[4], &t->nodes[5]);
-		tree_add_child(&t->nodes[4], &t->nodes[6]);
-		tree_add_child(&t->nodes[4], &t->nodes[7]);
-		tree_add_child(&t->nodes[2], &t->nodes[8]);
-		tree_add_child(&t->nodes[0], &t->nodes[9]);
-	}
-
-	void gen_tree_structure8B(Tree *t){
-		/* 0 —> 9
-		 * |
-		 *  ——> 4 —> 7
-		 * |    |
-		 * |     ——> 6
-		 * |    |
-		 * |     ——> 5
-		 * |
-		 *  ——> 1 —> 2 -> 8
-		 *      |
-		 *       ——> 3
-		 */
-		tree_add_child(&t->nodes[0], &t->nodes[9]);
-		tree_add_child(&t->nodes[0], &t->nodes[4]);
-		tree_add_child(&t->nodes[4], &t->nodes[7]);
-		tree_add_child(&t->nodes[4], &t->nodes[6]);
-		tree_add_child(&t->nodes[4], &t->nodes[5]);
-		tree_add_child(&t->nodes[0], &t->nodes[1]);
-		tree_add_child(&t->nodes[1], &t->nodes[2]);
-		tree_add_child(&t->nodes[1], &t->nodes[3]);
-		tree_add_child(&t->nodes[2], &t->nodes[8]);
-	}
-
-	void gen_invalid_tree_structure1(Tree *t){
-		/* 0 ———
-		 * ^    |
-		 * |————
-		 */
-		tree_add_child(&t->nodes[0], &t->nodes[1]);
-		tree_add_child(&t->nodes[1], &t->nodes[2]);
-		tree_add_child(&t->nodes[2], &t->nodes[7]);
-		tree_add_child(&t->nodes[7], &t->nodes[0]);
-		tree_add_child(&t->nodes[1], &t->nodes[3]);
-	}
-
-	void gen_invalid_tree_structure2(Tree *t){
-		/* 0 —> 1 —> 2 -> 7
-		 * ^    |         |
-		 * |——————————————
-		 * |    |
-		 * |     ——> 3
-		 */
-		tree_add_child(&t->nodes[0], &t->nodes[1]);
-		tree_add_child(&t->nodes[1], &t->nodes[2]);
-		tree_add_child(&t->nodes[2], &t->nodes[7]);
-		tree_add_child(&t->nodes[7], &t->nodes[0]);
-		tree_add_child(&t->nodes[1], &t->nodes[3]);
-	}
 };
-
 
 TEST(TestTreeCompare, Test_CompareType1_EqualStructureRoot) {
 	// Compare with just one root node
@@ -199,14 +31,14 @@ TEST(TestTreeCompare, Test_CompareType1_EqualStructureRoot) {
 
 TEST(TestTreeCompare, Test_CompareType1_EqualStructure1) {
 	// Compare with just one child
-	gen_tree_structure1(t1);
-	gen_tree_structure1(t2);
+	init_tree_structure1(t1);
+	init_tree_structure1(t2);
 	LONGS_EQUAL(0, tree_cmp(t1, t2, TREE_COMPARE_SAME_NODE_MEMORY_LAYOUT));
 }
 
 TEST(TestTreeCompare, Test_CompareType1_InequalStructure1vsRoot) {
 	// Compare trees with different one and no child
-	gen_tree_structure1(t2);
+	init_tree_structure1(t2);
 
 	int ret = tree_cmp(t1, t2, TREE_COMPARE_SAME_NODE_MEMORY_LAYOUT);
 	int retSwap = tree_cmp(t2, t1, TREE_COMPARE_SAME_NODE_MEMORY_LAYOUT);
@@ -216,8 +48,8 @@ TEST(TestTreeCompare, Test_CompareType1_InequalStructure1vsRoot) {
 
 TEST(TestTreeCompare, Test_CompareType1_InequalStructure1vs2) {
 	// Compare trees with different one and no child
-	gen_tree_structure1(t1);
-	gen_tree_structure2(t2);
+	init_tree_structure1(t1);
+	init_tree_structure2(t2);
 
 	int ret = tree_cmp(t1, t2, TREE_COMPARE_SAME_NODE_MEMORY_LAYOUT);
 	int retSwap = tree_cmp(t2, t1, TREE_COMPARE_SAME_NODE_MEMORY_LAYOUT);
@@ -227,8 +59,8 @@ TEST(TestTreeCompare, Test_CompareType1_InequalStructure1vs2) {
 
 TEST(TestTreeCompare, Test_CompareType1_InequalStructure3vs4) {
 	// Compare trees with 3 and 6 children
-	gen_tree_structure3(t1);
-	gen_tree_structure4(t2);
+	init_tree_structure3(t1);
+	init_tree_structure4(t2);
 
 	int ret = tree_cmp(t1, t2, TREE_COMPARE_SAME_NODE_MEMORY_LAYOUT);
 	int retSwap = tree_cmp(t2, t1, TREE_COMPARE_SAME_NODE_MEMORY_LAYOUT);
@@ -238,8 +70,8 @@ TEST(TestTreeCompare, Test_CompareType1_InequalStructure3vs4) {
 
 TEST(TestTreeCompare, Test_CompareType1_EqualStructure2) {
 	// Compare trees with same 3 Nodes
-	gen_tree_structure2(t1);
-	gen_tree_structure2(t2);
+	init_tree_structure2(t1);
+	init_tree_structure2(t2);
 
 	LONGS_EQUAL(0, tree_cmp(t1, t2, TREE_COMPARE_SAME_NODE_MEMORY_LAYOUT));
 	LONGS_EQUAL(0, tree_cmp(t2, t1, TREE_COMPARE_SAME_NODE_MEMORY_LAYOUT));
@@ -247,8 +79,8 @@ TEST(TestTreeCompare, Test_CompareType1_EqualStructure2) {
 
 TEST(TestTreeCompare, Test_CompareType1_InequalStructure2vs3) {
 	// Compare trees with different order of 3 Nodes
-	gen_tree_structure2(t1);
-	gen_tree_structure3(t2);
+	init_tree_structure2(t1);
+	init_tree_structure3(t2);
 
 	int ret = tree_cmp(t1, t2, TREE_COMPARE_SAME_NODE_MEMORY_LAYOUT);
 	int retSwap = tree_cmp(t2, t1, TREE_COMPARE_SAME_NODE_MEMORY_LAYOUT);
@@ -258,8 +90,8 @@ TEST(TestTreeCompare, Test_CompareType1_InequalStructure2vs3) {
 
 TEST(TestTreeCompare, Test_CompareType1_EqualStructure8) {
 	// Compare trees with identical nodes
-	gen_tree_structure8(t1);
-	gen_tree_structure8(t2);
+	init_tree_structure8(t1);
+	init_tree_structure8(t2);
 
 	LONGS_EQUAL(0, tree_cmp(t1, t2, TREE_COMPARE_SAME_NODE_MEMORY_LAYOUT));
 	LONGS_EQUAL(0, tree_cmp(t2, t1, TREE_COMPARE_SAME_NODE_MEMORY_LAYOUT));
@@ -267,8 +99,8 @@ TEST(TestTreeCompare, Test_CompareType1_EqualStructure8) {
 
 TEST(TestTreeCompare, Test_CompareType1_EqualStructure8B) {
 	// Compare trees with nodes shuffeld children order (Assumed inequal for this compare type)
-	gen_tree_structure8(t1);
-	gen_tree_structure8B(t2);
+	init_tree_structure8(t1);
+	init_tree_structure8B(t2);
 
 	int ret = tree_cmp(t1, t2, TREE_COMPARE_SAME_NODE_MEMORY_LAYOUT);
 	int retSwap = tree_cmp(t2, t1, TREE_COMPARE_SAME_NODE_MEMORY_LAYOUT);
@@ -278,8 +110,8 @@ TEST(TestTreeCompare, Test_CompareType1_EqualStructure8B) {
 
 TEST(TestTreeCompare, Test_CompareType1_InequalStructure7vs8) {
 	// Compare trees with different structure
-	gen_tree_structure7(t1);
-	gen_tree_structure8(t2);
+	init_tree_structure7(t1);
+	init_tree_structure8(t2);
 
 	int ret = tree_cmp(t1, t2, TREE_COMPARE_SAME_NODE_MEMORY_LAYOUT);
 	int retSwap = tree_cmp(t2, t1, TREE_COMPARE_SAME_NODE_MEMORY_LAYOUT);
@@ -296,14 +128,14 @@ TEST(TestTreeCompare, Test_CompareType2_EqualStructureRoot) {
 
 TEST(TestTreeCompare, Test_CompareType2_EqualStructure1) {
 	// Compare with just one child
-	gen_tree_structure1(t1);
-	gen_tree_structure1(t2);
+	init_tree_structure1(t1);
+	init_tree_structure1(t2);
 	LONGS_EQUAL(0, tree_cmp(t1, t2, TREE_COMPARE_CHILD_NODE_ORDER_SCRAMBLED));
 }
 
 TEST(TestTreeCompare, Test_CompareType2_InequalStructure1vsRoot) {
 	// Compare trees with different one and no child
-	gen_tree_structure1(t2);
+	init_tree_structure1(t2);
 
 	int ret = tree_cmp(t1, t2, TREE_COMPARE_CHILD_NODE_ORDER_SCRAMBLED);
 	int retSwap = tree_cmp(t2, t1, TREE_COMPARE_CHILD_NODE_ORDER_SCRAMBLED);
@@ -313,8 +145,8 @@ TEST(TestTreeCompare, Test_CompareType2_InequalStructure1vsRoot) {
 
 TEST(TestTreeCompare, Test_CompareType2_InequalStructure1vs2) {
 	// Compare trees with different one and no child
-	gen_tree_structure1(t1);
-	gen_tree_structure2(t2);
+	init_tree_structure1(t1);
+	init_tree_structure2(t2);
 
 	int ret = tree_cmp(t1, t2, TREE_COMPARE_CHILD_NODE_ORDER_SCRAMBLED);
 	int retSwap = tree_cmp(t2, t1, TREE_COMPARE_CHILD_NODE_ORDER_SCRAMBLED);
@@ -324,8 +156,8 @@ TEST(TestTreeCompare, Test_CompareType2_InequalStructure1vs2) {
 
 TEST(TestTreeCompare, Test_CompareType2_InequalStructure3vs4) {
 	// Compare trees with 3 and 6 children
-	gen_tree_structure3(t1);
-	gen_tree_structure4(t2);
+	init_tree_structure3(t1);
+	init_tree_structure4(t2);
 
 	int ret = tree_cmp(t1, t2, TREE_COMPARE_CHILD_NODE_ORDER_SCRAMBLED);
 	int retSwap = tree_cmp(t2, t1, TREE_COMPARE_CHILD_NODE_ORDER_SCRAMBLED);
@@ -335,8 +167,8 @@ TEST(TestTreeCompare, Test_CompareType2_InequalStructure3vs4) {
 
 TEST(TestTreeCompare, Test_CompareType2_EqualStructure2) {
 	// Compare trees with same 3 Nodes
-	gen_tree_structure2(t1);
-	gen_tree_structure2(t2);
+	init_tree_structure2(t1);
+	init_tree_structure2(t2);
 
 	LONGS_EQUAL(0, tree_cmp(t1, t2, TREE_COMPARE_CHILD_NODE_ORDER_SCRAMBLED));
 	LONGS_EQUAL(0, tree_cmp(t2, t1, TREE_COMPARE_CHILD_NODE_ORDER_SCRAMBLED));
@@ -344,8 +176,8 @@ TEST(TestTreeCompare, Test_CompareType2_EqualStructure2) {
 
 TEST(TestTreeCompare, Test_CompareType2_InequalStructure2vs3) {
 	// Compare trees with different order of 3 Nodes
-	gen_tree_structure2(t1);
-	gen_tree_structure3(t2);
+	init_tree_structure2(t1);
+	init_tree_structure3(t2);
 
 	int ret = tree_cmp(t1, t2, TREE_COMPARE_CHILD_NODE_ORDER_SCRAMBLED);
 	int retSwap = tree_cmp(t2, t1, TREE_COMPARE_CHILD_NODE_ORDER_SCRAMBLED);
@@ -355,8 +187,8 @@ TEST(TestTreeCompare, Test_CompareType2_InequalStructure2vs3) {
 
 TEST(TestTreeCompare, Test_CompareType2_EqualStructure8) {
 	// Compare trees with identical nodes
-	gen_tree_structure8(t1);
-	gen_tree_structure8(t2);
+	init_tree_structure8(t1);
+	init_tree_structure8(t2);
 
 	LONGS_EQUAL(0, tree_cmp(t1, t2, TREE_COMPARE_CHILD_NODE_ORDER_SCRAMBLED));
 	LONGS_EQUAL(0, tree_cmp(t2, t1, TREE_COMPARE_CHILD_NODE_ORDER_SCRAMBLED));
@@ -364,8 +196,8 @@ TEST(TestTreeCompare, Test_CompareType2_EqualStructure8) {
 
 TEST(TestTreeCompare, Test_CompareType2_EqualStructure8B) {
 	// Compare trees with nodes shuffeld children order 
-	gen_tree_structure8(t1);
-	gen_tree_structure8B(t2);
+	init_tree_structure8(t1);
+	init_tree_structure8B(t2);
 
 	int ret = tree_cmp(t1, t2, TREE_COMPARE_CHILD_NODE_ORDER_SCRAMBLED);
 	int retSwap = tree_cmp(t2, t1, TREE_COMPARE_CHILD_NODE_ORDER_SCRAMBLED);
@@ -375,8 +207,8 @@ TEST(TestTreeCompare, Test_CompareType2_EqualStructure8B) {
 
 TEST(TestTreeCompare, Test_CompareType2_InequalStructure7vs8) {
 	// Compare trees with different structure
-	gen_tree_structure7(t1);
-	gen_tree_structure8(t2);
+	init_tree_structure7(t1);
+	init_tree_structure8(t2);
 	
 	int ret = tree_cmp(t1, t2, TREE_COMPARE_CHILD_NODE_ORDER_SCRAMBLED);
 	int retSwap = tree_cmp(t2, t1, TREE_COMPARE_CHILD_NODE_ORDER_SCRAMBLED);
