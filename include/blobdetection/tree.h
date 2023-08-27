@@ -106,15 +106,21 @@ void tree_gen_redundant_information_recursive(
 
 /* === Read-only operations ===
 */
+
+/* Gen unique and stable id for nodes in this tree-struct array. */
+int32_t tree_get_node_id(
+    const Tree *tree,
+    const Node *node);
+
 static inline Node * tree_right_sibling(
-    Node *n)
+    const Node *n)
 {
   return n->sibling;
 }
 
 /* Returns left sibling of node or NULL. */
 Node * tree_left_sibling(
-    Node *n);
+    const Node *n);
 
 /* Going upwards from 'successor' until child of descendant is reached.
  *
@@ -253,6 +259,7 @@ int tree_swap_data(
  * TODO: Define names in enums.h
  * */
 int tree_swap_nodes(
+    Tree * const tree,
     Node * const node1,
     Node * const node2,
     int child_node_rule,
@@ -272,6 +279,7 @@ int tree_swap_nodes(
  * TODO: Define names in enums.h
  * */
 int tree_swap_subtrees(
+    Tree * const tree,
     Node * const node1,
     Node * const node2,
     int descendant_node_rule,

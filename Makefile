@@ -1,9 +1,24 @@
+TEST_BUILD_DIR=debug_with_tests
+
+help:
+	echo "Build targets:\n\n" \
+	"\trelease\tCMake build in 'build' folder.\n" \
+	"\tdebug\tCMake build in 'debug' folder.\n" \
+	"\t\n" \
+	"\ttest\tCMake build in 'debug_with_tests' folder.\n" \
+	"\tgen_coverage_report\t Generate test coverage report with gcovr\n" \
+	"\tshow_coverage_report\t Show test coverage report in browser\n" \
+	"\t\n" \
+	"\tinstall_{BUILD_FOLDER}\tInstall lib into ./dest\n" \
+	"\t\n" \
+	"\t\n" \
+
 all: release install_build
 
 # Compile lib and examples into ./build
 release: make_build
 debug: make_debug
-test_coverage: make_debug_with_tests gen_coverage_report_tests
+test: make_$(TEST_BUILD_DIR) gen_coverage_report
 
 # Differnt build types
 build/CMakeCache.txt: mkdir_build
@@ -28,14 +43,14 @@ mkdir_%:
 	cd "$*" && make
 
 # Generate test coverage report
-gen_coverage_report_%:
-	cd "./$*" \
+gen_coverage_report:
+	cd "./$(TEST_BUILD_DIR)" \
 		&& gcovr -r .. -o covr-report.html --html-details \
 		--filter "../src/*" --filter "../include/*" \
 		--exclude-directories tests
 
-show_coverage_report_%:
-	cd "./$*" \
+show_coverage_report:
+	cd "./$(TEST_BUILD_DIR)" \
 		&& nohup sh -c 'sleep 2; xdg-open "http://127.0.0.1:8001/covr-report.html"' 2>/dev/null \
 		&& python -m http.server 8001
 
@@ -46,6 +61,6 @@ install_%:
 	cd "./$*" && make install && echo "Library installed"
 
 clean:
-	rm -rf ./build ./debug ./dest ./debug_with_tests
+	rm -rf ./build ./debug ./dest ./$(TEST_BUILD_DIR)
 
 .PHONY: all clean release debug debug_with_tests

@@ -3,7 +3,7 @@ project(Blobdetection)
 
 SET(CMAKE_C_STANDARD 11)
 
-OPTION(WITH_TESTS "Compile tests" ON)
+OPTION(WITH_TESTS "Compile tests" OFF)
 OPTION(WITH_EXAMPLES "Compile examples" ON)
 
 include_directories(

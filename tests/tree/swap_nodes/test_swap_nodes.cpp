@@ -45,12 +45,13 @@ TEST(TestSwapNodes, Test_for_direct_related_nodes) {
 		tree_print(t1, NULL, 0);
 	}
 
+	uint32_t num_nodes = tree_number_of_nodes(t1);
 	// Copy t1 to check if swapped arguments leads to same result.
 	Tree *t1clone = tree_clone(t1, NULL, NULL);
 
 	// Swap nodes with different parents
-	LONGS_EQUAL(0, tree_swap_nodes(&n1[1], &n1[3], 1, 1));
-	LONGS_EQUAL(0, tree_swap_nodes(&c1[3], &c1[1], 1, 1));
+	LONGS_EQUAL(0, tree_swap_nodes(t1, &n1[1], &n1[3], 1, 1));
+	LONGS_EQUAL(0, tree_swap_nodes(t1clone, &c1[3], &c1[1], 1, 1));
 	/* Expected result after operation:
 	 * 0 —> 3 —> 1
 	 *   —> 2
@@ -59,11 +60,12 @@ TEST(TestSwapNodes, Test_for_direct_related_nodes) {
 		printf("\n");
 		tree_print(t1, NULL, 0);
 	}
+	LONGS_EQUAL(num_nodes, tree_number_of_nodes(t1));
 	LONGS_EQUAL(0, tree_cmp(t1, t1clone, TREE_COMPARE_SAME_NODE_MEMORY_LAYOUT));
 
 	// Swap nodes with same parents
-	LONGS_EQUAL(0, tree_swap_nodes(&n1[3], &n1[2], 1, 1));
-	LONGS_EQUAL(0, tree_swap_nodes(&c1[2], &c1[3], 1, 1));
+	LONGS_EQUAL(0, tree_swap_nodes(t1, &n1[3], &n1[2], 1, 1));
+	LONGS_EQUAL(0, tree_swap_nodes(t1clone, &c1[2], &c1[3], 1, 1));
 	/* Expected result after operation:
 	 * 0 —> 2 —> 1
 	 *   —> 3
@@ -72,6 +74,7 @@ TEST(TestSwapNodes, Test_for_direct_related_nodes) {
 		printf("\n");
 		tree_print(t1, NULL, 0);
 	}
+	LONGS_EQUAL(num_nodes, tree_number_of_nodes(t1));
 	LONGS_EQUAL(0, tree_cmp(t1, t1clone, TREE_COMPARE_SAME_NODE_MEMORY_LAYOUT));
 
 	// Check structure
@@ -114,12 +117,13 @@ TEST(TestSwapNodes, Test_for_indirect_related_nodes) {
 		tree_print(t1, NULL, 0);
 	}
 
+	uint32_t num_nodes = tree_number_of_nodes(t1);
 	// Copy t1 to check if swapped arguments leads to same result.
 	Tree *t1clone = tree_clone(t1, NULL, NULL);
 
 	// Swap nodes on same branch, one node between.
-	LONGS_EQUAL(0, tree_swap_nodes(&n1[1], &n1[3], 1, 1));
-	LONGS_EQUAL(0, tree_swap_nodes(&c1[3], &c1[1], 1, 1));
+	LONGS_EQUAL(0, tree_swap_nodes(t1, &n1[1], &n1[3], 1, 1));
+	LONGS_EQUAL(0, tree_swap_nodes(t1clone, &c1[3], &c1[1], 1, 1));
 	/* Expected result after operation:
 	 * 0 —> 3 —> 2 —> 1 —> 4 —> 5
 	 *   —> 6 —> 7
@@ -130,11 +134,12 @@ TEST(TestSwapNodes, Test_for_indirect_related_nodes) {
 		printf("\n");
 		tree_print(t1, NULL, 0);
 	}
+	LONGS_EQUAL(num_nodes, tree_number_of_nodes(t1));
 	LONGS_EQUAL(0, tree_cmp(t1, t1clone, TREE_COMPARE_SAME_NODE_MEMORY_LAYOUT));
 
 	// Swap nodes on same branch, two nodes between
-	LONGS_EQUAL(0, tree_swap_nodes(&n1[3], &n1[4], 1, 1));
-	LONGS_EQUAL(0, tree_swap_nodes(&t1clone->nodes[4], &t1clone->nodes[3], 1, 1));
+	LONGS_EQUAL(0, tree_swap_nodes(t1, &n1[3], &n1[4], 1, 1));
+	LONGS_EQUAL(0, tree_swap_nodes(t1clone, &c1[4], &c1[3], 1, 1));
 	/* Expected result after operation:
 	 * 0 —> 4 —> 2 —> 1 —> 3 —> 5
 	 *   —> 6 —> 7
@@ -145,11 +150,12 @@ TEST(TestSwapNodes, Test_for_indirect_related_nodes) {
 		printf("\n");
 		tree_print(t1, NULL, 0);
 	}
+	LONGS_EQUAL(num_nodes, tree_number_of_nodes(t1));
 	LONGS_EQUAL(0, tree_cmp(t1, t1clone, TREE_COMPARE_SAME_NODE_MEMORY_LAYOUT));
 
 	// Swap nodes on same branch, tree nodes between
-	LONGS_EQUAL(0, tree_swap_nodes(&n1[4], &n1[5], 1, 1));
-	LONGS_EQUAL(0, tree_swap_nodes(&c1[5], &c1[4], 1, 1));
+	LONGS_EQUAL(0, tree_swap_nodes(t1, &n1[4], &n1[5], 1, 1));
+	LONGS_EQUAL(0, tree_swap_nodes(t1clone, &c1[5], &c1[4], 1, 1));
 	/* Expected result after operation:
 	 * 0 —> 5 —> 2 —> 1 —> 3 —> 4
 	 *   —> 6 —> 7
@@ -160,11 +166,12 @@ TEST(TestSwapNodes, Test_for_indirect_related_nodes) {
 		printf("\n");
 		tree_print(t1, NULL, 0);
 	}
+	LONGS_EQUAL(num_nodes, tree_number_of_nodes(t1));
 	LONGS_EQUAL(0, tree_cmp(t1, t1clone, TREE_COMPARE_SAME_NODE_MEMORY_LAYOUT));
 
 	// Swap nodes on different branches, both with childs.
-	LONGS_EQUAL(0, tree_swap_nodes(&n1[3], &n1[6], 1, 1));
-	LONGS_EQUAL(0, tree_swap_nodes(&c1[6], &c1[3], 1, 1));
+	LONGS_EQUAL(0, tree_swap_nodes(t1, &n1[3], &n1[6], 1, 1));
+	LONGS_EQUAL(0, tree_swap_nodes(t1clone, &c1[6], &c1[3], 1, 1));
 	/* Expected result after operation:
 	 * 0 —> 5 —> 2 —> 1 —> 6 —> 4
 	 *   —> 3 —> 7
@@ -175,13 +182,14 @@ TEST(TestSwapNodes, Test_for_indirect_related_nodes) {
 		printf("\n");
 		tree_print(t1, NULL, 0);
 	}
+	LONGS_EQUAL(num_nodes, tree_number_of_nodes(t1));
 	LONGS_EQUAL(0, tree_cmp(t1, t1clone, TREE_COMPARE_SAME_NODE_MEMORY_LAYOUT));
 
 	// Finally, test swap of root node
 	// Here, we has to update the root information manually
 	// because called function had no acces on Tree struct...
-	LONGS_EQUAL(0, tree_swap_nodes(&n1[0], &n1[9], 1, 1));
-	LONGS_EQUAL(0, tree_swap_nodes(&c1[9], &c1[0], 1, 1));
+	LONGS_EQUAL(0, tree_swap_nodes(t1, &n1[0], &n1[9], 1, 1));
+	LONGS_EQUAL(0, tree_swap_nodes(t1clone, &c1[9], &c1[0], 1, 1));
 	tree_set_root(t1, &n1[9]);
 	tree_set_root(t1clone, &c1[9]);
 	/* Expected result after operation:
@@ -194,6 +202,7 @@ TEST(TestSwapNodes, Test_for_indirect_related_nodes) {
 		printf("\n");
 		tree_print(t1, NULL, 0);
 	}
+	LONGS_EQUAL(num_nodes, tree_number_of_nodes(t1));
 	LONGS_EQUAL(0, tree_cmp(t1, t1clone, TREE_COMPARE_SAME_NODE_MEMORY_LAYOUT));
 
 	// Check structure
@@ -243,7 +252,7 @@ TEST(TestSwapNodes, Test_child_node_rule_fail) {
   tree_add_child(&n1[1], &n1[3]);
 
   // Operation not allowed because n1[3] is direct child of n1[1]
-	LONGS_EQUAL(-1, tree_swap_nodes(&n1[1], &n1[3], 0, 0));
+	LONGS_EQUAL(-1, tree_swap_nodes(t1, &n1[1], &n1[3], 0, 0));
 }
 
 TEST(TestSwapNodes, Test_for_non_related_nodes) {
@@ -254,7 +263,7 @@ TEST(TestSwapNodes, Test_for_non_related_nodes) {
 
 int main(int ac, char** av)
 {
-	if (ac>1 && av[1][0] != '\0'){
+	if (ac>1){
 		verbose = 1;
 	}
 	return CommandLineTestRunner::RunAllTests(ac, av);

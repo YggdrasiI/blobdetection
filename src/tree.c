@@ -416,6 +416,7 @@ int tree_release_child(
  * both input nodes will have a parent.
  */
 int _tree_swap_siblings(
+    Tree * const tree,
     Node * const node1,
     Node * const node2,
     int children_swap,
@@ -525,6 +526,14 @@ int _tree_swap_siblings(
   if (data_pointer_swap) {
     SWAP(node1->data, node2->data);
   }
+
+  // Update tree root
+  if (node1 == tree->root){
+    tree_set_root(tree, node2);
+  }else if(node2 == tree->root){
+    tree_set_root(tree, node1);
+  }
+
 #ifdef TREE_REDUNDANT_INFOS
   // Nothing to do in this case/operation.
 #endif
@@ -546,6 +555,7 @@ int _tree_swap_siblings(
  *
  */
 int  _tree_swap_parent_child_tuple(
+    Tree * const tree,
     Node *node1,
     Node *node2,
     int data_pointer_swap)
@@ -607,6 +617,15 @@ int  _tree_swap_parent_child_tuple(
     SWAP(node1->data, node2->data);
   }
 
+  // Update tree root
+  if (node1 == tree->root){
+    tree_set_root(tree, node2);
+  }else if(node2 == tree->root){
+    tree_set_root(tree, node1);
+  }
+
+  // TODO: Update width/height?!
+
  return 0;
 }
 
@@ -624,7 +643,8 @@ int  _tree_swap_parent_child_tuple(
  *              —> CP1'
  *
  */
-int  _tree_swap_parent_child_tupleB(
+int  _tree_swap_subtrees_direct_parent(
+    Tree * const tree,
     Node *node1,
     Node *node2,
     int data_pointer_swap)
@@ -682,6 +702,13 @@ int  _tree_swap_parent_child_tupleB(
     SWAP(node1->data, node2->data);
   }
 
+  // Update tree root
+  if (node1 == tree->root){
+    tree_set_root(tree, node2);
+  }else if(node2 == tree->root){
+    tree_set_root(tree, node1);
+  }
+
  return 0;
 }
 
@@ -706,7 +733,8 @@ int  _tree_swap_parent_child_tupleB(
  *   1: The order of nodes in bath will be inverted. (_-range in sketch)
  *
  */
-int  _tree_swap_parent_successor_tuple(
+int  _tree_swap_subtrees_descendant(
+    Tree * const tree,
     Node *node1,
     Node *node2,
     int flip_direction,
@@ -717,7 +745,7 @@ int  _tree_swap_parent_successor_tuple(
   assert(node1 != node2);
 
   if (node2->parent == node1) {
-    return _tree_swap_parent_child_tupleB(node1, node2, data_pointer_swap);
+    return _tree_swap_subtrees_direct_parent(tree, node1, node2, data_pointer_swap);
   }
 
   assert(node2->parent != node1);
@@ -737,18 +765,18 @@ int  _tree_swap_parent_successor_tuple(
   Node *left_sib2 = tree_left_sibling(node2); // Element of CP2' or NULL
 
   /* Change of siblings:
-   * 1. Remove tl_node2 from CN1
+   * 1. Remove tl_node2 (=path to node2) from CN1
    * 2. Replace node1 by node2 in CP1
    * 3. Replace node2 by node1 in CP2
-   * 4. Add tl_node2 to CN2 as leftmost sibling
+   * 4. Add tl_node2 (=path to node1) to CN2 as leftmost sibling
    * Order of this three operations is important!
    */
 
-  // 1) Remove node2 from CN1
+  // 1) Remove tl_node2 from CN1
   if(left_tl_node2){
     left_tl_node2->sibling = tl_node2->sibling;
   }else{
-    assert(node1->child == left_tl_node2);
+    assert(node1->child == tl_node2);
     node1->child = tl_node2->sibling;
   }
   // Final 'tl_node2->sibling = ...' done in (4).
@@ -771,7 +799,7 @@ int  _tree_swap_parent_successor_tuple(
 
   // 4) Add tl_node2 to CN2 as leftmost sibling
   tl_node2->sibling = node2->child;
-  node2->child = node1;
+  node2->child = tl_node2;
   tl_node2->parent = node2;
 
 
@@ -784,6 +812,14 @@ int  _tree_swap_parent_successor_tuple(
     SWAP(node1->data, node2->data);
   }
 
+  // Update tree root
+  if (node1 == tree->root){
+    tree_set_root(tree, node2);
+  }else if(node2 == tree->root){
+    tree_set_root(tree, node1);
+  }
+
+  // Recursion 
   if( flip_direction ) {
     if( parent2 == node1){ // Directly connected.
     }
@@ -791,8 +827,8 @@ int  _tree_swap_parent_successor_tuple(
       // <node1> —> <lt_node2> —> <node2>  => No flipping of paths needed.
     }else{
       // At least two nodes between input nodes. Recurivly flipping them.
-      int _ret = _tree_swap_parent_successor_tuple(
-          tl_node2, parent2,
+      int _ret = _tree_swap_subtrees_descendant(
+          tree, tl_node2, parent2,
           1 /*flip_direction*/, data_pointer_swap); 
       if(_ret) {
         assert(0);
@@ -811,6 +847,7 @@ int  _tree_swap_parent_successor_tuple(
  * reference pointers.
  */
 int _tree_swap_unconnected_nodes(
+    Tree * const tree,
     Node * const node1,
     Node * const node2,
     int children_swap,
@@ -866,6 +903,14 @@ int _tree_swap_unconnected_nodes(
   if (data_pointer_swap) {
     SWAP(node1->data, node2->data);
   }
+
+  // Update tree root
+  if (node1 == tree->root){
+    tree_set_root(tree, node2);
+  }else if(node2 == tree->root){
+    tree_set_root(tree, node1);
+  }
+
 #ifdef TREE_REDUNDANT_INFOS
   //update redundant information
   if (!children_swap) {
@@ -896,6 +941,7 @@ int tree_swap_data(
 
 /* Replaces node1 by node2 and vice versa. */
 int tree_swap_nodes(
+    Tree * const tree,
     Node * const node1,
     Node * const node2,
     int child_node_rule,
@@ -911,28 +957,29 @@ int tree_swap_nodes(
   if (parent1 == parent2
     /* swapping siblings just works for non-root nodes! */
     && parent1 != NULL ){
-    return _tree_swap_siblings(node1, node2, 1, data_pointer_swap);
+    return _tree_swap_siblings(tree, node1, node2, 1, data_pointer_swap);
   }
 
   if (node_is_parent(node1, node2)){
     if (child_node_rule == 1){
-      return _tree_swap_parent_child_tuple(node1, node2, data_pointer_swap);
+      return _tree_swap_parent_child_tuple(tree, node1, node2, data_pointer_swap);
     }
     return -1; // Operation not allowed
   }
   else if (node_is_parent(node2, node1)){
     if (child_node_rule == 1){
-      return _tree_swap_parent_child_tuple(node2, node1, data_pointer_swap);
+      return _tree_swap_parent_child_tuple(tree, node2, node1, data_pointer_swap);
     }
     return -1; // Operation not allowed
   }
 
   // Here, we know that nodes are not directly connected
   // and no siblings. This eliminates most corner cases.
-  return _tree_swap_unconnected_nodes(node1, node2, 1, data_pointer_swap);
+  return _tree_swap_unconnected_nodes(tree, node1, node2, 1, data_pointer_swap);
 }
 
 int tree_swap_subtrees(
+    Tree * const tree,
     Node * const node1,
     Node * const node2,
     int descendant_node_rule,
@@ -948,24 +995,24 @@ int tree_swap_subtrees(
   if (parent1 == parent2
       /* swapping siblings just works for non-root nodes! */
       && parent1 != NULL ){
-    return _tree_swap_siblings(node1, node2, 0, data_pointer_swap);
+    return _tree_swap_siblings(tree, node1, node2, 0, data_pointer_swap);
   }
 
   if (node_is_descendant(node1, node2)){
     if (descendant_node_rule == 1){
-      return _tree_swap_parent_successor_tuple(node1, node2, 0, data_pointer_swap);
+      return _tree_swap_subtrees_descendant(tree, node1, node2, 0, data_pointer_swap);
     }
     if (descendant_node_rule == 2){
-      return _tree_swap_parent_successor_tuple(node1, node2, 1, data_pointer_swap);
+      return _tree_swap_subtrees_descendant(tree, node1, node2, 1, data_pointer_swap);
     }
     return -1; // Operation not allowed
   }
   else if (node_is_descendant(node2, node1)){
     if (descendant_node_rule == 1){
-      return _tree_swap_parent_successor_tuple(node2, node1, 0, data_pointer_swap);
+      return _tree_swap_subtrees_descendant(tree, node2, node1, 0, data_pointer_swap);
     }
     if (descendant_node_rule == 2){
-      return _tree_swap_parent_successor_tuple(node2, node1, 1, data_pointer_swap);
+      return _tree_swap_subtrees_descendant(tree, node2, node1, 1, data_pointer_swap);
     }
     return -1; // Operation not allowed
   }
@@ -974,13 +1021,15 @@ int tree_swap_subtrees(
   // This eliminates most corner cases.
   // We can handle it like the uncritical case of
   // tree_swap_nodes, without applying changes on children.
-  return _tree_swap_unconnected_nodes(node1, node2, 0, data_pointer_swap);
+  return _tree_swap_unconnected_nodes(tree, node1, node2, 0, data_pointer_swap);
 }
 
 uint32_t tree_number_of_nodes(
     const Tree * const tree)
 {
   // TODO: Caching number(?)
+  // Das würde aber das Debugging erschweren, wobei ich ja 
+  // da dann immer node_number_of_successors nehmen könnte...
   return node_number_of_successors(tree->root);
 }
 
@@ -1008,7 +1057,6 @@ uint32_t node_number_of_successors(
   return n;
 }
 
-
 void _tree_print(
     const Tree * tree,
     const Node *node,
@@ -1017,10 +1065,7 @@ void _tree_print(
   // TODO
   int32_t i;
   int32_t shift2=0;
-  // Gen unique and stable id for nodes in tree-struct array
-  int32_t id = (node>=tree->nodes)?
-    ((node - tree->nodes)% tree->size):
-    ((tree->nodes - node)% tree->size + tree->size);
+  int32_t id = tree_get_node_id(tree, node);
 #ifdef TREE_REDUNDANT_INFOS
 #if 0
   printf("%3i• (w:%2i, h:%2i) ", id, node->width, node->height);
@@ -1098,9 +1143,23 @@ Tree *tree_loads(
   return NULL;
 }
 
+int32_t tree_get_node_id(
+    const Tree *tree,
+    const Node *node)
+{
+  /* Relative to root and modulu
+  return (node>=tree->root)?
+    ((node - tree->root)% tree->size):
+    ((tree->root - node)% tree->size + tree->size);
+    */
+  assert(node>= tree->nodes);
+  assert(node<tree->nodes + tree->size);
+  return (node - tree->nodes);
+}
+
 
 Node * tree_left_sibling(
-    Node *n)
+    const Node *n)
 {
   if(n->parent == NULL) return NULL;
 
