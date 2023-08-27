@@ -45,7 +45,7 @@ mkdir_%:
 # Generate test coverage report
 gen_coverage_report:
 	cd "./$(TEST_BUILD_DIR)" \
-		&& gcovr -r .. -o covr-report.html --html-details \
+		&& gcovr -r . -o covr-report.html --html-details \
 		--filter "../src/*" --filter "../include/*" \
 		--exclude-directories tests
 

@@ -642,11 +642,18 @@ int  _tree_swap_parent_child_tuple(
  *                         —> CN2
  *              —> CP1'
  *
+ *
+ * exclude_child2: (For _tree_swap_subtrees_descendant())
+ *   Used in recursion steps to mark the path from node1 to node2.
+ *   This path is excluded from swapping.
+ *   The end-node on the other side of the path will be 'tl_node2'
+ *
  */
 int  _tree_swap_subtrees_direct_parent(
     Tree * const tree,
     Node *node1,
     Node *node2,
+    Node *exclude_child2,
     int data_pointer_swap)
 {
   assert(node1 != NULL);
@@ -660,11 +667,15 @@ int  _tree_swap_subtrees_direct_parent(
   Node *left_sib1 = tree_left_sibling(node1); // Element of CP1' or NULL
   Node *left_sib2 = tree_left_sibling(node2); // Element of CN1' or NULL
 
+  Node *left_exclude_child2 = tree_left_sibling(exclude_child2); // Element of CN2' or NULL
+
   /* Change of siblings:
    * 1. Remove node2 from CN1
+   * 1b Remove exclude_child2 from CN2
    * 2. Replace node1 in CP1' by node2
    * 3. Add node1 to CN2 as leftmost sibling
-   * Order of this three operations is important!
+   * 3b Add exclude_child2 to CN1 as leftmost sibling if !=NULL
+   * Order of this operations is important!
    */
 
   // 1) Remove node2 from CN1
@@ -675,6 +686,15 @@ int  _tree_swap_subtrees_direct_parent(
     node1->child = node2->sibling;
   }
   // Final 'node2->sibling = ...' done in (2).
+
+  // 1a) Remove exclude_child2 from CN2
+  if(left_exclude_child2){
+    left_exclude_child2->sibling = exclude_child2->sibling;
+  }else if(exclude_child2){
+    assert(node2->child == exclude_child2);
+    node2->child = exclude_child2->sibling;
+  }
+  // Final 'exclude_child2->sibling = ...' done in (3b).
 
   // 2) Replace node1 in CP1' by node2
   if(left_sib1){
@@ -691,6 +711,12 @@ int  _tree_swap_subtrees_direct_parent(
   node1->sibling = node2->child;
   node2->child = node1;
 
+  // 3b
+  if (exclude_child2){
+    exclude_child2->sibling = node1->child;
+    node1->child = exclude_child2;
+    exclude_child2->parent = node1;
+  }
 
   // Change parents
   node1->parent = node2;
@@ -727,6 +753,10 @@ int  _tree_swap_subtrees_direct_parent(
  *                         —> CN2
  *              —> CP2'
  *              
+ * exclude_child2: 
+ *   Used in recursion steps to mark the path from node1 to node2.
+ *   This path is excluded from swapping.
+ *   The end-node on the other side of the path will be 'tl_node2'
  *
  * flip_direction:
  *   0: Nodes on path between node1 and node2 will not be changed.
@@ -737,6 +767,7 @@ int  _tree_swap_subtrees_descendant(
     Tree * const tree,
     Node *node1,
     Node *node2,
+    Node *exclude_child2,
     int flip_direction,
     int data_pointer_swap)
 {
@@ -745,7 +776,7 @@ int  _tree_swap_subtrees_descendant(
   assert(node1 != node2);
 
   if (node2->parent == node1) {
-    return _tree_swap_subtrees_direct_parent(tree, node1, node2, data_pointer_swap);
+    return _tree_swap_subtrees_direct_parent(tree, node1, node2, exclude_child2, data_pointer_swap);
   }
 
   assert(node2->parent != node1);
@@ -761,28 +792,39 @@ int  _tree_swap_subtrees_descendant(
 
   // Search left siblings of both nodes
   Node *left_sib1 = tree_left_sibling(node1); // Element of CP1' or NULL
-  Node *left_tl_node2 = tree_left_sibling(tl_node2); // Element of CN1' or NULL
   Node *left_sib2 = tree_left_sibling(node2); // Element of CP2' or NULL
+  // Left siblings of the critical childs of node1/node2
+  Node *left_tl_node2 = tree_left_sibling(tl_node2); // Element of CN1' or NULL
+  Node *left_exclude_child2 = tree_left_sibling(exclude_child2); // Element of CN2' or NULL
 
   /* Change of siblings:
-   * 1. Remove tl_node2 (=path to node2) from CN1
-   * 2. Replace node1 by node2 in CP1
-   * 3. Replace node2 by node1 in CP2
-   * 4. Add tl_node2 (=path to node1) to CN2 as leftmost sibling
-   * Order of this three operations is important!
+   * 1a Remove tl_node2 (=path to node2) from CN1
+   * 1b Remove exclude_child2 from CN2
+   * 2. Swap node1 with node2 in CP1/CP2
+   * 3a Add tl_node2 (=path to node1) to CN2 as leftmost sibling
+   * 3b Add exclude_child2 to CN1 as leftmost sibling if !=NULL
    */
 
-  // 1) Remove tl_node2 from CN1
+  // 1a) Remove tl_node2 from CN1
   if(left_tl_node2){
     left_tl_node2->sibling = tl_node2->sibling;
   }else{
     assert(node1->child == tl_node2);
     node1->child = tl_node2->sibling;
   }
-  // Final 'tl_node2->sibling = ...' done in (4).
+  // Final 'tl_node2->sibling = ...' done in (3a).
+
+  // 1a) Remove exclude_child2 from CN2
+  if(left_exclude_child2){
+    left_exclude_child2->sibling = exclude_child2->sibling;
+  }else if(exclude_child2){
+    assert(node2->child == exclude_child2);
+    node2->child = exclude_child2->sibling;
+  }
+  // Final 'exclude_child2->sibling = ...' done in (3b).
 
   // 2) Replace node1 by node2 in CP1
-  //  and 3) Replace node2 by node1 in CP2
+  //    and replace node2 by node1 in CP2
   if(left_sib1){
     left_sib1->sibling = node2;
   }else{
@@ -797,11 +839,17 @@ int  _tree_swap_subtrees_descendant(
   }
   SWAP(node2->sibling, node1->sibling);
 
-  // 4) Add tl_node2 to CN2 as leftmost sibling
+  // 3a) Add tl_node2 to CN2 as leftmost sibling
   tl_node2->sibling = node2->child;
   node2->child = tl_node2;
   tl_node2->parent = node2;
 
+  // 3b
+  if (exclude_child2){
+    exclude_child2->sibling = node1->child;
+    node1->child = exclude_child2;
+    exclude_child2->parent = node1;
+  }
 
   // Change parents
   node1->parent = parent2;
@@ -815,8 +863,6 @@ int  _tree_swap_subtrees_descendant(
   // Update tree root
   if (node1 == tree->root){
     tree_set_root(tree, node2);
-  }else if(node2 == tree->root){
-    tree_set_root(tree, node1);
   }
 
   // Recursion 
@@ -829,7 +875,8 @@ int  _tree_swap_subtrees_descendant(
       // At least two nodes between input nodes. Recurivly flipping them.
       int _ret = _tree_swap_subtrees_descendant(
           tree, tl_node2, parent2,
-          1 /*flip_direction*/, data_pointer_swap); 
+          node1 /*Now at position of node2 */, 1 /*flip_direction*/,
+          data_pointer_swap); 
       if(_ret) {
         assert(0);
         return _ret;
@@ -1000,19 +1047,19 @@ int tree_swap_subtrees(
 
   if (node_is_descendant(node1, node2)){
     if (descendant_node_rule == 1){
-      return _tree_swap_subtrees_descendant(tree, node1, node2, 0, data_pointer_swap);
+      return _tree_swap_subtrees_descendant(tree, node1, node2, NULL, 0, data_pointer_swap);
     }
     if (descendant_node_rule == 2){
-      return _tree_swap_subtrees_descendant(tree, node1, node2, 1, data_pointer_swap);
+      return _tree_swap_subtrees_descendant(tree, node1, node2, NULL, 1, data_pointer_swap);
     }
     return -1; // Operation not allowed
   }
   else if (node_is_descendant(node2, node1)){
     if (descendant_node_rule == 1){
-      return _tree_swap_subtrees_descendant(tree, node2, node1, 0, data_pointer_swap);
+      return _tree_swap_subtrees_descendant(tree, node2, node1, NULL, 0, data_pointer_swap);
     }
     if (descendant_node_rule == 2){
-      return _tree_swap_subtrees_descendant(tree, node2, node1, 1, data_pointer_swap);
+      return _tree_swap_subtrees_descendant(tree, node2, node1, NULL, 1, data_pointer_swap);
     }
     return -1; // Operation not allowed
   }
@@ -1028,15 +1075,16 @@ uint32_t tree_number_of_nodes(
     const Tree * const tree)
 {
   // TODO: Caching number(?)
+  // There are many operations which invalidates this number?!
   // Das würde aber das Debugging erschweren, wobei ich ja 
   // da dann immer node_number_of_successors nehmen könnte...
-  return node_number_of_successors(tree->root);
+  return 1 + node_number_of_successors(tree->root);
 }
 
 uint32_t node_number_of_successors(
         const Node * node)
 {
-  uint32_t n = 1;
+  uint32_t n = 0;
   Node *cur = node->child;
   while (cur != NULL) {
     n++;
@@ -1062,15 +1110,10 @@ void _tree_print(
     const Node *node,
     int32_t shift)
 {
-  // TODO
   int32_t i;
   int32_t shift2=0;
   int32_t id = tree_get_node_id(tree, node);
-#ifdef TREE_REDUNDANT_INFOS
-#if 0
-  printf("%3i• (w:%2i, h:%2i) ", id, node->width, node->height);
-  shift2+=19;
-#else
+
   //printf(id>99?"<%3i> ":" <%2i>", id);
   //shift2+=6;
   printf(id>99?"◖%3i◗ ":(id>9?"◖■%2i◗":" ◖■%1i■◗"), id);
@@ -1078,11 +1121,6 @@ void _tree_print(
 
   // More ident for higher ids(?!)
   if(id>999) shift2 += ((int)log10(id)) - 3;
-#endif
-#else
-  printf("%3i• ", id);
-  shift2+=5;
-#endif
 
 
   if( node->child != NULL){
@@ -1161,7 +1199,8 @@ int32_t tree_get_node_id(
 Node * tree_left_sibling(
     const Node *n)
 {
-  if(n->parent == NULL) return NULL;
+  if (n == NULL) return NULL;
+  if (n->parent == NULL) return NULL;
 
   Node *sib = n->parent->child;
   while (sib){

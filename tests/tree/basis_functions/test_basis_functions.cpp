@@ -122,9 +122,9 @@ TEST(TestAddingNodes, Test_AddingTwoNodesToRoot) {
 	t1->nodes[2] = Leaf;
   tree_add_child(&nodes1[0], &nodes1[1]);
   tree_add_child(&nodes1[0], &nodes1[2]);
-  LONGS_EQUAL(3, node_number_of_successors(&nodes1[0]));
-  LONGS_EQUAL(1, node_number_of_successors(&nodes1[1]));
-  LONGS_EQUAL(1, node_number_of_successors(&nodes1[2]));
+  LONGS_EQUAL(2, node_number_of_successors(&nodes1[0]));
+  LONGS_EQUAL(0, node_number_of_successors(&nodes1[1]));
+  LONGS_EQUAL(0, node_number_of_successors(&nodes1[2]));
 
 	// Check root
 	POINTERS_EQUAL(NULL, nodes1[0].parent);
@@ -151,9 +151,9 @@ TEST(TestAddingNodes, Test_AddingGrandchild) {
 	t1->nodes[2] = Leaf;
   tree_add_child(&nodes1[0], &nodes1[1]);
   tree_add_child(&nodes1[1], &nodes1[2]);
-  LONGS_EQUAL(3, node_number_of_successors(&nodes1[0]));
-  LONGS_EQUAL(2, node_number_of_successors(&nodes1[1]));
-  LONGS_EQUAL(1, node_number_of_successors(&nodes1[2]));
+  LONGS_EQUAL(2, node_number_of_successors(&nodes1[0]));
+  LONGS_EQUAL(1, node_number_of_successors(&nodes1[1]));
+  LONGS_EQUAL(0, node_number_of_successors(&nodes1[2]));
 
 	// Check root
 	POINTERS_EQUAL(&nodes1[1], nodes1[0].child);

@@ -113,7 +113,7 @@ TEST(TestSwapTrees, Test_for_direct_related_nodes) {
 	tree_destroy(&t1clone);
 }
 
-TEST(TestSwapTrees, Test_for_indirect_related_nodesA) {
+TEST(TestSwapTrees, Indirect_related_nodes_13) {
 	int print_tree = verbose;
 	int rule = 1; // descendant_node_rule
 
@@ -156,7 +156,7 @@ TEST(TestSwapTrees, Test_for_indirect_related_nodesA) {
 	tree_destroy(&t1clone);
 }
 
-TEST(TestSwapTrees, Test_for_indirect_related_nodesB) {
+TEST(TestSwapTrees, Indirect_related_nodes_14) {
 	int print_tree = verbose;
 	int rule = 1; // descendant_node_rule
 
@@ -183,6 +183,133 @@ TEST(TestSwapTrees, Test_for_indirect_related_nodesB) {
 	 * 0 —> 4 —> 2 —> 3 —> 1
 	 *                  —> 8
 	 *        —> 5
+	 *   —> 6 —> 7
+	 *   —> 9
+	 */
+	if (print_tree) {
+		printf("\n");
+		tree_print(t1, NULL, 0);
+	}
+	LONGS_EQUAL(num_nodes, tree_number_of_nodes(t1));
+	LONGS_EQUAL(0, tree_cmp(t1, t1clone, TREE_COMPARE_SAME_NODE_MEMORY_LAYOUT));
+
+	// Check structure
+	// TODO: String to Tree parser needed
+
+	tree_destroy(&t1clone);
+}
+
+TEST(TestSwapTrees, Indirect_related_nodes_14flip) {
+	int print_tree = verbose;
+	int rule = 2; // descendant_node_rule
+
+	/* Generate following structuere:
+	 * 0 —> 1 —> 2 —> 3 —> 4 —> 5
+	 *                  —> 8
+	 *   —> 6 —> 7
+	 *   —> 9
+	 */
+	gen2(t1);
+	if (print_tree) {
+		printf("\n");
+		tree_print(t1, NULL, 0);
+	}
+
+	uint32_t num_nodes = tree_number_of_nodes(t1);
+	// Copy t1 to check if swapped arguments leads to same result.
+	Tree *t1clone = tree_clone(t1, NULL, NULL);
+
+	// Swap nodes on same branch, two node between.
+	LONGS_EQUAL(0, tree_swap_subtrees(t1, &n1[1], &n1[4], rule, 1));
+	LONGS_EQUAL(0, tree_swap_subtrees(t1clone, &c1[4], &c1[1], rule, 1));
+	/* Expected result after operation:
+	 * 0 —> 4 —> 3 —> 2 —> 1
+	 *             —> 8
+	 *        —> 5
+	 *   —> 6 —> 7
+	 *   —> 9
+	 */
+	if (print_tree) {
+		printf("\n");
+		tree_print(t1, NULL, 0);
+	}
+	LONGS_EQUAL(num_nodes, tree_number_of_nodes(t1));
+	LONGS_EQUAL(0, tree_cmp(t1, t1clone, TREE_COMPARE_SAME_NODE_MEMORY_LAYOUT));
+
+	// Check structure
+	// TODO: String to Tree parser needed
+
+	tree_destroy(&t1clone);
+}
+
+TEST(TestSwapTrees, Indirect_related_nodes_15) {
+	int print_tree = verbose;
+	int rule = 1; // descendant_node_rule
+
+	/* Generate following structuere:
+	 * 0 —> 1 —> 2 —> 3 —> 4 —> 5
+	 *                  —> 8
+	 *   —> 6 —> 7
+	 *   —> 9
+	 */
+	gen2(t1);
+	if (print_tree) {
+		printf("\n");
+		tree_print(t1, NULL, 0);
+	}
+
+	uint32_t num_nodes = tree_number_of_nodes(t1);
+	// Copy t1 to check if swapped arguments leads to same result.
+	Tree *t1clone = tree_clone(t1, NULL, NULL);
+
+	// Swap nodes on same branch, two node between.
+	LONGS_EQUAL(0, tree_swap_subtrees(t1, &n1[1], &n1[5], rule, 1));
+	LONGS_EQUAL(0, tree_swap_subtrees(t1clone, &c1[5], &c1[1], rule, 1));
+	/* Expected result after operation:
+	 * 0 —> 5 —> 2 —> 3 —> 4 —> 1
+	 *                  —> 8
+	 *   —> 6 —> 7
+	 *   —> 9
+	 */
+	if (print_tree) {
+		printf("\n");
+		tree_print(t1, NULL, 0);
+	}
+	LONGS_EQUAL(num_nodes, tree_number_of_nodes(t1));
+	LONGS_EQUAL(0, tree_cmp(t1, t1clone, TREE_COMPARE_SAME_NODE_MEMORY_LAYOUT));
+
+	// Check structure
+	// TODO: String to Tree parser needed
+
+	tree_destroy(&t1clone);
+}
+
+TEST(TestSwapTrees, Indirect_related_nodes_15flip) {
+	int print_tree = verbose;
+	int rule = 2; // descendant_node_rule
+
+	/* Generate following structuere:
+	 * 0 —> 1 —> 2 —> 3 —> 4 —> 5
+	 *                  —> 8
+	 *   —> 6 —> 7
+	 *   —> 9
+	 */
+	gen2(t1);
+	if (print_tree) {
+		printf("\n");
+		tree_print(t1, NULL, 0);
+	}
+
+	uint32_t num_nodes = tree_number_of_nodes(t1);
+	// Copy t1 to check if swapped arguments leads to same result.
+	Tree *t1clone = tree_clone(t1, NULL, NULL);
+
+	// Swap nodes on same branch, two node between.
+	LONGS_EQUAL(0, tree_swap_subtrees(t1, &n1[1], &n1[5], rule, 1));
+	LONGS_EQUAL(0, tree_swap_subtrees(t1clone, &c1[5], &c1[1], rule, 1));
+	/* Expected result after operation:
+	 * 0 —> 5 —> 4 —> 3 —> 2 —> 1
+	 *             —> 8
 	 *   —> 6 —> 7
 	 *   —> 9
 	 */

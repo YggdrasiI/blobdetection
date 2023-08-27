@@ -115,6 +115,7 @@ int32_t tree_get_node_id(
 static inline Node * tree_right_sibling(
     const Node *n)
 {
+  if (n == NULL) return NULL;
   return n->sibling;
 }
 
@@ -128,6 +129,7 @@ Node * tree_left_sibling(
  */
 static inline Node * node_get_node_before_descendant(const Node *descendant, const Node *successor)
 {
+  if (successor == NULL ) return NULL;
   Node * s = successor->parent;
   while(s){
     if(s->parent == descendant) return s; 
@@ -176,6 +178,21 @@ static inline uint32_t node_number_of_descendants(
   }
   return r;
 }
+
+static inline uint32_t node_number_of_children(
+    const Node * node){
+#ifdef TREE_REDUNDANT_INFOS
+  return node->width;
+#endif
+  uint32_t c=0;
+  node=node->child;
+  while(node){
+    ++c;
+    node = node->sibling;
+  }
+  return c;
+}
+
 static inline uint32_t node_get_depth(
     const Node * node){
   return node_number_of_descendants(node);
