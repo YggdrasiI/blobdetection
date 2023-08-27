@@ -132,7 +132,7 @@ static inline Node * node_get_node_before_descendant(const Node *descendant, con
   if (successor == NULL ) return NULL;
   Node * s = successor->parent;
   while(s){
-    if(s->parent == descendant) return s; 
+    if(s->parent == descendant) return s;
     s = s->parent;
   }
   return NULL;
@@ -145,7 +145,7 @@ static inline Node * node_get_node_before_descendant(const Node *descendant, con
 static inline int node_is_descendant(const Node *descendant, const Node *successor)
 {
   while(successor->parent){
-    if(successor == descendant) return 1; 
+    if(successor == descendant) return 1;
     successor = successor->parent;
   }
   return 0;
@@ -242,7 +242,7 @@ int tree_add_siblings(
     Node * const child);
 
 /* Release child from its parent. After this child
- * is like a root node (no parent and no siblings), but is 
+ * is like a root node (no parent and no siblings), but is
  * not connected to the main tree.
  *
  * It still shares the memory of Tree struct.
@@ -269,7 +269,7 @@ int tree_swap_data(
  * If node_i is child of node_(1-i), the set of childs can
  * not be keept:
  *
- * child_node_rule == 0: Reject swap of nodes if one node is parent of the other. 
+ * child_node_rule == 0: Reject swap of nodes if one node is parent of the other.
  * child_node_rule == 1: Allow change of childs.
  *
  *
@@ -286,10 +286,10 @@ int tree_swap_nodes(
  * keeping its children.
  *
  * If subtree(node_i) is containing node_(1-i), the path between
- * both nodes has to be excluded from the swap and has to be 
+ * both nodes has to be excluded from the swap and has to be
  * handled differently:
  *
- * descendant_node_rule == 0: Reject swap of nodes 
+ * descendant_node_rule == 0: Reject swap of nodes
  * descendant_node_rule == 1: Keep order of nodes between both nodes.
  * descendant_node_rule == 2: Reverse order of nodes between both nodes.
  *
@@ -328,7 +328,7 @@ int tree_add_child(
  *                       will mapped into cloned_data.
  *
  * Returns:
- *    New tree with same structure as origin. 
+ *    New tree with same structure as origin.
  */
 Tree *tree_clone(
     const Tree * source,
@@ -338,15 +338,15 @@ Tree *tree_clone(
 
 /* ======  For traversal over trees ================= */
 
-/* Type for functions called on each node 
+/* Type for functions called on each node
  * during a traversal of a tree.
  *
  * Return value != 0 breaks loop over tree */
 typedef int node_func_t(const Node *n, void *data);
 
 /* Same as node_func_t but type indicates that n->parent is the target
- * node of the event. 
- * We can not simply propagate n->parent instead of n because 
+ * node of the event.
+ * We can not simply propagate n->parent instead of n because
  * a) In-Order calls can be done multiple times for nodes with n>2 childs.
  * b) Post-Order calls can be handled better if we know the right-most child.
  * c) Pre-Order calls do not profit, but to normalize the behavour to the other
@@ -382,9 +382,10 @@ int tree_cmp(
  * subtree_root is NULL or defining the root of printed (sub-)tree.
  * Shift defines number of spaces at line beginning. */
 void tree_print(
-    const Tree * tree,
+    const Tree *tree,
     const Node *subtree_root,
     int32_t shift);
+
 
 /* Sorting the nodes such that topological equal trees got
  * the same result. The algorithm sort rekursivly all children
@@ -419,4 +420,5 @@ int tree_integrity_check(
 
 void tree_print_integrity_check(
     Node *root);
+
 #endif

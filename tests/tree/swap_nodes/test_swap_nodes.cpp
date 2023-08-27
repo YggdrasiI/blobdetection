@@ -27,10 +27,27 @@ TEST_GROUP(TestSwapNodes) {
 		tree_destroy(&t2);
 	}
 
+	void gen2(Tree *t) {
+		/* Generate following structuere:
+		 * 0 —> 1 —> 2 —> 3 —> 4 —> 5
+		 *                  —> 8
+		 *   —> 6 —> 7
+		 *   —> 9
+		 */
+		tree_add_child(&t->nodes[0], &t->nodes[1]);
+		tree_add_child(&t->nodes[1], &t->nodes[2]);
+		tree_add_child(&t->nodes[2], &t->nodes[3]);
+		tree_add_child(&t->nodes[3], &t->nodes[4]);
+		tree_add_child(&t->nodes[4], &t->nodes[5]);
+		tree_add_child(&t->nodes[0], &t->nodes[6]);
+		tree_add_child(&t->nodes[6], &t->nodes[7]);
+		tree_add_child(&t->nodes[3], &t->nodes[8]);
+		tree_add_child(&t->nodes[0], &t->nodes[9]);
+	}
 };
 
 
-TEST(TestSwapNodes, Test_for_direct_related_nodes) {
+TEST(TestSwapNodes, Direct_related_nodes) {
 	int print_tree = verbose;
 
 	/* Generate following structuere:
@@ -94,7 +111,7 @@ TEST(TestSwapNodes, Test_for_direct_related_nodes) {
 	tree_destroy(&t1clone);
 }
 
-TEST(TestSwapNodes, Test_for_indirect_related_nodes) {
+TEST(TestSwapNodes, Indirect_related_nodes) {
 	int print_tree = verbose;
 
 	/* Generate following structuere:
@@ -240,7 +257,7 @@ TEST(TestSwapNodes, Test_for_indirect_related_nodes) {
 	tree_destroy(&t1clone);
 }
 
-TEST(TestSwapNodes, Test_child_node_rule_fail) {
+TEST(TestSwapNodes, Child_node_rule_fail) {
 	int print_tree = verbose;
 
 	/* Generate following structuere:
@@ -255,7 +272,47 @@ TEST(TestSwapNodes, Test_child_node_rule_fail) {
 	LONGS_EQUAL(-1, tree_swap_nodes(t1, &n1[1], &n1[3], 0, 0));
 }
 
-TEST(TestSwapNodes, Test_for_non_related_nodes) {
+TEST(TestSwapNodes, Non_related_nodes) {
+	int print_tree = verbose;
+	int rule = 0; // descendant_node_rule
+
+	/* Generate following structuere:
+	 * 0 —> 1 —> 2 —> 3 —> 4 —> 5
+	 *                  —> 8
+	 *   —> 6 —> 7
+	 *   —> 9
+	 */
+	gen2(t1);
+	if (print_tree) {
+		printf("\n");
+		tree_print(t1, NULL, 0);
+	}
+
+	uint32_t num_nodes = tree_number_of_nodes(t1);
+	// Copy t1 to check if swapped arguments leads to same result.
+	Tree *t1clone = tree_clone(t1, NULL, NULL);
+
+	// Swap nodes on same branch, two node between.
+	LONGS_EQUAL(0, tree_swap_nodes(t1, &n1[3], &n1[6], rule, 1));
+	LONGS_EQUAL(0, tree_swap_nodes(t1clone, &c1[6], &c1[3], rule, 1));
+	/* Expected result after operation:
+	 * 0 —> 1 —> 2 —> 6 —> 7
+   *   —> 3 —> 4 —> 5
+	 *        —> 8
+	 *   —> 9
+	 */
+	if (print_tree) {
+		printf("\n");
+		tree_print(t1, NULL, 0);
+	}
+	LONGS_EQUAL(num_nodes, tree_number_of_nodes(t1));
+	LONGS_EQUAL(0, tree_cmp(t1, t1clone, TREE_COMPARE_SAME_NODE_MEMORY_LAYOUT));
+
+	// Check structure
+	// TODO: String to Tree parser needed
+
+	tree_destroy(&t1clone);
+
 }
 
 //=================================================
