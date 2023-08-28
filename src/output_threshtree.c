@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "output.h"
-#include "output_threshtree.h"
+#include "blobdetection/output.h"
+#include "blobdetection/output_threshtree.h"
 
 char *sprint_threshtree_areas(
         const uint8_t* data,

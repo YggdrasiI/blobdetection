@@ -3,7 +3,7 @@
 #include <string.h>
 
 extern "C" {
-#include "tree.h"
+#include "blobdetection/tree.h"
 #include "tree_loops.h"
 }
 

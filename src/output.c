@@ -1,4 +1,4 @@
-#include "output.h"
+#include "blobdetection/output.h"
 
 int32_t term_color_mode = -1;
 int32_t term_num_colors = 2;

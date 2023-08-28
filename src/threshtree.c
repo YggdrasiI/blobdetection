@@ -8,8 +8,9 @@
 
 #include <assert.h>
 
+#include "blobdetection/threshtree.h"
+
 #include "tree_intern.h"
-#include "threshtree.h"
 #include "threshtree_macros.h"
 //#include "threshtree_macros_old.h"
 

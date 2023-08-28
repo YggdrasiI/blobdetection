@@ -1,7 +1,7 @@
 TEST_BUILD_DIR=debug_with_tests
 
 help:
-	echo "Build targets:\n\n" \
+	@echo -e "Build targets:\n\n" \
 	"\trelease\tCMake build in 'build' folder.\n" \
 	"\tdebug\tCMake build in 'debug' folder.\n" \
 	"\t\n" \
@@ -17,8 +17,15 @@ all: release install_build
 
 # Compile lib and examples into ./build
 release: make_build
+	@echo ""
+
 debug: make_debug
+	@echo ""
+
+tests: test
+
 test: make_$(TEST_BUILD_DIR) gen_coverage_report
+	@echo ""
 
 # Differnt build types
 build/CMakeCache.txt: mkdir_build
@@ -27,9 +34,9 @@ build/CMakeCache.txt: mkdir_build
 debug/CMakeCache.txt: mkdir_debug
 	cd debug && cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=../dest ..
 
-debug_with_tests/CMakeCache.txt: mkdir_debug_with_tests
-	cd debug_with_tests && cmake -DCMAKE_BUILD_TYPE=Debug -DWITH_TESTS=1 \
-		-DCMAKE_C_FLAGS=--coverage -g -O0 -DCMAKE_CXX_FLAGS=--coverage -g -O0 \
+$(TEST_BUILD_DIR)/CMakeCache.txt: mkdir_$(TEST_BUILD_DIR)
+	cd $(TEST_BUILD_DIR) && cmake -DCMAKE_BUILD_TYPE=Debug -DWITH_TESTS=1 \
+		-DCMAKE_C_FLAGS="--coverage -g -O0" -DCMAKE_CXX_FLAGS="--coverage -g -O0" \
 		..
 
 # Artifical targets
@@ -63,4 +70,8 @@ install_%:
 clean:
 	rm -rf ./build ./debug ./dest ./$(TEST_BUILD_DIR)
 
-.PHONY: all clean release debug debug_with_tests
+.PHONY: all clean release debug test tests
+
+# This preventing make from delete its intermediate target
+# Without, the make is ending with 'rm [...]/src/libdepthtree.so'
+.PRECIOUS: %/src/libdepthtree.so

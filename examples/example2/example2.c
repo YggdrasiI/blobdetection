@@ -2,8 +2,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "depthtree.h"
-#include "output_depthtree.h"
+#include "blobdetection/depthtree.h"
+#include "blobdetection/output_depthtree.h"
 
 static const uint32_t W=28;
 static const uint32_t H=28;

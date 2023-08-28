@@ -1,4 +1,4 @@
-#include "enums.h"
+#include "blobdetection/enums.h"
 
 // Note NDEBUG is defined by cmake for build type 'Release'.
 // We strip the strings from the build in this case.

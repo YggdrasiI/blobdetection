@@ -7,7 +7,7 @@ OPTION(WITH_TESTS "Compile tests" OFF)
 OPTION(WITH_EXAMPLES "Compile examples" ON)
 
 include_directories(
-	${CMAKE_SOURCE_DIR}/include/blobdetection
+	${CMAKE_SOURCE_DIR}/include
 	${CMAKE_SOURCE_DIR}/src
 	)
 
@@ -15,6 +15,9 @@ include_directories(
 #set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -g -O0 -fmax-errors=3 -w" )
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c18 -Wall " )
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -std=c18 -Wall -Werror " )
+
+# For clang/lsp
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_subdirectory(src)
 

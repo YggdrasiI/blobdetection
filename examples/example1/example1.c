@@ -2,8 +2,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "threshtree.h"
-#include "output_threshtree.h"
+#include "blobdetection/threshtree.h"
+#include "blobdetection/output_threshtree.h"
 
 static const uint32_t W=28;
 static const uint32_t H=28;

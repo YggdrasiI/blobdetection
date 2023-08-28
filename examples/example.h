@@ -6,9 +6,9 @@
 
 
 #if __has_include("settings.h")
-#include "settings.h"
+#include "blobdetection/settings.h"
 #else
-#include "settings.default.h"
+#include "blobdetection/settings.default.h"
 #endif
 
 #ifdef VISUAL_STUDIO
@@ -18,8 +18,8 @@ int32_t random(){
 
 #endif
 
-#include "tree.h"
-#include "blob.h"
+#include "blobdetection/tree.h"
+#include "blobdetection/blob.h"
 
 static const char * c( uint8_t i){
   switch(i){

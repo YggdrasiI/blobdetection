@@ -8,7 +8,7 @@
 
 //#include "enums.h"
 
-#include "tree.h"
+#include "blobdetection/tree.h"
 
 #ifndef INLINE
 #define UNDEF_INLINE

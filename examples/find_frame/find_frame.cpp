@@ -10,8 +10,8 @@
 #include "../helpers.hpp"
 
 
-#include "threshtree.h"
-#include "depthtree.h"
+#include "blobdetection/threshtree.h"
+#include "blobdetection/depthtree.h"
 
 //using namespace cv;
 using std::cout;

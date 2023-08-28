@@ -4,8 +4,8 @@
 #include <string.h>
 #include <stddef.h>
 
-//#define INLINE inline
-#include "tree.h"
+#include "blobdetection/tree.h"
+
 #include "tree_intern.h"
 
 Tree *tree_clone(

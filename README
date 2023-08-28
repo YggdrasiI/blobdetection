@@ -252,4 +252,5 @@ EXAMPLE USAGE:
   None, unless tests are enabled.
 
   If build with -DWITH_TESTS=1:
-	  CppUTest, e.g.  'apt install cpputest'
+	  CppUTest, e.g.  'apt install cpputest gcovr'
+		'pacman -S cpputest gcovr

@@ -3,9 +3,9 @@
 #include <stddef.h>
 #include <string.h>
 
-#include "enums.h"
+#include "blobdetection/enums.h"
+#include "blobdetection/tree.h"
 
-#include "tree.h"
 #include "tree_intern.h"
 
 // Force gcc to inline looping over threes.

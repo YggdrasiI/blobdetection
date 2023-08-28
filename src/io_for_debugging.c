@@ -1,4 +1,4 @@
-#include "tree.h"
+#include "blobdetection/tree.h"
 #include "tree_intern.h"
 
 // Debug/Helper-Functions

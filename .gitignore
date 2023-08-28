@@ -6,4 +6,5 @@
 *.bin
 build
 debug
+debug_with_tests
 tests/*.html

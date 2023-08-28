@@ -8,11 +8,10 @@
 
 #include <assert.h>
 
-#include "blob.h"
-#include "depthtree.h"
-//#define INLINE static inline
-#include "tree_intern.h" // _reallocarray_or_free()
+#include "blobdetection/blob.h"
+#include "blobdetection/depthtree.h"
 
+#include "tree_intern.h" // _reallocarray_or_free()
 #include "depthtree_macros.h"
 
 int32_t depthtree_create_workspace(
