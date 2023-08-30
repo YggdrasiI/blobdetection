@@ -93,7 +93,7 @@ int _tree_depth_first_search(
         if (on_non_leaf_pre_order(cur->child, data)) return 1;
       }
 
-      // Alfter on_non_leaf_in_order call to allow child-resort before.
+      // After on_non_leaf_in_order()-call to allow resort of childs before.
       cur = cur->child;
       continue;
     }
@@ -115,7 +115,7 @@ int _tree_depth_first_search(
       continue;
     }
 
-    while(cur!=root){
+    while(cur){
       // Here, cur is always the rightmost child.
 
       // Post-Order-Position for non-leafs (cur->parent)
@@ -128,6 +128,10 @@ int _tree_depth_first_search(
       if(cur==NULL){ // tree is inconsistent if we reach NULL before root
         assert(cur!=NULL);
         return -3;
+      }
+      if (cur->parent == NULL){ // root (or node with wrong parent) reached
+        assert(cur == root);
+        return 0; //cur = NULL; break;
       }
 
       if (cur->sibling) {
@@ -195,7 +199,7 @@ int _trees_depth_first_search(
         if (d) return d;
       }
 
-      // Alfter on_non_leaf_in_order call to allow child-resort before.
+      // After on_non_leaf_in_order()-call to allow resort of childs before.
       cur1 = cur1->child;
       cur2 = cur2->child;
       assert(cur1!= NULL && cur2 != NULL); // guaranteed due previous if's.

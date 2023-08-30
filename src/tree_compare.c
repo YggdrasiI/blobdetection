@@ -1,6 +1,8 @@
 #include <assert.h>
 #include <limits.h>
 #include <stddef.h>
+
+//#define _POSIX_C_SOURCE >= 200809L
 #include <string.h>
 
 #include "blobdetection/enums.h"
@@ -22,15 +24,15 @@
  * Returns 1, if a>b, and 0 otherwise.
  * Do not use (1, 0, -1) like strcmp for sorting stability.
  */
-typedef int pointer_compare_func(const void **a, const void **b);
+typedef int pointer_compare_func(void **a, void **b);
 
-int _cmp_strings_by_value(const void **a, const void **b)
+int _cmp_strings_by_value(void **a, void **b)
 {
   if (strcmp(*a, *b) > 0) return 1;
   return 0;
 }
 
-int _cmp_strings_by_position(const void **a, const void **b)
+int _cmp_strings_by_position(void **a, void **b)
 {
   return (*a < *b?1:0);
 }
@@ -55,7 +57,8 @@ void _quicksort_pointer(
   split = begin + 1;
   while (++ptr != end) {
     //if ( **ptr < **begin )
-    if ( cmp(*ptr, *begin) ) 
+    //if ( cmp(*ptr, *begin) ) 
+    if ( cmp(ptr, begin) ) 
     {
       _swap_pointers(ptr, split);
       ++split;
@@ -242,6 +245,10 @@ int parent_compare_func2(const Node *n1, const Node *n2, void *compare_data) {
       (void **)cmp->sorting_siblings1,
       (void **)cmp->sorting_siblings1+num_nodes,
       _cmp_strings_by_position);
+  _quicksort_pointer(
+      (void **)cmp->sorting_siblings2,
+      (void **)cmp->sorting_siblings2+num_nodes,
+      _cmp_strings_by_position);
 
   // Check if canonical form is the same.
   uint32_t idx = num_nodes;
@@ -255,7 +262,7 @@ int parent_compare_func2(const Node *n1, const Node *n2, void *compare_data) {
   // Update node order in both trees to canonical form.
   Node **pn1 = cmp->sorting_siblings1;
   Node **pn2 = cmp->sorting_siblings2;
-  for(idx = 1 /* not 0 */; idx<num_nodes; ++idx){
+  for(idx = 0; idx<num_nodes-1; ++idx){
     (*pn1)->sibling = *(pn1+1);
     (*pn2)->sibling = *(pn2+1);
     ++pn1; ++pn2;
@@ -341,8 +348,8 @@ int func3_on_leaf(const Node *n, void *_data) {
   compare_func3_data * data = (compare_func3_data *)_data;
 
   //Flipping in and out avoids nesting with data->depth++ ;data->depth--;
-  const uint32_t idx_in = data->depth % 2;
-  const uint32_t idx_out = 1-idx_in;
+  const uint32_t idx_out = data->depth % 2;
+  //const uint32_t idx_in = 1-idx_out;
 
   // Eval index in label arrays
   const ptrdiff_t d = n - data->anchor;
@@ -351,9 +358,8 @@ int func3_on_leaf(const Node *n, void *_data) {
 
   // Save start of label for this node
   data->label_refs[d] = data->first_free_char_in_label_cache[idx_out];
-  // insert "()"
-  *(data->first_free_char_in_label_cache[idx_out])++ = '(';
-  *(data->first_free_char_in_label_cache[idx_out])++ = ')';
+  // insert "|"
+  *(data->first_free_char_in_label_cache[idx_out])++ = 'o';
   *(data->first_free_char_in_label_cache[idx_out])++ = '\0';
 
   return 0;
@@ -370,8 +376,8 @@ int func3_on_nonleaf_postorder(const Node *n, void *_data) {
   // n = Last child node.
   compare_func3_data * data = (compare_func3_data *)_data;
 
-  const uint32_t idx_out = data->depth % 2;
-  const uint32_t idx_in = 1-idx_out;
+  const uint32_t idx_in = data->depth % 2;
+  const uint32_t idx_out = 1-idx_in;
 
   // Put label refs into array
 #ifdef TREE_REDUNDANT_INFOS
@@ -447,21 +453,25 @@ int func3_on_nonleaf_postorder(const Node *n, void *_data) {
     assert(0);
     return -5;
   }
+	*cur_pos++ = '[';
   while (plabel < plabelEnd) {
-    assert(cur_pos > data->label_cache[idx_out]);
+    assert(cur_pos >= data->label_cache[idx_out]);
     assert(cur_pos + strlen(*plabel) 
         < data->label_cache[idx_out] + data->len_of_label_caches);
-    cur_pos = strcpy(cur_pos, *plabel);
+    cur_pos = stpcpy(cur_pos, *plabel);
     ++plabel;
   }
+	*cur_pos++ = ']';
+	*cur_pos = '\0';
+  printf("XXX %s\n", data->first_free_char_in_label_cache[idx_out]);
 
   // Lock memory in idx_out-cache
-  data->first_free_char_in_label_cache[idx_out] = cur_pos;
+  data->first_free_char_in_label_cache[idx_out] = cur_pos+1; /* One after last '\0' */
   // Unlock memory in idx_in-cache
   data->first_free_char_in_label_cache[idx_in] = leftmost_pointer_input_labels;
 
   // Link to new label in parent node
-  const ptrdiff_t dParent = cur->parent - data->anchor;
+  const ptrdiff_t dParent = n->parent - data->anchor;
   data->label_refs[dParent] = leftmost_pointer_output_labels;
 
   // We're done :-)
@@ -699,7 +709,10 @@ int tree_cmp_same_memory_layout(
   Tree *_tree1 = (Tree *)tree1;
   Tree *_tree2 = (Tree *)tree2;
 
-  compare_func1_data data = {_tree1->nodes, _tree2->nodes};
+  compare_func1_data data = {
+			.anchor1 = _tree1->nodes,
+			.anchor2 = _tree2->nodes,
+	};
   return _trees_depth_first_search(_tree1, _tree2,
       child_compare_func1, parent_compare_func1,
       NULL, NULL, &data);
@@ -780,8 +793,16 @@ int tree_cmp_child_node_order_scrambled(
   // (It would be possible to shrink this on one clone.)
   Tree *_tree1 = tree_clone(tree1, NULL, NULL);
   Tree *_tree2 = tree_clone(tree2, NULL, NULL);
+	tree_print(tree1, NULL, 0);
+	tree_print(tree2, NULL, 0);
 
-  compare_func2_data data = {_tree1->nodes, _tree2->nodes, 0, NULL, NULL};
+	compare_func2_data data = {
+			.anchor1 = _tree1->nodes,
+			.anchor2 = _tree2->nodes,
+			.num_sorting_siblings = 0,
+			.sorting_siblings1 = NULL,
+			.sorting_siblings2 = NULL,
+	};
   int ret = _trees_depth_first_search(_tree1, _tree2,
       child_compare_func2, parent_compare_func2,
       NULL, NULL, &data);
@@ -840,19 +861,19 @@ int tree_cmp_if_nodes_isomorph(
    * This preventing overlapping of strings during writing the node label.
    */
   /* 
-   * We do not clone the input trees and for thes reason we can not use
+   * We do not clone the input trees and for this reason we can not use
    * the data pointer without overwriting user data.
    * Instead, we're using 'nodeX - treeX->root' as index into an new data array.
-   * the ->data pointer.
-   * (Cloning the input trees looks more practival, but we want use the 
-   * same structure as the TREE_COMPARE_IF_DATA_ISOMORPH algorithm and there,
+   * 
+   * (Cloning the input trees looks more practical, but we want use this function 
+   * in the TREE_COMPARE_IF_DATA_ISOMORPH algorithm and there,
    * we need the input data pointer.
    */
-  /*
-   * Two Terminals '(',')' for each node will be used, to 2*num_nodes(t)+1
-   * can store the whole string and num_nodes(t) <= t->size.
+  /* One terminal char, 'o', for each leaf and
+   * two Terminals '(',')'  for each non-leaf will be used.
+   * Thus 2*num_nodes(t)+1 chars can store the whole string,
+   *  where num_nodes(t) <= t->size.
    */
-
   char *label_tree1 = _gen_canonical_label(tree1);
   if (label_tree1 == NULL) return -1;
   char *label_tree2 = _gen_canonical_label(tree2);
@@ -883,6 +904,8 @@ int tree_cmp(
       return tree_cmp_same_memory_layout(tree1, tree2);
     case TREE_COMPARE_CHILD_NODE_ORDER_SCRAMBLED:
       return tree_cmp_child_node_order_scrambled(tree1, tree2);
+    case TREE_COMPARE_IF_NODES_ISOMORPH:
+      return tree_cmp_if_nodes_isomorph(tree1, tree2);
     default:
       fprintf(stderr, "Unsupported compare type: ");
       fprintf_enum_name(stderr, compare_type);

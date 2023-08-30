@@ -20,13 +20,13 @@ macro(build_and_run_test TEST_NAME SOURCE_FILES LIBS)
 
 	### Run the test once the build is done
 
-	# 1)
+	# 2.1.1)
 	# Simple template which deletes the binary on failure.
 	# Drawback: Deletion of binary is anoying for debugging.
 	#
 	#add_custom_command(TARGET ${TEST_APP_NAME} COMMAND ./${TEST_APP_NAME} POST_BUILD)
 
-	# 2)
+	# 2.1.2)
 	# This variant interleaves a target between build and running test.
 	# It will keep the binary.
 	# Drawback: Test called on every 'make' even if sources or test file 
@@ -35,8 +35,8 @@ macro(build_and_run_test TEST_NAME SOURCE_FILES LIBS)
 	#add_custom_target(${TEST_NAME}_run ALL DEPENDS ${TEST_NAME})
 	#add_custom_command(TARGET ${TEST_NAME}_run COMMAND ./${TEST_NAME} POST_BUILD)
 
-	# 3)
-	# Like (2), but test just runs if source code change led to new test binary.
+	# 2.1.3)
+	# Like (2.1.2), but test just runs if source code change led to new test binary.
 	#
 	# This variant creates a file if the test completes successful and removes
 	# it when a new test binary was build.
@@ -45,15 +45,19 @@ macro(build_and_run_test TEST_NAME SOURCE_FILES LIBS)
 	add_custom_target(${TEST_NAME}_run ALL DEPENDS ${TEST_NAME})
 	add_custom_command(TARGET ${TEST_NAME}_run
 		COMMAND test -e "${TEST_SUCC_FILE}" || ./${TEST_NAME}
-		) 
+	) 
 	add_custom_command(TARGET ${TEST_NAME}_run
 		POST_BUILD
 		COMMAND touch "${TEST_SUCC_FILE}"
-		)
+	)
 	add_custom_command(TARGET ${TEST_NAME}
 		POST_BUILD
 		COMMAND test -e "${TEST_SUCC_FILE}" && rm "${TEST_SUCC_FILE}" || true
-		)
+	)
+
+	#(2.2) Delay the *_run command after all tests has been build.
+	add_dependencies(${TEST_NAME}_run tests_semaphore)
+	add_dependencies(tests_semaphore ${TEST_NAME})
 endmacro()
 
 # Helper for CMake's add_subdirectory() call for every test
@@ -78,6 +82,9 @@ endfunction()
 
 #############################################
 
+# Dummy target for (2.2). tests will run after all tests has been build.
+add_custom_target(tests_semaphore)
+
 LIST(APPEND TESTGROUPS_BLACKLIST "none")
 message(STATUS "Tests:")
 list(APPEND CMAKE_MESSAGE_INDENT "  ")
@@ -86,3 +93,4 @@ list(APPEND CMAKE_MESSAGE_INDENT "  ")
 loop_over_test_dirs(${CMAKE_CURRENT_SOURCE_DIR} ${TESTGROUPS_BLACKLIST})
 
 list(POP_BACK CMAKE_MESSAGE_INDENT)
+

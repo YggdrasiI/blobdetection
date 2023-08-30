@@ -29,8 +29,8 @@
 /* realloc did not free array on source location on error. 
  * Let's free it in this wrapper function before the pointer will be overwritten.
  * */
-static inline
-void *_reallocarray_or_free(void *ptr, size_t nmemb, size_t size){
+__attribute__((unused))
+static inline void *_reallocarray_or_free(void *ptr, size_t nmemb, size_t size){
     void *ptr_new = reallocarray(ptr, nmemb, size);
     if(ptr_new == NULL) {
         assert(0);
@@ -38,6 +38,9 @@ void *_reallocarray_or_free(void *ptr, size_t nmemb, size_t size){
     }
     return ptr_new;
 }
+// About clang warning
+//https://stackoverflow.com/questions/59958785/unused-static-inline-functions-generate-warnings-with-clang
+// => __attribute__((unused)
 
 
 /*

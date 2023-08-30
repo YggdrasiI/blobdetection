@@ -22,6 +22,7 @@ release: make_build
 debug: make_debug
 	@echo ""
 
+# Just an alias
 tests: test
 
 test: make_$(TEST_BUILD_DIR) gen_coverage_report
@@ -40,17 +41,20 @@ $(TEST_BUILD_DIR)/CMakeCache.txt: mkdir_$(TEST_BUILD_DIR)
 		..
 
 # Artifical targets
-make_%: mkdir_% %/CMakeCache.txt %/src/libdepthtree.so
-	@echo "" # Dummy
+#cmake_%: mkdir_% %/CMakeCache.txt
+#	@echo "" # Dummy
 
 mkdir_%:
 	@test -d "./$*" || mkdir "./$*"
 
-%/src/libdepthtree.so:
+make_%: %/CMakeCache.txt
 	cd "$*" && make
 
+#%/src/libdepthtree.so:
+#	cd "$*" && make
+
 # Generate test coverage report
-gen_coverage_report:
+gen_coverage_report: make_$(TEST_BUILD_DIR)
 	cd "./$(TEST_BUILD_DIR)" \
 		&& gcovr -r . -o covr-report.html --html-details \
 		--filter "../src/*" --filter "../include/*" \

@@ -24,19 +24,19 @@ TEST_GROUP(TestTreeCompare) {
 	}
 };
 
-TEST(TestTreeCompare, Test_CompareType1_EqualStructureRoot) {
+TEST(TestTreeCompare, CompareType1_EqualStructureRoot) {
 	// Compare with just one root node
 	LONGS_EQUAL(0, tree_cmp(t1, t2, TREE_COMPARE_SAME_NODE_MEMORY_LAYOUT));
 }
 
-TEST(TestTreeCompare, Test_CompareType1_EqualStructure1) {
+TEST(TestTreeCompare, CompareType1_EqualStructure1) {
 	// Compare with just one child
 	init_tree_structure1(t1);
 	init_tree_structure1(t2);
 	LONGS_EQUAL(0, tree_cmp(t1, t2, TREE_COMPARE_SAME_NODE_MEMORY_LAYOUT));
 }
 
-TEST(TestTreeCompare, Test_CompareType1_InequalStructure1vsRoot) {
+TEST(TestTreeCompare, CompareType1_InequalStructure1vsRoot) {
 	// Compare trees with different one and no child
 	init_tree_structure1(t2);
 
@@ -46,7 +46,7 @@ TEST(TestTreeCompare, Test_CompareType1_InequalStructure1vsRoot) {
 	LONGS_EQUAL(ret, -retSwap);
 }
 
-TEST(TestTreeCompare, Test_CompareType1_InequalStructure1vs2) {
+TEST(TestTreeCompare, CompareType1_InequalStructure1vs2) {
 	// Compare trees with different one and no child
 	init_tree_structure1(t1);
 	init_tree_structure2(t2);
@@ -57,7 +57,7 @@ TEST(TestTreeCompare, Test_CompareType1_InequalStructure1vs2) {
 	LONGS_EQUAL(ret, -retSwap);
 }
 
-TEST(TestTreeCompare, Test_CompareType1_InequalStructure3vs4) {
+TEST(TestTreeCompare, CompareType1_InequalStructure3vs4) {
 	// Compare trees with 3 and 6 children
 	init_tree_structure3(t1);
 	init_tree_structure4(t2);
@@ -68,7 +68,7 @@ TEST(TestTreeCompare, Test_CompareType1_InequalStructure3vs4) {
 	LONGS_EQUAL(ret, -retSwap);
 }
 
-TEST(TestTreeCompare, Test_CompareType1_EqualStructure2) {
+TEST(TestTreeCompare, CompareType1_EqualStructure2) {
 	// Compare trees with same 3 Nodes
 	init_tree_structure2(t1);
 	init_tree_structure2(t2);
@@ -77,7 +77,7 @@ TEST(TestTreeCompare, Test_CompareType1_EqualStructure2) {
 	LONGS_EQUAL(0, tree_cmp(t2, t1, TREE_COMPARE_SAME_NODE_MEMORY_LAYOUT));
 }
 
-TEST(TestTreeCompare, Test_CompareType1_InequalStructure2vs3) {
+TEST(TestTreeCompare, CompareType1_InequalStructure2vs3) {
 	// Compare trees with different order of 3 Nodes
 	init_tree_structure2(t1);
 	init_tree_structure3(t2);
@@ -88,7 +88,7 @@ TEST(TestTreeCompare, Test_CompareType1_InequalStructure2vs3) {
 	LONGS_EQUAL(ret, -retSwap);
 }
 
-TEST(TestTreeCompare, Test_CompareType1_EqualStructure8) {
+TEST(TestTreeCompare, CompareType1_EqualStructure8) {
 	// Compare trees with identical nodes
 	init_tree_structure8(t1);
 	init_tree_structure8(t2);
@@ -97,7 +97,7 @@ TEST(TestTreeCompare, Test_CompareType1_EqualStructure8) {
 	LONGS_EQUAL(0, tree_cmp(t2, t1, TREE_COMPARE_SAME_NODE_MEMORY_LAYOUT));
 }
 
-TEST(TestTreeCompare, Test_CompareType1_EqualStructure8B) {
+TEST(TestTreeCompare, CompareType1_EqualStructure8B) {
 	// Compare trees with nodes shuffeld children order (Assumed inequal for this compare type)
 	init_tree_structure8(t1);
 	init_tree_structure8B(t2);
@@ -108,7 +108,7 @@ TEST(TestTreeCompare, Test_CompareType1_EqualStructure8B) {
 	LONGS_EQUAL(ret, -retSwap);
 }
 
-TEST(TestTreeCompare, Test_CompareType1_InequalStructure7vs8) {
+TEST(TestTreeCompare, CompareType1_InequalStructure7vs8) {
 	// Compare trees with different structure
 	init_tree_structure7(t1);
 	init_tree_structure8(t2);
@@ -121,19 +121,19 @@ TEST(TestTreeCompare, Test_CompareType1_InequalStructure7vs8) {
 
 // =============================================================
 
-TEST(TestTreeCompare, Test_CompareType2_EqualStructureRoot) {
+TEST(TestTreeCompare, CompareType2_EqualStructureRoot) {
 	// Compare with just one root node
 	LONGS_EQUAL(0, tree_cmp(t1, t2, TREE_COMPARE_CHILD_NODE_ORDER_SCRAMBLED));
 }
 
-TEST(TestTreeCompare, Test_CompareType2_EqualStructure1) {
+TEST(TestTreeCompare, CompareType2_EqualStructure1) {
 	// Compare with just one child
 	init_tree_structure1(t1);
 	init_tree_structure1(t2);
 	LONGS_EQUAL(0, tree_cmp(t1, t2, TREE_COMPARE_CHILD_NODE_ORDER_SCRAMBLED));
 }
 
-TEST(TestTreeCompare, Test_CompareType2_InequalStructure1vsRoot) {
+TEST(TestTreeCompare, CompareType2_InequalStructure1vsRoot) {
 	// Compare trees with different one and no child
 	init_tree_structure1(t2);
 
@@ -143,7 +143,7 @@ TEST(TestTreeCompare, Test_CompareType2_InequalStructure1vsRoot) {
 	LONGS_EQUAL(ret, -retSwap);
 }
 
-TEST(TestTreeCompare, Test_CompareType2_InequalStructure1vs2) {
+TEST(TestTreeCompare, CompareType2_InequalStructure1vs2) {
 	// Compare trees with different one and no child
 	init_tree_structure1(t1);
 	init_tree_structure2(t2);
@@ -154,7 +154,7 @@ TEST(TestTreeCompare, Test_CompareType2_InequalStructure1vs2) {
 	LONGS_EQUAL(ret, -retSwap);
 }
 
-TEST(TestTreeCompare, Test_CompareType2_InequalStructure3vs4) {
+TEST(TestTreeCompare, CompareType2_InequalStructure3vs4) {
 	// Compare trees with 3 and 6 children
 	init_tree_structure3(t1);
 	init_tree_structure4(t2);
@@ -165,7 +165,7 @@ TEST(TestTreeCompare, Test_CompareType2_InequalStructure3vs4) {
 	LONGS_EQUAL(ret, -retSwap);
 }
 
-TEST(TestTreeCompare, Test_CompareType2_EqualStructure2) {
+TEST(TestTreeCompare, CompareType2_EqualStructure2) {
 	// Compare trees with same 3 Nodes
 	init_tree_structure2(t1);
 	init_tree_structure2(t2);
@@ -174,7 +174,7 @@ TEST(TestTreeCompare, Test_CompareType2_EqualStructure2) {
 	LONGS_EQUAL(0, tree_cmp(t2, t1, TREE_COMPARE_CHILD_NODE_ORDER_SCRAMBLED));
 }
 
-TEST(TestTreeCompare, Test_CompareType2_InequalStructure2vs3) {
+TEST(TestTreeCompare, CompareType2_InequalStructure2vs3) {
 	// Compare trees with different order of 3 Nodes
 	init_tree_structure2(t1);
 	init_tree_structure3(t2);
@@ -185,7 +185,7 @@ TEST(TestTreeCompare, Test_CompareType2_InequalStructure2vs3) {
 	LONGS_EQUAL(ret, -retSwap);
 }
 
-TEST(TestTreeCompare, Test_CompareType2_EqualStructure8) {
+TEST(TestTreeCompare, CompareType2_EqualStructure8) {
 	// Compare trees with identical nodes
 	init_tree_structure8(t1);
 	init_tree_structure8(t2);
@@ -194,7 +194,7 @@ TEST(TestTreeCompare, Test_CompareType2_EqualStructure8) {
 	LONGS_EQUAL(0, tree_cmp(t2, t1, TREE_COMPARE_CHILD_NODE_ORDER_SCRAMBLED));
 }
 
-TEST(TestTreeCompare, Test_CompareType2_EqualStructure8B) {
+TEST(TestTreeCompare, CompareType2_EqualStructure8B) {
 	// Compare trees with nodes shuffeld children order 
 	init_tree_structure8(t1);
 	init_tree_structure8B(t2);
@@ -205,7 +205,7 @@ TEST(TestTreeCompare, Test_CompareType2_EqualStructure8B) {
 	LONGS_EQUAL(ret, -retSwap);
 }
 
-TEST(TestTreeCompare, Test_CompareType2_InequalStructure7vs8) {
+TEST(TestTreeCompare, CompareType2_InequalStructure7vs8) {
 	// Compare trees with different structure
 	init_tree_structure7(t1);
 	init_tree_structure8(t2);
@@ -219,6 +219,45 @@ TEST(TestTreeCompare, Test_CompareType2_InequalStructure7vs8) {
 
 // =============================================================
 
+TEST(TestTreeCompare, CompareType3_EqualStructure1) {
+	// Compare trees with identical nodes
+	init_tree_structure8(t1);
+	init_tree_structure8(t2);
+
+	LONGS_EQUAL(0, tree_cmp(t1, t2, TREE_COMPARE_IF_NODES_ISOMORPH));
+	LONGS_EQUAL(0, tree_cmp(t2, t1, TREE_COMPARE_IF_NODES_ISOMORPH));
+}
+
+TEST(TestTreeCompare, CompareType3_EqualStructure2) {
+	// Compare trees with some swapped nodes, where nodes are on the same level
+	// Thus, it should be isomorph
+	init_tree_structure8(t1);
+	init_tree_structure8(t2);
+
+	/* t1, t2:
+	 * 0 —> 1 —> 2 —> 8
+	 *       ——> 3
+	 *  ——> 4 —> 5
+	 *       ——> 6
+	 *       ——> 7
+	 *  ——> 9
+	 */
+	tree_swap_subtrees(t1, &t1->nodes[1], &t1->nodes[9], 0, 0);
+	tree_swap_nodes(t1, &t1->nodes[6], &t1->nodes[8], 0, 0);
+	tree_swap_nodes(t1, &t1->nodes[3], &t1->nodes[5], 0, 0);
+  //tree_print(t1, t1->root, 0);
+	/* t1':
+	 * 0 —> 9
+	 *  ——> 4 —> 3
+	 *       ——> 8
+	 *       ——> 7
+	 *  ——> 1 —> 2 —> 6
+	 *       ——> 5
+	 */
+
+	LONGS_EQUAL(0, tree_cmp(t1, t2, TREE_COMPARE_IF_NODES_ISOMORPH));
+	LONGS_EQUAL(0, tree_cmp(t2, t1, TREE_COMPARE_IF_NODES_ISOMORPH));
+}
 // =============================================================
 
 // =============================================================
