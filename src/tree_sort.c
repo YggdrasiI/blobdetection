@@ -202,7 +202,7 @@ int sort_func1_on_nonleaf_postorder(Node *n, void *_data) {
   uint32_t num_nodes = node_index;
 #endif
 
-  // Backup pointer to leftmost used label before sorting. All labels fullfill the 
+  // Backup pointer to leftmost used label before sorting. All labels fullfill the
   // condition &label_child_1 < ... &label_child_K.
   assert(num_nodes > 0);
   label_node_ref_t * const leftmost_pointer_input_labels = data->sorting_siblings[0];
@@ -231,7 +231,7 @@ int sort_func1_on_nonleaf_postorder(Node *n, void *_data) {
   while (pRef < pRefEnd-1) {
     assert( (*(pRef+1))->node_ref->parent == (*pRef)->node_ref->parent);
     assert(cur_pos >= data->label_cache[idx_out]);
-    assert(cur_pos + strlen((*pRef)->label_ref) 
+    assert(cur_pos + strlen((*pRef)->label_ref)
         < data->label_cache[idx_out] + data->len_of_label_caches);
 
     (*pRef)->node_ref->sibling = (*(pRef+1))->node_ref; // not (*pRef)+1…
@@ -242,7 +242,7 @@ int sort_func1_on_nonleaf_postorder(Node *n, void *_data) {
     (*pRef)->node_ref->sibling = NULL; // Rightmost child
 
     assert(cur_pos >= data->label_cache[idx_out]);
-    assert(cur_pos + strlen((*pRef)->label_ref) 
+    assert(cur_pos + strlen((*pRef)->label_ref)
         < data->label_cache[idx_out] + data->len_of_label_caches);
     cur_pos = stpcpy(cur_pos, (*pRef)->label_ref);
     ++pRef;
@@ -321,7 +321,7 @@ int tree_sort_canonical_order(
   Tree *copied_tree = tree_clone(tree, NULL, NULL);
   tree_print(copied_tree, NULL, 0);
   tree_print_integrity_check(copied_tree->root);
-  int ret = tree_sort_canonical_order_inplace(copied_tree, out_label); 
+  int ret = tree_sort_canonical_order_inplace(copied_tree, out_label);
 
   if (ret) { // error occoured, return NULL for out_tree and out_label
     tree_destroy(&copied_tree);
@@ -493,7 +493,7 @@ int sort_func2_on_nonleaf_postorder(Node *n, void *_data) {
   uint32_t num_nodes = node_index;
 #endif
 
-  // Backup pointer to leftmost used label before sorting. All labels fullfill the 
+  // Backup pointer to leftmost used label before sorting. All labels fullfill the
   // condition &label_child_1 < ... &label_child_K.
   assert(num_nodes > 0);
   char * const leftmost_pointer_input_labels = data->sorting_siblings[0];
@@ -516,7 +516,7 @@ int sort_func2_on_nonleaf_postorder(Node *n, void *_data) {
   *cur_pos++ = LEFT_NON_LEAF_CHAR;
   while (plabel < plabelEnd) {
     assert(cur_pos >= data->label_cache[idx_out]);
-    assert(cur_pos + strlen(*plabel) 
+    assert(cur_pos + strlen(*plabel)
         < data->label_cache[idx_out] + data->len_of_label_caches);
     cur_pos = stpcpy(cur_pos, *plabel);
     ++plabel;

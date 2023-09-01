@@ -5,22 +5,22 @@
 #include "blobdetection/tree.h"
 #include "quicksort.h"
 
-int _cmp_strings_by_value(void **a, void **b)
+int _cmp_strings_by_value(void *a, void *b)
 {
-  if (strcmp(*a, *b) < 0) return 1;
+  if (strcmp(a, b) < 0) return 1;
   return 0;
 }
 
 /* typeof(*a,b) will be (Node *), which points into tree->nodes */
-int _cmp_pointer_by_position(void **a, void **b)
+int _cmp_pointer_by_position(void *a, void *b)
 {
-  return (*a < *b?1:0);
+  return (a < b?1:0);
 }
 
-int _cmp_nodes_by_data_pointer(void **a, void **b)
+int _cmp_nodes_by_data_pointer(void *a, void *b)
 {
-  Node *n1 = *((Node **)a);
-  Node *n2 = *((Node **)b);
+  Node *n1 = (Node *)a;
+  Node *n2 = (Node *)b;
   return ((n1->data < n2->data)?1:0);
 }
 
@@ -43,7 +43,7 @@ void _quicksort_pointer(
   ptr = begin;
   split = begin + 1;
   while (++ptr != end) {
-    if ( cmp(ptr, begin) ) 
+    if ( cmp(*ptr, *begin) )
     {
       _swap_pointers(ptr, split);
       ++split;

@@ -9,11 +9,11 @@
  * Returns 1, if a>b, and 0 otherwise.
  * Do not use (1, 0, -1) like strcmp for sorting stability.
  */
-typedef int pointer_compare_func(void **a, void **b);
+typedef int pointer_compare_func(void *a, void *b);
 
-int _cmp_strings_by_value(void **a, void **b);
-int _cmp_pointer_by_position(void **a, void **b);
-int _cmp_nodes_by_data_pointer(void **a, void **b);
+int _cmp_strings_by_value(void *a, void *b);
+int _cmp_pointer_by_position(void *a, void *b);
+int _cmp_nodes_by_data_pointer(void *a, void *b);
 
 void _swap_pointers(void **a, void **b);
 
