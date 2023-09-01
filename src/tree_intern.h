@@ -8,6 +8,8 @@
 
 #include "blobdetection/tree.h"
 
+#define MAX(A,B) ((A>B)?(A):(B))
+
 #ifndef INLINE
 #define UNDEF_INLINE
 #ifdef VISUAL_STUDIO

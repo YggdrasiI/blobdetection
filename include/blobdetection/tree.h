@@ -342,7 +342,8 @@ Tree *tree_clone(
  * during a traversal of a tree.
  *
  * Return value != 0 breaks loop over tree */
-typedef int node_func_t(const Node *n, void *data);
+//typedef int node_func_t(const Node *n, void *data); // Bad for re-order of nodes
+typedef int node_func_t(Node *n, void *data);
 
 /* Same as node_func_t but type indicates that n->parent is the target
  * node of the event.
@@ -364,7 +365,8 @@ typedef node_func_t child_node_func_t;
  * It would fail if the trees are just isomorph. It this case you
  * hat to convert the isomorpth trees in the (shared) canonical form.
  * * */
-typedef int node2_func_t(const Node *n1, const Node *n2, void *data);
+//typedef int node2_func_t(const Node *n1, const Node *n2, void *data);
+typedef int node2_func_t(Node *n1, Node *n2, void *data);
 typedef node2_func_t child_node2_func_t;
 
 
@@ -420,5 +422,8 @@ int tree_integrity_check(
 
 void tree_print_integrity_check(
     Node *root);
+
+
+#include "tree_sort.h"
 
 #endif

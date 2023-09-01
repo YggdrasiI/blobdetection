@@ -44,6 +44,7 @@ Tree *tree_create(
   }else{
     for( uint32_t i=0; i<size; ++i ) {
       // Setup any non-null values. Currently above calloc is fine…
+      //tree->nodes[i] = Leaf;
     }
   }
 
@@ -1473,7 +1474,7 @@ int tree_integrity_check(
   Node *p = node->parent;
   while(p && depth < TREE_MAX_HEIGHT){
     ++depth;
-    p = node->parent;
+    p = p->parent;
   }
   if( depth >= TREE_MAX_HEIGHT ){
     RETURN_ON_INTEGRITY_ERR(TREE_ERROR_TOO_MANY_LEVELS); // or cycle in parent-relation

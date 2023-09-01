@@ -2,72 +2,32 @@
 #include <limits.h>
 #include <stddef.h>
 
-//#define _POSIX_C_SOURCE >= 200809L
 #include <string.h>
 
 #include "blobdetection/enums.h"
 #include "blobdetection/tree.h"
+//#include "blobdetection/tree_sort.h"
 
 #include "tree_intern.h"
 
-// Force gcc to inline looping over threes.
+// Force gcc to inline looping over trees.
 // This probably removes the 'if (function_handler == NULL)' checks.
 //#define INLINE inline __attribute__((always_inline))
 #include "tree_loops.h"
 
-#define MAX(A,B) ((A>B)?(A):(B))
+#include "quicksort.h"
+
+
+/* This changes the order of some operations.
+ *
+ * If nodes were resorted in some of the functions
+ * compare this siblings directly and not after traversing normally 
+ * over the tree.
+ */
+#define DIRECT_CHECK_AFTER_SORTING
 
 // Collection of comparator functions for Tree struct.
 
-/* Compare function for _quicksort_pointer function.
- *
- * Returns 1, if a>b, and 0 otherwise.
- * Do not use (1, 0, -1) like strcmp for sorting stability.
- */
-typedef int pointer_compare_func(void **a, void **b);
-
-int _cmp_strings_by_value(void **a, void **b)
-{
-  if (strcmp(*a, *b) > 0) return 1;
-  return 0;
-}
-
-int _cmp_strings_by_position(void **a, void **b)
-{
-  return (*a < *b?1:0);
-}
-
-void _swap_pointers(void **a, void **b)
-{
-  void *tmp = *a;
-  *a = *b;
-  *b = tmp;
-}
-
-void _quicksort_pointer(
-    void **begin,
-    void **end,
-    pointer_compare_func *cmp)
-{
-  void **ptr;
-  void **split;
-  if (end - begin <= 1)
-    return;
-  ptr = begin;
-  split = begin + 1;
-  while (++ptr != end) {
-    //if ( **ptr < **begin )
-    //if ( cmp(*ptr, *begin) ) 
-    if ( cmp(ptr, begin) ) 
-    {
-      _swap_pointers(ptr, split);
-      ++split;
-    }
-  }
-  _swap_pointers(begin, split - 1);
-  _quicksort_pointer(begin, split - 1, cmp);
-  _quicksort_pointer(split, end, cmp);
-}
 
 #if 0
 /* Define type for compare functions.
@@ -76,7 +36,7 @@ void _quicksort_pointer(
  * • Data holds struct with specific data needed for the different
  * compare types, e.g pointer to the root nodes.
  * */
-typedef int node_compare_func(const Node *n1, const Node *n2, void *compare_data);
+typedef int node_compare_func(Node *n1, Node *n2, void *compare_data);
 
 /* Tree looping function for node_compare_func handlers*/
 int _tree_cmp(
@@ -119,19 +79,19 @@ typedef struct {
 } compare_func1_data;
 
 
-int child_compare_func1(const Node *n1, const Node *n2, void *compare_data) {
-  const compare_func1_data * cmp = (const compare_func1_data *)compare_data;
-  ptrdiff_t d1 = n1 - cmp->anchor1;
-  ptrdiff_t d2 = n2 - cmp->anchor2;
+int child_compare_func1(Node *n1, Node *n2, void *_compare_data) {
+  const compare_func1_data * compare_data = (const compare_func1_data *)_compare_data;
+  ptrdiff_t d1 = n1 - compare_data->anchor1;
+  ptrdiff_t d2 = n2 - compare_data->anchor2;
   if (d2-d1) return d2-d1;
 
   return 0;
 }
 
-int parent_compare_func1(const Node *n1, const Node *n2, void *compare_data) {
-  const compare_func1_data * cmp = (const compare_func1_data *)compare_data;
-  ptrdiff_t d1 = n1->parent - cmp->anchor1;
-  ptrdiff_t d2 = n2->parent - cmp->anchor2;
+int parent_compare_func1(Node *n1, Node *n2, void *_compare_data) {
+  const compare_func1_data * compare_data = (const compare_func1_data *)_compare_data;
+  ptrdiff_t d1 = n1->parent - compare_data->anchor1;
+  ptrdiff_t d2 = n2->parent - compare_data->anchor2;
   if (d2-d1) return d2-d1;
 
   return 0;
@@ -159,15 +119,15 @@ void destroy_compare_func2_data(compare_func2_data *d){
   free(d->sorting_siblings2);
 }
 
-//int compare_func2(const Node *n1, const Node *n2, void *compare_data){}
+//int compare_func2(Node *n1, Node *n2, void *compare_data){}
 #define child_compare_func2 child_compare_func1
 
-int parent_compare_func2(const Node *n1, const Node *n2, void *compare_data) {
-  compare_func2_data * cmp = (compare_func2_data *)compare_data;
+int parent_compare_func2(Node *n1, Node *n2, void *_compare_data) {
+  compare_func2_data * compare_data = (compare_func2_data *)_compare_data;
 
   // This function re-sorts child on left-most child and just compare results
   // on all other nodes. (Maybe it's better to check all siblings directly in first call?!)
-  if( n1->parent->child != n1 ) return child_compare_func2(n1->parent, n2->parent, compare_data);
+  if( n1->parent->child != n1 ) return child_compare_func2(n1->parent, n2->parent, _compare_data);
 
   // Search bijection between nodes of n1->parent and n2->parent by sorting both sets
 #ifdef TREE_REDUNDANT_INFOS
@@ -176,17 +136,17 @@ int parent_compare_func2(const Node *n1, const Node *n2, void *compare_data) {
   if(num_nodes != num_nodes2) return num_nodes2-num_nodes;
 
   // Guarantee enough space.
-  if (num_nodes > cmp->num_sorting_siblings) {
-    free(cmp->sorting_siblings1);
-    free(cmp->sorting_siblings2);
-    cmp->num_sorting_siblings = MAX(num_nodes+8,
-        2 * cmp->num_sorting_siblings);
-    cmp->sorting_siblings1 = malloc(
-        cmp->num_sorting_siblings*sizeof(Node *));
-    cmp->sorting_siblings2 = malloc(
-        cmp->num_sorting_siblings*sizeof(Node *));
-    if (cmp->sorting_siblings1 == NULL || cmp->sorting_siblings2 == NULL ){
-      cmp->num_sorting_siblings = 0;
+  if (num_nodes > compare_data->num_sorting_siblings) {
+    free(compare_data->sorting_siblings1);
+    free(compare_data->sorting_siblings2);
+    compare_data->num_sorting_siblings = MAX(num_nodes+8,
+        2 * compare_data->num_sorting_siblings);
+    compare_data->sorting_siblings1 = malloc(
+        compare_data->num_sorting_siblings*sizeof(Node *));
+    compare_data->sorting_siblings2 = malloc(
+        compare_data->num_sorting_siblings*sizeof(Node *));
+    if (compare_data->sorting_siblings1 == NULL || compare_data->sorting_siblings2 == NULL ){
+      compare_data->num_sorting_siblings = 0;
       assert(0);
       return -4;
     }
@@ -195,8 +155,8 @@ int parent_compare_func2(const Node *n1, const Node *n2, void *compare_data) {
   // Fill arrays
   Node *cur1 = n1->parent->child;
   Node *cur2 = n2->parent->child;
-  Node **array_cur1 = cmp->sorting_siblings1;
-  Node **array_cur2 = cmp->sorting_siblings2;
+  Node **array_cur1 = compare_data->sorting_siblings1;
+  Node **array_cur2 = compare_data->sorting_siblings2;
   while(cur1){
     *array_cur1 = cur1;
     *array_cur2 = cur2;
@@ -212,23 +172,23 @@ int parent_compare_func2(const Node *n1, const Node *n2, void *compare_data) {
   uint32_t node_index = 0;
   while(cur1 && cur2){
     // Realloc destination array if too small
-    if (node_index >= cmp->num_sorting_siblings) {
-      cmp->num_sorting_siblings = MAX(node_index+8,
-          2 * cmp->num_sorting_siblings);
-      cmp->sorting_siblings1 = _reallocarray_or_free(cmp->sorting_siblings1,
-          cmp->num_sorting_siblings, sizeof(Node *));
-      cmp->sorting_siblings2 = _reallocarray_or_free(cmp->sorting_siblings1,
-          cmp->num_sorting_siblings, sizeof(Node *));
-      if (cmp->sorting_siblings1 == NULL || cmp->sorting_siblings2 == NULL ){
-        cmp->num_sorting_siblings = 0;
+    if (node_index >= compare_data->num_sorting_siblings) {
+      compare_data->num_sorting_siblings = MAX(node_index+8,
+          2 * compare_data->num_sorting_siblings);
+      compare_data->sorting_siblings1 = _reallocarray_or_free(compare_data->sorting_siblings1,
+          compare_data->num_sorting_siblings, sizeof(Node *));
+      compare_data->sorting_siblings2 = _reallocarray_or_free(compare_data->sorting_siblings1,
+          compare_data->num_sorting_siblings, sizeof(Node *));
+      if (compare_data->sorting_siblings1 == NULL || compare_data->sorting_siblings2 == NULL ){
+        compare_data->num_sorting_siblings = 0;
         assert(0);
         return -4;
       }
     }
 
     // Fill arrays
-    cmp->sorting_siblings1[node_index] = cur1;
-    cmp->sorting_siblings2[node_index] = cur2;
+    compare_data->sorting_siblings1[node_index] = cur1;
+    compare_data->sorting_siblings2[node_index] = cur2;
 
     cur1 = cur1->sibling;
     cur2 = cur2->sibling;
@@ -242,26 +202,27 @@ int parent_compare_func2(const Node *n1, const Node *n2, void *compare_data) {
 
   // Sorting
   _quicksort_pointer(
-      (void **)cmp->sorting_siblings1,
-      (void **)cmp->sorting_siblings1+num_nodes,
-      _cmp_strings_by_position);
+      (void **)compare_data->sorting_siblings1,
+      (void **)compare_data->sorting_siblings1+num_nodes,
+      _cmp_pointer_by_position);
   _quicksort_pointer(
-      (void **)cmp->sorting_siblings2,
-      (void **)cmp->sorting_siblings2+num_nodes,
-      _cmp_strings_by_position);
+      (void **)compare_data->sorting_siblings2,
+      (void **)compare_data->sorting_siblings2+num_nodes,
+      _cmp_pointer_by_position);
 
+#ifdef DIRECT_CHECK_AFTER_SORTING
   // Check if canonical form is the same.
   uint32_t idx = num_nodes;
   while(idx--){
-    Node *n1 = cmp->sorting_siblings1[idx];
-    Node *n2 = cmp->sorting_siblings2[idx];
-    int d = child_compare_func2(n1, n2, compare_data);
+    Node *n1 = compare_data->sorting_siblings1[idx];
+    Node *n2 = compare_data->sorting_siblings2[idx];
+    int d = child_compare_func2(n1, n2, _compare_data);
     if (d) return d;
   }
 
   // Update node order in both trees to canonical form.
-  Node **pn1 = cmp->sorting_siblings1;
-  Node **pn2 = cmp->sorting_siblings2;
+  Node **pn1 = compare_data->sorting_siblings1;
+  Node **pn2 = compare_data->sorting_siblings2;
   for(idx = 0; idx<num_nodes-1; ++idx){
     (*pn1)->sibling = *(pn1+1);
     (*pn2)->sibling = *(pn2+1);
@@ -269,6 +230,23 @@ int parent_compare_func2(const Node *n1, const Node *n2, void *compare_data) {
   }
   (*pn1)->sibling = NULL;
   (*pn2)->sibling = NULL;
+#else // Just check leftmost node.
+
+  // Update node order in both trees to canonical form.
+  Node **pn1 = compare_data->sorting_siblings1;
+  Node **pn2 = compare_data->sorting_siblings2;
+  for(idx = 0; idx<num_nodes-1; ++idx){
+    (*pn1)->sibling = *(pn1+1);
+    (*pn2)->sibling = *(pn2+1);
+    ++pn1; ++pn2;
+  }
+  (*pn1)->sibling = NULL;
+  (*pn2)->sibling = NULL;
+
+  int d = child_compare_func2(compare_data->sorting_siblings1[0],
+      compare_data->sorting_siblings2[0], compare_data);
+  if (d) return d;
+#endif
 
   return 0;
 }
@@ -281,234 +259,56 @@ int parent_compare_func2(const Node *n1, const Node *n2, void *compare_data) {
  * this variant ignores the node positions in the underlying array.
  * This is probably the most practical variant for users.
  * */
-typedef struct {
-    const Node *anchor;
-    uint32_t depth;
-    size_t len_of_label_caches;
-    char *label_cache[2];
-    char **label_refs;
-    char *first_free_char_in_label_cache[2];
-
-    uint32_t num_sorting_siblings;
-    char **sorting_siblings;
-} compare_func3_data;
-
-void destroy_compare_func3_data(compare_func3_data *d, int keep_label0){
-  if( !keep_label0 ){
-    free(d->label_cache[0]);
-  }
-  free(d->label_cache[1]);
-}
-
-compare_func3_data create_compare_func3_data(const Tree *tree){
-
-  const uint32_t number_of_labels = tree->size;
-  const uint32_t len_of_label_caches = (2 * number_of_labels + 1) * sizeof(char);
-
-  compare_func3_data data = {
-    .anchor = tree->nodes /* first node of array needed here*/,
-    .depth = 0,
-    .len_of_label_caches = len_of_label_caches,
-    .label_cache = {
-      malloc(len_of_label_caches),
-      malloc(len_of_label_caches)
-    },
-    .label_refs = calloc(number_of_labels, sizeof(char *)),
-    .first_free_char_in_label_cache = {NULL, NULL},
-    .num_sorting_siblings = 0,
-    .sorting_siblings = NULL
-  };
-  // Check allocations for failure
-  if (data.label_cache[0] == NULL || data.label_cache[0] == NULL
-      || data.label_refs == NULL ){
-    assert(0);
-    destroy_compare_func3_data(&data, 0);
-    compare_func3_data fail_data = {
-      .anchor = NULL,
-      .depth = 0,
-      .len_of_label_caches = 0,
-      .label_cache = { NULL, NULL },
-      .label_refs = NULL,
-      .first_free_char_in_label_cache = {NULL, NULL},
-      .num_sorting_siblings = 0,
-      .sorting_siblings = NULL
-    };
-    return fail_data;
-  }
-  data.label_cache[0][data.len_of_label_caches] = '\0';
-  data.label_cache[1][data.len_of_label_caches] = '\0';
-  data.first_free_char_in_label_cache[0] = data.label_cache[0];
-  data.first_free_char_in_label_cache[1] = data.label_cache[1];
-
-  return data;
-}
-
-int func3_on_leaf(const Node *n, void *_data) {
-  // Init labels on leafs
-  compare_func3_data * data = (compare_func3_data *)_data;
-
-  //Flipping in and out avoids nesting with data->depth++ ;data->depth--;
-  const uint32_t idx_out = data->depth % 2;
-  //const uint32_t idx_in = 1-idx_out;
-
-  // Eval index in label arrays
-  const ptrdiff_t d = n - data->anchor;
-  assert( d>=0 && d<data->len_of_label_caches/2); //=> n pointer ok
-  assert( data->first_free_char_in_label_cache[idx_out] + 3 < data->label_cache[idx_out] + data->len_of_label_caches);
-
-  // Save start of label for this node
-  data->label_refs[d] = data->first_free_char_in_label_cache[idx_out];
-  // insert "|"
-  *(data->first_free_char_in_label_cache[idx_out])++ = 'o';
-  *(data->first_free_char_in_label_cache[idx_out])++ = '\0';
-
-  return 0;
-}
-int func3_on_nonleaf_preorder(const Node *n, void *_data) {
-  // n = First child node.
-  compare_func3_data * data = (compare_func3_data *)_data;
-  data->depth++;
-
-  return 0;
-}
-
-int func3_on_nonleaf_postorder(const Node *n, void *_data) {
-  // n = Last child node.
-  compare_func3_data * data = (compare_func3_data *)_data;
-
-  const uint32_t idx_in = data->depth % 2;
-  const uint32_t idx_out = 1-idx_in;
-
-  // Put label refs into array
-#ifdef TREE_REDUNDANT_INFOS
-  const uint32_t num_nodes = n->parent->width;
-  // Guarantee enough space.
-  if (num_nodes > data->num_sorting_siblings) {
-    free(data->sorting_siblings);
-    data->num_sorting_siblings = MAX(num_nodes+8,
-        2 * data->num_sorting_siblings);
-    data->sorting_siblings = malloc(
-        data->num_sorting_siblings*sizeof(char *));
-    if (data->sorting_siblings == NULL) {
-      data->num_sorting_siblings = 0;
-      assert(0);
-      return -4;
-    }
-  }
-
-  // Fill array
-  Node *cur = n->parent->child;
-  char **array_cur = data->sorting_siblings;
-  while(cur){
-    const ptrdiff_t d = cur - data->anchor;
-    *array_cur = data->label_refs[d];
-    cur = cur->sibling;
-    ++array_cur;
-  }
-#else
-  // Combined step to count array size and filling.
-  Node *cur = n->parent->child;
-  uint32_t node_index = 0;
-  while(cur){
-    // Realloc destination array if too small
-    if (node_index >= data->num_sorting_siblings) {
-      data->num_sorting_siblings = MAX(node_index+8,
-          2 * data->num_sorting_siblings);
-      data->sorting_siblings = _reallocarray_or_free(data->sorting_siblings,
-          data->num_sorting_siblings, sizeof(char *));
-      if (data->sorting_siblings == NULL){
-        data->num_sorting_siblings = 0;
-        assert(0);
-        return -4;
-      }
-    }
-
-    // Fill array
-    const ptrdiff_t d = cur - data->anchor;
-    data->sorting_siblings[node_index] = data->label_refs[d];
-
-    cur = cur->sibling;
-    ++node_index;
-  }
-  uint32_t num_nodes = node_index;
-#endif
-
-  // Backup pointer to leftmost used label before sorting. All labels fullfill the 
-  // condition &label_child_1 < ... &label_child_K.
-  assert(num_nodes > 0);
-  char * const leftmost_pointer_input_labels = data->sorting_siblings[0];
-
-  // Sorting the label refs
-  _quicksort_pointer(
-      (void **)data->sorting_siblings,
-      (void **)data->sorting_siblings+num_nodes,
-      _cmp_strings_by_value);
-
-  // Merging labels into label of parent node
-  char **plabel = data->sorting_siblings;
-  char ** const plabelEnd = plabel + num_nodes;
-  char *cur_pos = data->first_free_char_in_label_cache[idx_out];
-  char * const leftmost_pointer_output_labels = cur_pos;
-  if(cur_pos == NULL){
-    assert(0);
-    return -5;
-  }
-	*cur_pos++ = '[';
-  while (plabel < plabelEnd) {
-    assert(cur_pos >= data->label_cache[idx_out]);
-    assert(cur_pos + strlen(*plabel) 
-        < data->label_cache[idx_out] + data->len_of_label_caches);
-    cur_pos = stpcpy(cur_pos, *plabel);
-    ++plabel;
-  }
-	*cur_pos++ = ']';
-	*cur_pos = '\0';
-  printf("XXX %s\n", data->first_free_char_in_label_cache[idx_out]);
-
-  // Lock memory in idx_out-cache
-  data->first_free_char_in_label_cache[idx_out] = cur_pos+1; /* One after last '\0' */
-  // Unlock memory in idx_in-cache
-  data->first_free_char_in_label_cache[idx_in] = leftmost_pointer_input_labels;
-
-  // Link to new label in parent node
-  const ptrdiff_t dParent = n->parent - data->anchor;
-  data->label_refs[dParent] = leftmost_pointer_output_labels;
-
-  // We're done :-)
-  data->depth--;
-  return 0;
-}
-
+// See tree_sort.c
 
 /* Variant 4: TREE_COMPARE_SAME_DATA_MEMORY_LAYOUT
  *
- * Check if nodes of both trees have same distance to each root node.
- * and made the same check for data handlers, if both given.
+ * Check if trees had the same structure and 
+ * for all nodes with data nA_i and nB_i of tree i holds:
+ *     nB_0.data - nA_0.data == nB_1.data - nB_1.data
+
+ * Note that data pointer of both trees can differ and interal
+ * nodes during the path traversal of both trees can differ, too.
+ * //Check if nodes of both trees have same distance to each root node.
+ * //and made the same check for data handlers, if both given.
  *
  * */
 typedef struct {
-    const Node *anchor1;
-    const Node *anchor2;
-    const void *tree1_data;
-    const void *tree2_data;
+    //const Node *anchor1;
+    //const Node *anchor2;
+    void *data1_anchor;
+    void *data2_anchor;
 } compare_func4_data;
 
 
-int compare_func4(const Node *n1, const Node *n2, void *compare_data) {
-  const compare_func4_data * cmp = (const compare_func4_data *)compare_data;
+int child_compare_func4(Node *n1, Node *n2, void *_compare_data) {
+  compare_func4_data * compare_data = (compare_func4_data *)_compare_data;
   if (n1->data){
-    if (n2->data == NULL) return -1;
-    ptrdiff_t d1 = n1->data - cmp->tree1_data;
-    ptrdiff_t d2 = n2->data - cmp->tree2_data;
-    return d2-d1;
+    if (compare_data->data1_anchor == NULL){
+        compare_data->data1_anchor = n1->data;
+    }
+    if (n2->data == NULL) return -1; // Second data pointer NULL
   }
-  if (n2->data){
-    if (n1->data == NULL) return 1;
-    ptrdiff_t d1 = n1->data - cmp->tree1_data;
-    ptrdiff_t d2 = n2->data - cmp->tree2_data;
-    return d2-d1;
+  else if (n2->data){
+    if (compare_data->data2_anchor == NULL){
+        compare_data->data2_anchor = n2->data;
+    }
+    return 1; // First data pointer NULL
   }
-  return 0;
+  else { // Both data pointers NULL
+    return 0;
+  }
+
+  // Previous if's guarantees that both ->data entries are != NULL
+  assert(n1->data != NULL && n2->data != NULL);
+
+  ptrdiff_t d1 = n1->data - compare_data->data1_anchor;
+  ptrdiff_t d2 = n2->data - compare_data->data2_anchor;
+  return d2-d1;
+}
+
+int parent_compare_func4(Node *n1, Node *n2, void *compare_data) {
+    return child_compare_func4(n1->parent, n1->parent, compare_data);
 }
 
 /* Variant 5: TREE_COMPARE_CHILD_DATA_ORDER_SCRAMBLED
@@ -516,17 +316,185 @@ int compare_func4(const Node *n1, const Node *n2, void *compare_data) {
  * LIKE TREE_COMPARE_CHILD_NODE_ORDER_SCRAMBLED but compare data pointer
  * instead of node's own position.
  *
- * Attention: It just checks the pointer position, not the content.
+ * Attention:
+ *    • All ->data pointers needs to be set. 
+ *      Otherwise False-Negative results are possible.
+ *    • It just checks the pointer position, not the content.
  * */
 typedef struct {
-    const Node *anchor1;
-    const Node *anchor2;
-    const void *tree1_data;
-    const void *tree2_data;
+    //const Node *anchor1;
+    //const Node *anchor2;
+    void *data1_anchor;
+    void *data2_anchor;
+
+    size_t num_sorting_siblings;
+    Node **sorting_siblings1;
+    Node **sorting_siblings2;
 } compare_func5_data;
 
+void destroy_compare_func5_data(compare_func5_data *d){
+  free(d->sorting_siblings1);
+  free(d->sorting_siblings2);
+}
 
-int compare_func5(const Node *n1, const Node *n2, void *compare_data) {
+/* This function will be called for leafs or
+ * already sorted(!) siblings of its parent node. */
+int child_compare_func5(Node *n1, Node *n2, void *_compare_data) {
+  compare_func5_data * compare_data = (compare_func5_data *)_compare_data;
+  if (n1->data){
+    if (compare_data->data1_anchor == NULL){
+        compare_data->data1_anchor = n1->data;
+    }
+    if (n2->data == NULL) return -1; // Second data pointer NULL
+  }
+  else if (n2->data){
+    if (compare_data->data2_anchor == NULL){
+        compare_data->data2_anchor = n2->data;
+    }
+    return 1; // First data pointer NULL
+  }
+  else { // Both data pointers NULL
+    return 0;
+  }
+
+  // Previous if's guarantees that both ->data entries are != NULL
+  assert(n1->data != NULL && n2->data != NULL);
+
+  ptrdiff_t d1 = n1->data - compare_data->data1_anchor;
+  ptrdiff_t d2 = n2->data - compare_data->data2_anchor;
+  return d2-d1;
+}
+
+int parent_compare_func5(Node *n1, Node *n2, void *_compare_data) {
+  compare_func5_data * compare_data = (compare_func5_data *)_compare_data;
+
+  // This function re-sorts child on left-most child and just compare results
+  // on all other nodes. (Maybe it's better to check all siblings directly in first call?!)
+#ifdef DIRECT_CHECK_AFTER_SORTING
+  if( n1->parent->child != n1 ) return 0; // We had already checked.
+#else
+  if( n1->parent->child != n1 ) return child_compare_func5(n1->parent, n2->parent, compare_data);
+#endif
+
+  // Search bijection between nodes of n1->parent and n2->parent by sorting both sets
+#ifdef TREE_REDUNDANT_INFOS
+  const uint32_t num_nodes = n1->parent->width;
+  const uint32_t num_nodes2 = n2->parent->width;
+  if(num_nodes != num_nodes2) return num_nodes2-num_nodes;
+
+  // Guarantee enough space.
+  if (num_nodes > compare_data->num_sorting_siblings) {
+    free(compare_data->sorting_siblings1);
+    free(compare_data->sorting_siblings2);
+    compare_data->num_sorting_siblings = MAX(num_nodes+8,
+        2 * compare_data->num_sorting_siblings);
+    compare_data->sorting_siblings1 = malloc(
+        compare_data->num_sorting_siblings*sizeof(Node *));
+    compare_data->sorting_siblings2 = malloc(
+        compare_data->num_sorting_siblings*sizeof(Node *));
+    if (compare_data->sorting_siblings1 == NULL || compare_data->sorting_siblings2 == NULL ){
+      compare_data->num_sorting_siblings = 0;
+      assert(0);
+      return -4;
+    }
+  }
+
+  // Fill arrays
+  Node *cur1 = n1->parent->child;
+  Node *cur2 = n2->parent->child;
+  Node **array_cur1 = compare_data->sorting_siblings1;
+  Node **array_cur2 = compare_data->sorting_siblings2;
+  while(cur1){
+    *array_cur1 = cur1;
+    *array_cur2 = cur2;
+    cur1 = cur1->sibling;
+    cur2 = cur2->sibling;
+    ++array_cur1;
+    ++array_cur2;
+  }
+#else
+  // Combined step to count array size and filling.
+  Node *cur1 = n1->parent->child;
+  Node *cur2 = n2->parent->child;
+  uint32_t node_index = 0;
+  while(cur1 && cur2){
+    // Realloc destination array if too small
+    if (node_index >= compare_data->num_sorting_siblings) {
+      compare_data->num_sorting_siblings = MAX(node_index+8,
+          2 * compare_data->num_sorting_siblings);
+      compare_data->sorting_siblings1 = _reallocarray_or_free(compare_data->sorting_siblings1,
+          compare_data->num_sorting_siblings, sizeof(Node *));
+      compare_data->sorting_siblings2 = _reallocarray_or_free(compare_data->sorting_siblings1,
+          compare_data->num_sorting_siblings, sizeof(Node *));
+      if (compare_data->sorting_siblings1 == NULL || compare_data->sorting_siblings2 == NULL ){
+        compare_data->num_sorting_siblings = 0;
+        assert(0);
+        return -4;
+      }
+    }
+
+    // Fill arrays
+    compare_data->sorting_siblings1[node_index] = cur1;
+    compare_data->sorting_siblings2[node_index] = cur2;
+
+    cur1 = cur1->sibling;
+    cur2 = cur2->sibling;
+    ++node_index;
+  }
+  if( cur1 || cur2){ //One parent node had an extra sibling.
+    return cur2 - cur1;
+  }
+  uint32_t num_nodes = node_index;
+#endif
+
+  // Sorting
+  _quicksort_pointer(
+      (void **)compare_data->sorting_siblings1,
+      (void **)compare_data->sorting_siblings1+num_nodes,
+      _cmp_nodes_by_data_pointer);
+  _quicksort_pointer(
+      (void **)compare_data->sorting_siblings2,
+      (void **)compare_data->sorting_siblings2+num_nodes,
+      _cmp_nodes_by_data_pointer);
+
+#ifdef DIRECT_CHECK_AFTER_SORTING
+  // Check if canonical form is the same.
+  uint32_t idx = num_nodes;
+  while(idx--){
+    Node *n1 = compare_data->sorting_siblings1[idx];
+    Node *n2 = compare_data->sorting_siblings2[idx];
+    int d = child_compare_func5(n1, n2, compare_data);
+    if (d) return d;
+  }
+
+  // Update node order in both trees to canonical form.
+  Node **pn1 = compare_data->sorting_siblings1;
+  Node **pn2 = compare_data->sorting_siblings2;
+  for(idx = 0; idx<num_nodes-1; ++idx){
+    (*pn1)->sibling = *(pn1+1);
+    (*pn2)->sibling = *(pn2+1);
+    ++pn1; ++pn2;
+  }
+  (*pn1)->sibling = NULL;
+  (*pn2)->sibling = NULL;
+#else // Just check leftmost node.
+
+  // Update node order in both trees to canonical form.
+  Node **pn1 = compare_data->sorting_siblings1;
+  Node **pn2 = compare_data->sorting_siblings2;
+  for(idx = 0; idx<num_nodes-1; ++idx){
+    (*pn1)->sibling = *(pn1+1);
+    (*pn2)->sibling = *(pn2+1);
+    ++pn1; ++pn2;
+  }
+  (*pn1)->sibling = NULL;
+  (*pn2)->sibling = NULL;
+
+  int d = child_compare_func5(compare_data->sorting_siblings1[0],
+      compare_data->sorting_siblings2[0], compare_data);
+  if (d) return d;
+#endif
+
   return 0;
 }
 
@@ -538,14 +506,14 @@ int compare_func5(const Node *n1, const Node *n2, void *compare_data) {
  * Attention: It just checks the pointer position, not the content.
  * */
 typedef struct {
-    const Node *anchor1;
-    const Node *anchor2;
-    const void *tree1_data;
-    const void *tree2_data;
+  const Node *anchor1;
+  const Node *anchor2;
+  const void *tree1_data;
+  const void *tree2_data;
 } compare_func6_data;
 
 
-int compare_func6(const Node *n1, const Node *n2, void *compare_data) {
+int compare_func6(Node *n1, Node *n2, void *compare_data) {
   return 0;
 }
 
@@ -560,15 +528,15 @@ int compare_func6(const Node *n1, const Node *n2, void *compare_data) {
  *  Nevertheless, a hash collision is unlikely enough in most application.
  */
 typedef struct {
-    const Node *anchor1;
-    const Node *anchor2;
+  const Node *anchor1;
+  const Node *anchor2;
 
-    const void *tree1_hash;
-    const void *tree2_hash;
+  const void *tree1_hash;
+  const void *tree2_hash;
 } compare_func7_data;
 
-int compare_func7(const Node *n1, const Node *n2, void *compare_data) {
-  //const compare_func7_data * cmp = (const compare_func7_data *)compare_data;
+int compare_func7(Node *n1, Node *n2, void *_compare_data) {
+  //const compare_func7_data * compare_data = (const compare_func7_data *)_compare_data;
 
   return 0;
 }
@@ -583,109 +551,22 @@ int compare_func7(const Node *n1, const Node *n2, void *compare_data) {
  *  Nevertheless, a hash collision is unlikely enough in most application.
  */
 typedef struct {
-    const Node *anchor1;
-    const Node *anchor2;
+  const Node *anchor1;
+  const Node *anchor2;
 
-    const void *tree1_hash;
-    const void *tree2_hash;
+  const void *tree1_hash;
+  const void *tree2_hash;
 } compare_func8_data;
 
-int compare_func8(const Node *n1, const Node *n2, void *compare_data) {
-  //const compare_func8_data * cmp = (const compare_func8_data *)compare_data;
+int compare_func8(Node *n1, Node *n2, void *_compare_data) {
+  //const compare_func8_data * compare_data = (const compare_func8_data *)_compare_data;
 
   return 0;
 }
 
+
 // End variants
 // ==============================================
-
-#if 0
-int _tree_cmp(
-        Tree * const tree1,
-        Tree * const tree2,
-        node_compare_func *cmp_on_enter_node,
-        node_compare_func *cmp_on_leaf,
-        node_compare_func *cmp_on_leave_last_child,
-        void *data)
-{
-
-    if (tree1 == NULL) return (tree2==NULL)?0:1;
-    if (tree2 == NULL) return -1;
-    assert(tree1 != NULL && tree2 != NULL);
-
-    // This would be wrong because the size
-    // is just the number of allocated space. 
-    // Trees can just be the same for different sizes.
-    //int32_t d = tree2->size - tree1->size;
-    //if (d) return d;
-
-    const Node * const root1 = tree1->root;
-    const Node * const root2 = tree2->root;
-    const Node *cur1 = root1->child;
-    const Node *cur2 = root2->child;
-    int32_t d;
-    // Loop through tree1 and check if tree2 condition matches.
-    while(cur1) {
-      if (cur2==NULL) // tree1 has more nodes
-          return -1;
-
-      // Check of nodes on entering
-      if (cmp_on_enter_node != NULL) {
-        d = cmp_on_enter_node(cur1, cur2, data);
-        if(d) return d;
-      }
-
-      if (cur1->child) {
-          cur1 = cur1->child;
-          cur2 = cur2->child;
-          continue;
-      }
-
-      // Check/Initialization of leafs
-      if (cmp_on_leaf != NULL) {
-        d = cmp_on_leaf(cur1, cur2, data);
-        if(d) return d;
-      }
-
-      if (cur1->sibling) {
-          cur1 = cur1->sibling;
-          cur2 = cur2->sibling;
-          continue;
-      }
-      while(cur1!=root1){
-
-        // Check siblings on leaving of right most child
-        if (cmp_on_leave_last_child != NULL ) {
-          d = cmp_on_leave_last_child(cur1, cur2, data);
-          if(d) return d;
-        }
-
-          cur1=cur1->parent;
-          cur2=cur2->parent;
-
-          if(cur1==NULL){ // tree1 is inconsistent if we reach NULL before root1
-              assert(cur1!=NULL);
-              return INT_MAX;
-          }
-          if(cur2==NULL){ // tree2 ending too early
-              return INT_MIN;
-          }
-
-          if (cur1->sibling){
-              cur1=cur1->sibling;
-              cur2=cur2->sibling;
-              break;
-          }
-      }
-    }
-
-    if (cur2 != NULL) // => Extra node
-      return 1;
-
-    return 0;
-}
-#endif
-
 
 /*
  * Check if the parent-child-relation matches
@@ -698,10 +579,9 @@ int _tree_cmp(
  * Elements of node array which are not connected to the
  * root node will be ignored.
  */
-#if 1
-int tree_cmp_same_memory_layout(
-        const Tree * const tree1,
-        const Tree * const tree2)
+int tree_cmp_same_node_memory_layout(
+    const Tree * const tree1,
+    const Tree * const tree2)
 {
   assert(tree1 != NULL && tree2 != NULL);
 
@@ -710,82 +590,18 @@ int tree_cmp_same_memory_layout(
   Tree *_tree2 = (Tree *)tree2;
 
   compare_func1_data data = {
-			.anchor1 = _tree1->nodes,
-			.anchor2 = _tree2->nodes,
-	};
+    .anchor1 = _tree1->nodes,
+    .anchor2 = _tree2->nodes,
+  };
   return _trees_depth_first_search(_tree1, _tree2,
       child_compare_func1, parent_compare_func1,
       NULL, NULL, &data);
 }
 
-#else // Old version without function handlers
-int tree_cmp_same_memory_layout(
-        const Tree * const tree1,
-        const Tree * const tree2)
-{
-    assert(tree1 != NULL && tree2 != NULL);
-
-    // This would be wrong because the size
-    // is just the number of allocated space. 
-    // Trees can just be the same for different sizes.
-    //int32_t d = tree2->size - tree1->size;
-    //if (d) return d;
-
-    const Node * const root1 = tree1->root;
-    const Node * const root2 = tree2->root;
-    const Node *cur1 = root1->child;
-    const Node *cur2 = root2->child;
-    int32_t d1, d2;
-    // Loop through tree1 and check if tree2 condition matches.
-    while(cur1) {
-        if (cur2==NULL) // tree1 has more nodes
-            return -1;
-
-        d1 = cur1-root1;
-        d2 = cur2-root2;
-        if(d1 != d2) return d2-d1;
-
-
-        if (cur1->child) {
-            cur1 = cur1->child;
-            cur2 = cur2->child;
-            continue;
-        }
-        if (cur1->sibling) {
-            cur1 = cur1->sibling;
-            cur2 = cur2->sibling;
-            continue;
-        }
-        while(cur1!=root1){
-            cur1=cur1->parent;
-            cur2=cur2->parent;
-
-            if(cur1==NULL){ // tree1 is inconsistent if we reach NULL before root1
-                assert(cur1!=NULL);
-                return INT_MAX;
-            }
-            if(cur2==NULL){ // tree2 ending too early
-                return INT_MIN;
-            }
-
-            if (cur1->sibling){
-                cur1=cur1->sibling;
-                cur2=cur2->sibling;
-                break;
-            }
-        }
-    }
-
-    if (cur2 != NULL) // => Extra node
-        return 1;
-
-    return 0;
-}
-#endif
 
 int tree_cmp_child_node_order_scrambled(
-        const Tree * const tree1,
-        const Tree * const tree2)
+    const Tree * const tree1,
+    const Tree * const tree2)
 {
   assert(tree1 != NULL && tree2 != NULL);
 
@@ -793,16 +609,14 @@ int tree_cmp_child_node_order_scrambled(
   // (It would be possible to shrink this on one clone.)
   Tree *_tree1 = tree_clone(tree1, NULL, NULL);
   Tree *_tree2 = tree_clone(tree2, NULL, NULL);
-	tree_print(tree1, NULL, 0);
-	tree_print(tree2, NULL, 0);
 
-	compare_func2_data data = {
-			.anchor1 = _tree1->nodes,
-			.anchor2 = _tree2->nodes,
-			.num_sorting_siblings = 0,
-			.sorting_siblings1 = NULL,
-			.sorting_siblings2 = NULL,
-	};
+  compare_func2_data data = {
+    .anchor1 = _tree1->nodes,
+    .anchor2 = _tree2->nodes,
+    .num_sorting_siblings = 0,
+    .sorting_siblings1 = NULL,
+    .sorting_siblings2 = NULL,
+  };
   int ret = _trees_depth_first_search(_tree1, _tree2,
       child_compare_func2, parent_compare_func2,
       NULL, NULL, &data);
@@ -815,40 +629,9 @@ int tree_cmp_child_node_order_scrambled(
   return ret;
 }
 
-/* Delete returned char after usage! */
-char *_gen_canonical_label(const Tree *tree){
-
-  compare_func3_data data = create_compare_func3_data(tree);
-  if (data.anchor == NULL){ // Check allocations for failure
-    assert(0);
-    destroy_compare_func3_data(&data, 0);
-    return NULL;
-  }
-  data.label_cache[0][data.len_of_label_caches] = '\0';
-  data.label_cache[1][data.len_of_label_caches] = '\0';
-  data.first_free_char_in_label_cache[0] = data.label_cache[0];
-  data.first_free_char_in_label_cache[1] = data.label_cache[1];
-  
-  int ret = _tree_depth_first_search(
-      (Tree *)tree /* Discarding const is ok for this function handlers */,
-      func3_on_leaf, func3_on_nonleaf_preorder,
-      NULL, func3_on_nonleaf_postorder,
-      &data);
-
-  if (ret == 0){
-    // Cleanup, but hold result
-    destroy_compare_func3_data(&data, 1);
-    return data.label_cache[0]; // TODO: Unklar ob letztes Label ganz vorne. Mindestens nen Assert einbauen.
-  }else{
-    // Cleanup all
-    destroy_compare_func3_data(&data, 0);
-    return NULL;
-  }
-}
-
 int tree_cmp_if_nodes_isomorph(
-        const Tree * const tree1,
-        const Tree * const tree2)
+    const Tree * const tree1,
+    const Tree * const tree2)
 {
   assert(tree1 != NULL && tree2 != NULL);
 
@@ -874,26 +657,126 @@ int tree_cmp_if_nodes_isomorph(
    * Thus 2*num_nodes(t)+1 chars can store the whole string,
    *  where num_nodes(t) <= t->size.
    */
-  char *label_tree1 = _gen_canonical_label(tree1);
+  char *label_tree1 = tree_canonical_label(tree1);
   if (label_tree1 == NULL) return -1;
-  char *label_tree2 = _gen_canonical_label(tree2);
+  char *label_tree2 = tree_canonical_label(tree2);
   if (label_tree2 == NULL) {
     free(label_tree1);
     return 1;
   }
 
   int ret = strcmp(label_tree1, label_tree2);
-  
+
   // Cleanup
   free(label_tree1);
   free(label_tree2);
   return ret;
 }
 
+int tree_cmp_same_data_memory_layout(
+    const Tree * const tree1,
+    const Tree * const tree2)
+{
+  assert(tree1 != NULL && tree2 != NULL);
+
+  // Non-const pointers, but underlaying handlers will not alter trees.
+  Tree *_tree1 = (Tree *)tree1;
+  Tree *_tree2 = (Tree *)tree2;
+
+  compare_func4_data data = {
+    .data1_anchor = NULL, /* Set on first found data_poiter != NULL */
+    .data2_anchor = NULL,
+  };
+  return _trees_depth_first_search(_tree1, _tree2,
+      child_compare_func4, parent_compare_func4,
+      NULL, NULL, &data);
+}
+
+
+int tree_cmp_child_data_order_scrambled(
+    const Tree * const tree1,
+    const Tree * const tree2)
+{
+  assert(tree1 != NULL && tree2 != NULL);
+
+  // Create copies because we will re-sort childs during the operation.
+  // (It would be possible to shrink this on one clone.)
+  Tree *_tree1 = tree_clone(tree1, NULL, NULL);
+  Tree *_tree2 = tree_clone(tree2, NULL, NULL);
+
+  compare_func5_data data = {
+    .data1_anchor = NULL, /* Set on first found data_poiter != NULL */
+    .data2_anchor = NULL,
+    .num_sorting_siblings = 0,
+    .sorting_siblings1 = NULL,
+    .sorting_siblings2 = NULL,
+  };
+  int ret = _trees_depth_first_search(_tree1, _tree2,
+      child_compare_func5, parent_compare_func5,
+      NULL, NULL, &data);
+
+  // Cleanup
+  destroy_compare_func5_data(&data);
+  tree_destroy(&_tree1);
+  tree_destroy(&_tree2);
+
+  return ret;
+}
+
+int tree_cmp_if_data_isomorph(
+    const Tree * const tree1,
+    const Tree * const tree2)
+{
+  assert(tree1 != NULL && tree2 != NULL);
+
+  /* The data to compare the trees will be build 'down to top'.
+   *
+   * Thus, we can overwrite data from child nodes after we reached
+   * a node in post-order. Nevertheless we use two buffers and
+   * nodes of depth N will read from buffer (N+1)%2
+   * and write into buffer (N+0)%2.
+   * This preventing overlapping of strings during writing the node label.
+   */
+  /* 
+   * We do not clone the input trees and for this reason we can not use
+   * the data pointer without overwriting user data.
+   * Instead, we're using 'nodeX - treeX->root' as index into an new data array.
+   * 
+   * (Cloning the input trees looks more practical, but we want use this function 
+   * in the TREE_COMPARE_IF_DATA_ISOMORPH algorithm and there,
+   * we need the input data pointer.
+   */
+  /* One terminal char, 'o', for each leaf and
+   * two Terminals '(',')'  for each non-leaf will be used.
+   * Thus 2*num_nodes(t)+1 chars can store the whole string,
+   *  where num_nodes(t) <= t->size.
+   */
+  Tree *tree1_ordered = NULL, *tree2_ordered = NULL;
+  char *label_tree1 = NULL, *label_tree2 = NULL;
+  int ret;
+
+  ret = tree_sort_canonical_order(tree1, &tree1_ordered, &label_tree1);
+  if (ret) return -1;
+  ret = tree_sort_canonical_order(tree2, &tree2_ordered, &label_tree2);
+  if (ret){
+    tree_destroy(&tree1_ordered);
+    free(label_tree1);
+    return 1;
+  }
+
+  ret = strcmp(label_tree1, label_tree2);
+
+  // Cleanup
+  free(label_tree1);
+  free(label_tree2);
+  return ret;
+}
+
+
 int tree_cmp(
-        const Tree * const tree1,
-        const Tree * const tree2,
-        enum tree_compare_types compare_type)
+    const Tree * const tree1,
+    const Tree * const tree2,
+    enum tree_compare_types compare_type)
 {
   if (tree1 == NULL) return (tree2==NULL)?0:1;
   if (tree2 == NULL) return -1;
@@ -901,11 +784,17 @@ int tree_cmp(
 
   switch (compare_type) {
     case TREE_COMPARE_SAME_NODE_MEMORY_LAYOUT:
-      return tree_cmp_same_memory_layout(tree1, tree2);
+      return tree_cmp_same_node_memory_layout(tree1, tree2);
     case TREE_COMPARE_CHILD_NODE_ORDER_SCRAMBLED:
       return tree_cmp_child_node_order_scrambled(tree1, tree2);
     case TREE_COMPARE_IF_NODES_ISOMORPH:
       return tree_cmp_if_nodes_isomorph(tree1, tree2);
+    case TREE_COMPARE_SAME_DATA_MEMORY_LAYOUT:
+      return tree_cmp_same_data_memory_layout(tree1, tree2);
+    case TREE_COMPARE_CHILD_DATA_ORDER_SCRAMBLED:
+      return tree_cmp_child_data_order_scrambled(tree1, tree2);
+    case TREE_COMPARE_IF_DATA_ISOMORPH:
+      return tree_cmp_if_data_isomorph(tree1, tree2);
     default:
       fprintf(stderr, "Unsupported compare type: ");
       fprintf_enum_name(stderr, compare_type);

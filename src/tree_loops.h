@@ -81,8 +81,18 @@ int _tree_depth_first_search(
   if (tree == NULL) return -1;
   assert(tree != NULL);
 
-  const Node * const root = tree->root;
-  const Node *cur = root;
+  Node * const root = tree->root;
+  Node *cur = root;
+
+  // Check if tree contains just root node.
+  // This avoids call of on_non_leaf_post_order for empty root.
+  if (cur->child == NULL){
+      if (on_leaf != NULL) {
+        if (on_leaf(cur, data)) return 1;
+      }
+      return 0;
+  }
+
   // Loop through tree until an handler indicates an hit/error.
   while(cur) {
 
@@ -172,15 +182,27 @@ int _trees_depth_first_search(
   //int32_t d = tree2->size - tree1->size;
   //if (d) return d;
 
-  const Node * const root1 = tree1->root;
-  const Node * const root2 = tree2->root;
-  const Node *cur1 = root1;
-  const Node *cur2 = root2;
+  Node * const root1 = tree1->root;
+  Node * const root2 = tree2->root;
+  Node *cur1 = root1;
+  Node *cur2 = root2;
   // Loop through tree1 + tree2 and until handler returned an hit/error
   // or the structure of both trees doesn't match anymore
 
   if (cur1 && cur2==NULL) // tree1 has more nodes on certain place
     return -2;
+
+  // Check if tree contains just root node.
+  // This avoids call of on_non_leaf_post_order for empty root.
+  // The cases if just one child is NULL are covered in while loop
+  // (return of 12/-12)
+  if (cur1->child == NULL && cur2->child == NULL){
+      if (on_leaf != NULL) {
+        int32_t d = on_leaf(cur1, cur2, data);
+        if (d) return d;
+      }
+      return 0;
+  }
 
   while(cur1) {
     // Commented out because the NULL checks are already done before loop restarts

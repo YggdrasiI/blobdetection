@@ -7,7 +7,7 @@ extern "C" {
 #include "tree_loops.h"
 }
 
-int child_compare_func1(const Node *n1, const Node *n2, void *compare_data) {
+int child_compare_func1(Node *n1, Node *n2, void *compare_data) {
 	int dw = n1->width - n2->width;
 	int dh = n1->height - n2->height;
 	if (dw) return dw;
@@ -15,7 +15,7 @@ int child_compare_func1(const Node *n1, const Node *n2, void *compare_data) {
 	return 0;
 }
 
-int parent_compare_func1(const Node *n1, const Node *n2, void *compare_data) {
+int parent_compare_func1(Node *n1, Node *n2, void *compare_data) {
 	return child_compare_func1(n1->parent, n2->parent, compare_data);
 }
 
@@ -182,4 +182,13 @@ void gen_invalid_tree_structure2(Tree *t){
 	tree_add_child(&t->nodes[2], &t->nodes[7]);
 	tree_add_child(&t->nodes[7], &t->nodes[0]);
 	tree_add_child(&t->nodes[1], &t->nodes[3]);
+}
+
+int check_integrity(Tree *t) {
+	int err = tree_integrity_check(t->root);
+	if(err){
+		//tree_print_integrity_check(t->root);
+		fprintf_enum_name(stderr, err);
+	}
+	return err;
 }
