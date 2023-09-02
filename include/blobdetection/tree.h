@@ -245,9 +245,15 @@ int tree_add_siblings(
  * is like a root node (no parent and no siblings), but is
  * not connected to the main tree.
  *
- * It still shares the memory of Tree struct.
+ * It still shares the memory of Tree struct and can
+ * be added again at another position.
  */
 int tree_release_child(
+    Node * const child,
+    int leaf_only);
+
+/* Mark this node as unused. Do not use node it after deletion.  */
+int tree_delete_node(
     Node * const child,
     int leaf_only);
 

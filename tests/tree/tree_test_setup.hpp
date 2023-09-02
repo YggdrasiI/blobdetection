@@ -184,6 +184,11 @@ void gen_invalid_tree_structure2(Tree *t){
 	tree_add_child(&t->nodes[1], &t->nodes[3]);
 }
 
+Tree * gen_full_binary_tree(int height){
+	// TODO
+	return NULL;
+}
+
 int check_integrity(Tree *t) {
 	int err = tree_integrity_check(t->root);
 	if(err){

@@ -313,11 +313,11 @@ int parent_compare_func4(Node *n1, Node *n2, void *compare_data) {
 
 /* Variant 5: TREE_COMPARE_CHILD_DATA_ORDER_SCRAMBLED
  *
- * LIKE TREE_COMPARE_CHILD_NODE_ORDER_SCRAMBLED but compare data pointer
+ * Like TREE_COMPARE_CHILD_NODE_ORDER_SCRAMBLED but compares data pointer
  * instead of node's own position.
  *
  * Attention:
- *    • All ->data pointers needs to be set. 
+ *    • All ->data pointers needs to be set and do not containing duplicates.
  *      Otherwise False-Negative results are possible.
  *    • It just checks the pointer position, not the content.
  * */
@@ -368,7 +368,7 @@ int child_compare_func5(Node *n1, Node *n2, void *_compare_data) {
 int parent_compare_func5(Node *n1, Node *n2, void *_compare_data) {
   compare_func5_data * compare_data = (compare_func5_data *)_compare_data;
 
-  // This function re-sorts child on left-most child and just compare results
+  // This function re-sorts child on left-most child and just compares results
   // on all other nodes. (Maybe it's better to check all siblings directly in first call?!)
 #ifdef DIRECT_CHECK_AFTER_SORTING
   if( n1->parent->child != n1 ) return 0; // We had already checked.
@@ -500,22 +500,13 @@ int parent_compare_func5(Node *n1, Node *n2, void *_compare_data) {
 
 /* Variant 6: TREE_COMPARE_IF_DATA_ISOMORPH
  *
- * LIKE TREE_COMPARE_IF_NODES_ISOMORPH but compare data pointer
+ * Like TREE_COMPARE_IF_NODES_ISOMORPH but compares data pointer
  * instead of node's own position.
  *
  * Attention: It just checks the pointer position, not the content.
+ *
  * */
-typedef struct {
-  const Node *anchor1;
-  const Node *anchor2;
-  const void *tree1_data;
-  const void *tree2_data;
-} compare_func6_data;
-
-
-int compare_func6(Node *n1, Node *n2, void *compare_data) {
-  return 0;
-}
+// See tree_sort.c
 
 /* Variant 7: TREE_COMPARE_ISOMORPH_NODE_HASH
  *
