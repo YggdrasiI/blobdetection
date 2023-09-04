@@ -1,4 +1,5 @@
 TEST_BUILD_DIR=debug_with_tests
+TEST_BUILD_FLAGS=--coverage -g -O0 -fprofile-abs-path
 
 help:
 	@echo -e "Build targets:\n\n" \
@@ -37,7 +38,7 @@ debug/CMakeCache.txt: mkdir_debug
 
 $(TEST_BUILD_DIR)/CMakeCache.txt: mkdir_$(TEST_BUILD_DIR)
 	cd $(TEST_BUILD_DIR) && cmake -DCMAKE_BUILD_TYPE=Debug -DWITH_TESTS=1 \
-		-DCMAKE_C_FLAGS="--coverage -g -O0" -DCMAKE_CXX_FLAGS="--coverage -g -O0" \
+		-DCMAKE_C_FLAGS="$(TEST_BUILD_FLAGS)" -DCMAKE_CXX_FLAGS="$(TEST_BUILD_FLAGS)" \
 		..
 
 # Artifical targets
