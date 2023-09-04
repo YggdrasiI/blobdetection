@@ -828,7 +828,7 @@ char * write_nonleaf(
   label_node_ref4_t **pRef = data->sorting_siblings;
   label_node_ref4_t ** const pRefEnd = pRef + num_childs;
   while (pRef < pRefEnd) {
-    printf(" cL: %d '%s'", (*pRef)->label_len, (*pRef)->label_ref);
+    //printf(" cL: %d '%s'", (*pRef)->label_len, (*pRef)->label_ref);
     out = mempcpy(out, (*pRef)->label_ref, (*pRef)->label_len
 #ifdef ADD_NULL_TERMINAL_TO_LABEL
         -1
@@ -836,7 +836,7 @@ char * write_nonleaf(
         );
     ++pRef;
   }
-  printf("\n");
+  //printf("\n");
   *out++ = RIGHT_NON_LEAF_CHAR;
 #ifdef ADD_NULL_TERMINAL_TO_LABEL
   *out++ = '\0'; // Written, but pointer not incremented
@@ -1031,7 +1031,7 @@ int sort_func4_on_leaf(Node *n, void *_data) {
   // Write label for leaf node
   char *node_label = data->first_free_char_in_label_cache[idx_out];
   char *char_after_node_label = data->write_leaf_f(n, node_label, data);
-  printf("Leaflabel: %s\n", node_label);
+  //printf("Leaflabel: %s\n", node_label);
 
   // Eval number of consumed bytes
   assert(char_after_node_label >= node_label);
@@ -1136,9 +1136,9 @@ int sort_func4_on_nonleaf_postorder(Node *n, void *_data) {
 
   // Write label for leaf node by merging labels into label of parent node
   char *node_label = data->first_free_char_in_label_cache[idx_out];
-  char *char_after_node_label = data->write_nonleaf_f(n, num_nodes,
+  char *char_after_node_label = data->write_nonleaf_f(n->parent, num_nodes,
       node_label, data);
-  printf("Label: %s\n", node_label);
+  //printf("Label: %s\n", node_label);
 
   // Re-sort children nodes
   if (data->sort_nodes) {
@@ -1434,10 +1434,11 @@ char *tree_hash_label(
 
 int tree_sort_by_data_pointer_inplace(
         Tree *tree,
-        char **out_label)
+        char **out_label,
+        size_t *out_label_size)
 {
   if( *out_label != NULL ){
-    free(*out_label); *out_label = NULL;
+    free(*out_label); *out_label = NULL; *out_label_size = 0;
   }
 
   sort_func4_data_t data;
@@ -1452,9 +1453,14 @@ int tree_sort_by_data_pointer_inplace(
       &data);
 
   if (ret == 0){
-    // Cleanup, but hold result
-    destroy_sort_func4_data(&data, 1);
     *out_label = data.label_cache[0];
+
+    // Look into refs array for root node to get length of label
+    const ptrdiff_t d = data.tree->root - data.anchor;
+    *out_label_size = data.refs[d].label_len;
+
+    // Cleanup, but do not free label_cache[0]
+    destroy_sort_func4_data(&data, 1);
     return 0;
   }else{
     // Cleanup all
@@ -1467,23 +1473,60 @@ int tree_sort_by_data_pointer_inplace(
 int tree_sort_by_data_pointer(
         const Tree *tree,
         Tree **out_tree,
-        char **out_label)
+        char **out_label,
+        size_t *out_label_size)
 {
   if( *out_tree != NULL ){
     tree_destroy(out_tree);
   }
 
   Tree *copied_tree = tree_clone(tree, NULL, NULL);
-  int ret = tree_sort_by_data_pointer_inplace(copied_tree, out_label);
+  int ret = tree_sort_by_data_pointer_inplace(copied_tree,
+      out_label, out_label_size);
 
   if (ret) { // error occoured, return NULL for out_tree and out_label
     tree_destroy(&copied_tree); *out_tree = NULL; // redundant
-    free(*out_label); *out_label = NULL;
+    free(*out_label); *out_label = NULL; *out_label_size = 0;
     return ret;
   }
   *out_tree = copied_tree;
   return ret;
 }
 
+int tree_data_pointer_label(
+        const Tree *tree,
+        char **out_label,
+        size_t *out_label_size)
+{
+  if( *out_label != NULL ){
+    free(*out_label); *out_label = NULL; *out_label_size = 0;
+  }
 
+  sort_func4_data_t data;
+  if (create_sort_func4_data(tree, 0, enrich_leaf_by_pointer, enrich_nonleaf_by_pointer, &data)){
+    return -1; // Allocation error
+  }
+
+  int ret = _tree_depth_first_search(
+      (Tree *)tree,
+      sort_func4_on_leaf, sort_func4_on_nonleaf_preorder,
+      NULL, sort_func4_on_nonleaf_postorder,
+      &data);
+
+  if (ret == 0){
+    *out_label = data.label_cache[0];
+
+    // Look into refs array for root node to get length of label
+    const ptrdiff_t d = data.tree->root - data.anchor;
+    *out_label_size = data.refs[d].label_len;
+
+    // Cleanup, but do not free label_cache[0]
+    destroy_sort_func4_data(&data, 1);
+    return 0;
+  }else{
+    // Cleanup all
+    destroy_sort_func4_data(&data, 0);
+    return -1;
+  }
+}
 #endif

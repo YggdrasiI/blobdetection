@@ -262,6 +262,36 @@ TEST(TestTreeCompare, CompareType3_EqualStructure2) {
 
 // =============================================================
 
+TEST(TestTreeCompare, CompareType6_EqualStructure8_Null_data) {
+	// Compare trees with identical nodes
+	init_tree_structure8(t1);
+	init_tree_structure8(t2);
+
+	LONGS_EQUAL(0, tree_cmp(t1, t2, TREE_COMPARE_IF_DATA_ISOMORPH));
+	LONGS_EQUAL(0, tree_cmp(t2, t1, TREE_COMPARE_IF_DATA_ISOMORPH));
+}
+
+TEST(TestTreeCompare, CompareType6_EqualStructure8) {
+	// Compare trees with identical nodes/data
+	init_tree_structure8(t1);
+	init_tree_structure8(t2);
+
+	char *offset = (char *)0x4141414141414141; //shift label chars into printable range.
+	for(int i=0; i<t1->size; ++i){
+		t1->nodes[i].data = offset + 0x0102030405060708 + i; //* 16;
+		t2->nodes[i].data = offset + 0x0102030405060708 + i; //* 16;
+	}
+
+	// Swap two values
+	void *tmp = t2->nodes[5].data;
+	t2->nodes[5].data = t2->nodes[7].data;
+	t2->nodes[7].data = tmp;
+
+	LONGS_EQUAL(0, tree_cmp(t1, t2, TREE_COMPARE_IF_DATA_ISOMORPH));
+	LONGS_EQUAL(0, tree_cmp(t2, t1, TREE_COMPARE_IF_DATA_ISOMORPH));
+}
+// =============================================================
+
 int main(int ac, char** av)
 {
 	   return CommandLineTestRunner::RunAllTests(ac, av);

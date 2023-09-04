@@ -720,42 +720,35 @@ int tree_cmp_if_data_isomorph(
 {
   assert(tree1 != NULL && tree2 != NULL);
 
-  /* The data to compare the trees will be build 'down to top'.
+  /* Generate labels which containing the data-pointer as part and
+   * sorting the labels from child nodes during tree traversal.
    *
-   * Thus, we can overwrite data from child nodes after we reached
-   * a node in post-order. Nevertheless we use two buffers and
-   * nodes of depth N will read from buffer (N+1)%2
-   * and write into buffer (N+0)%2.
-   * This preventing overlapping of strings during writing the node label.
+   * If both root labels are the same the trees had an isomorph
+   * structure and the data-Pointer of each node matches.
    */
-  /* 
-   * We do not clone the input trees and for this reason we can not use
-   * the data pointer without overwriting user data.
-   * Instead, we're using 'nodeX - treeX->root' as index into an new data array.
-   * 
-   * (Cloning the input trees looks more practical, but we want use this function 
-   * in the TREE_COMPARE_IF_DATA_ISOMORPH algorithm and there,
-   * we need the input data pointer.
-   */
-  /* One terminal char, 'o', for each leaf and
-   * two Terminals '(',')'  for each non-leaf will be used.
-   * Thus 2*num_nodes(t)+1 chars can store the whole string,
-   *  where num_nodes(t) <= t->size.
-   */
-  Tree *tree1_ordered = NULL, *tree2_ordered = NULL;
+
   char *label_tree1 = NULL, *label_tree2 = NULL;
+  size_t label_tree1_len, label_tree2_len;
   int ret;
 
-  ret = tree_sort_canonical_order(tree1, &tree1_ordered, &label_tree1);
+  ret = tree_data_pointer_label(tree1, &label_tree1, &label_tree1_len);
   if (ret) return -1;
-  ret = tree_sort_canonical_order(tree2, &tree2_ordered, &label_tree2);
+  ret = tree_data_pointer_label(tree2, &label_tree2, &label_tree2_len);
   if (ret){
-    tree_destroy(&tree1_ordered);
     free(label_tree1);
     return 1;
   }
+#if 0
+  printf("Label1: %s\nLabel2: %s\nsize1: %lu len1: %lu\nsize2: %lu len2: %lu\n",
+      label_tree1, label_tree2,
+      label_tree1_len, strlen(label_tree1),
+      label_tree2_len, strlen(label_tree2));
+#endif
 
-  ret = strcmp(label_tree1, label_tree2);
+  ret = label_tree1_len - label_tree2_len;
+  if (ret == 0){
+    ret = memcmp(label_tree1, label_tree2, label_tree1_len);
+  }
 
   // Cleanup
   free(label_tree1);

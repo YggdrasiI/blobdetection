@@ -67,7 +67,7 @@ int tree_sort_by_hash_data(
 
 /*
  * This just returns the hash generated
- * by thes sorting algorithm based on node hash values.
+ * by this sorting algorithm based on node hash values.
  *
  * Delete returned char after usage. */
 char *tree_hash_label(
@@ -77,11 +77,14 @@ char *tree_hash_label(
  * Like tree_canonical_order,
  * but label will respect data pointer.
  *
+ * The returned label is no string, because it can contain null-bytes!
+ *
  *            Free out_label after usage!
  * */
 int tree_sort_by_data_pointer_inplace(
         Tree *tree,
-        char **out_label);
+        char **out_label,
+        size_t *out_label_size);
 
 /* 
  * Like tree_canonical_order_inplace,
@@ -93,6 +96,17 @@ int tree_sort_by_data_pointer_inplace(
 int tree_sort_by_data_pointer(
         const Tree *tree,
         Tree **out_tree,
-        char **out_label);
+        char **out_label,
+        size_t *out_label_size);
+
+/*
+ * This just returns the label generated
+ * during the sorting by data pointer.
+ *
+ * Delete returned char after usage. */
+int tree_data_pointer_label(
+        const Tree *tree,
+        char **out_label,
+        size_t *out_label_size);
 
 #endif
