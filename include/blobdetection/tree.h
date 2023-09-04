@@ -430,6 +430,4 @@ void tree_print_integrity_check(
     Node *root);
 
 
-#include "tree_sort.h"
-
 #endif

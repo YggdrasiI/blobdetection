@@ -1108,6 +1108,7 @@ uint32_t node_number_of_successors(
 
 void _tree_print(
     const Tree * tree,
+    const Node *subtree_root,
     const Node *node,
     int32_t shift)
 {
@@ -1126,16 +1127,19 @@ void _tree_print(
 
   if( node->child != NULL){
     printf("→");
-    _tree_print(tree, node->child, shift+shift2);
+    _tree_print(tree, subtree_root, node->child, shift+shift2);
   }else{
     printf("\n");
   }
+
+  if (node == subtree_root) // ignore siblings for (sub-)root.
+      return;
 
   if( node->sibling != NULL){
   //  printf("\n");
     for(i=0; i<shift-1; i++) printf(" ");
     printf("↘");
-    _tree_print(tree, node->sibling, shift);
+    _tree_print(tree, subtree_root, node->sibling, shift);
   }
 }
 
@@ -1148,7 +1152,8 @@ void tree_print(
     assert(subtree_root >= tree->nodes);
     assert(subtree_root < tree->nodes + tree->size);
   }
-  _tree_print(tree, subtree_root?subtree_root:tree->root, shift);
+  subtree_root = subtree_root?subtree_root:tree->root;
+  _tree_print(tree, subtree_root, subtree_root, shift);
 }
 
 /* Generate trees from strings like tree_print(…). 

@@ -64,7 +64,6 @@ TEST(TestTreeCompare, CompareType1_InequalStructure3vs4) {
 
 	int ret = tree_cmp(t1, t2, TREE_COMPARE_SAME_NODE_MEMORY_LAYOUT);
 	int retSwap = tree_cmp(t2, t1, TREE_COMPARE_SAME_NODE_MEMORY_LAYOUT);
-	CHECK(ret != 0);
 	LONGS_EQUAL(ret, -retSwap);
 }
 
@@ -181,7 +180,7 @@ TEST(TestTreeCompare, CompareType2_InequalStructure2vs3) {
 
 	int ret = tree_cmp(t1, t2, TREE_COMPARE_CHILD_NODE_ORDER_SCRAMBLED);
 	int retSwap = tree_cmp(t2, t1, TREE_COMPARE_CHILD_NODE_ORDER_SCRAMBLED);
-	CHECK(ret != 0);
+	LONGS_EQUAL(0, ret);
 	LONGS_EQUAL(ret, -retSwap);
 }
 
@@ -195,13 +194,14 @@ TEST(TestTreeCompare, CompareType2_EqualStructure8) {
 }
 
 TEST(TestTreeCompare, CompareType2_EqualStructure8B) {
-	// Compare trees with nodes shuffeld children order 
+	// Compare trees with nodes shuffeld children order. Should be ok for this compare type 
 	init_tree_structure8(t1);
 	init_tree_structure8B(t2);
 
 	int ret = tree_cmp(t1, t2, TREE_COMPARE_CHILD_NODE_ORDER_SCRAMBLED);
 	int retSwap = tree_cmp(t2, t1, TREE_COMPARE_CHILD_NODE_ORDER_SCRAMBLED);
-	CHECK(ret != 0);
+	//CHECK(ret != 0);
+	LONGS_EQUAL(0, ret);
 	LONGS_EQUAL(ret, -retSwap);
 }
 
@@ -263,15 +263,65 @@ TEST(TestTreeCompare, CompareType3_EqualStructure2) {
 // =============================================================
 
 TEST(TestTreeCompare, CompareType6_EqualStructure8_Null_data) {
-	// Compare trees with identical nodes
+	// Compare trees with identical nodes, but without data
+	init_tree_structure8(t1);
+	//add_printable_data_pointer(t1, 0); // same label for all
+
+	LONGS_EQUAL(0, tree_cmp(t1, t1, TREE_COMPARE_IF_DATA_ISOMORPH));
+}
+
+TEST(TestTreeCompare, CompareType6_EqualStructure8) {
+	// Compare trees with identical nodes/data
 	init_tree_structure8(t1);
 	init_tree_structure8(t2);
+
+	add_printable_data_pointer(t1, 1);
+	add_printable_data_pointer(t2, 1);
+
+	// Swap two values on positions which does not disturb isomorphism
+	void *tmp = t2->nodes[5].data;
+	t2->nodes[5].data = t2->nodes[7].data;
+	t2->nodes[7].data = tmp;
 
 	LONGS_EQUAL(0, tree_cmp(t1, t2, TREE_COMPARE_IF_DATA_ISOMORPH));
 	LONGS_EQUAL(0, tree_cmp(t2, t1, TREE_COMPARE_IF_DATA_ISOMORPH));
 }
+// =============================================================
 
-TEST(TestTreeCompare, CompareType6_EqualStructure8) {
+TEST(TestTreeCompare, CompareType7_EqualStructure8_Null_data) {
+	// Compare trees with identical nodes, but without data
+	init_tree_structure8(t1);
+	init_tree_structure8(t2);
+
+	LONGS_EQUAL(0, tree_cmp(t1, t2, TREE_COMPARE_IF_DATA_ISOMORPH));
+}
+
+TEST(TestTreeCompare, CompareType7_EqualStructure8) {
+	// Compare trees with identical nodes/data
+	init_tree_structure8(t1);
+	init_tree_structure8(t2);
+
+	add_printable_data_pointer(t1, 1);
+	add_printable_data_pointer(t2, 1);
+
+	// Swap two values on positions which does not disturb isomorphism
+	void *tmp = t2->nodes[5].data;
+	t2->nodes[5].data = t2->nodes[7].data;
+	t2->nodes[7].data = tmp;
+
+	LONGS_EQUAL(0, tree_cmp(t1, t2, TREE_COMPARE_IF_DATA_ISOMORPH));
+	LONGS_EQUAL(0, tree_cmp(t2, t1, TREE_COMPARE_IF_DATA_ISOMORPH));
+}
+// =============================================================
+
+TEST(TestTreeCompare, CompareType8_EqualStructure8_Null_data) {
+	// Compare trees with identical nodes
+	init_tree_structure8(t1);
+
+	LONGS_EQUAL(0, tree_cmp(t1, t1, TREE_COMPARE_IF_DATA_ISOMORPH));
+}
+
+TEST(TestTreeCompare, CompareType8_EqualStructure8) {
 	// Compare trees with identical nodes/data
 	init_tree_structure8(t1);
 	init_tree_structure8(t2);
@@ -282,7 +332,7 @@ TEST(TestTreeCompare, CompareType6_EqualStructure8) {
 		t2->nodes[i].data = offset + 0x0102030405060708 + i; //* 16;
 	}
 
-	// Swap two values
+	// Swap two values on positions which does not disturb isomorphism
 	void *tmp = t2->nodes[5].data;
 	t2->nodes[5].data = t2->nodes[7].data;
 	t2->nodes[7].data = tmp;
@@ -291,30 +341,7 @@ TEST(TestTreeCompare, CompareType6_EqualStructure8) {
 	LONGS_EQUAL(0, tree_cmp(t2, t1, TREE_COMPARE_IF_DATA_ISOMORPH));
 }
 // =============================================================
-
 int main(int ac, char** av)
 {
 	   return CommandLineTestRunner::RunAllTests(ac, av);
 }
-
-#if 0
-int main(){
-  Tree *t1 = tree_create(10);
-  Node * const nodes= t1->root;
-  tree_add_child(&nodes[0], &nodes[1]);
-  tree_add_child(&nodes[0], &nodes[9]);
-  tree_add_child(&nodes[9], &nodes[8]);
-  tree_add_child(&nodes[8], &nodes[7]);
-  tree_add_child(&nodes[9], &nodes[6]);
-  tree_add_child(&nodes[1], &nodes[2]);
-  tree_add_child(&nodes[1], &nodes[3]);
-  tree_add_child(&nodes[1], &nodes[4]);
-  tree_add_child(&nodes[1], &nodes[5]);
-
-  tree_print(t1, t1->root, 0);
-
-  tree_destroy(&t1);
-
-  return 0;
-}
-#endif

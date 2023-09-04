@@ -4,6 +4,8 @@
 
 //#include "blobdetection/tree_sort.h"
 
+#include "blobdetection/tree_sort.h"
+
 #include "tree_intern.h"
 
 // Force gcc to inline looping over trees.
@@ -13,7 +15,7 @@
 
 #include "quicksort.h"
 
-#define POINTER_LEN sizeof(void *)
+#define POINTER_LEN sizeof(uintptr_t)
 #define ADD_NULL_TERMINAL_TO_LABEL
 
 typedef struct {
@@ -773,7 +775,6 @@ typedef char * write_nonleaf_label_t(
     char *out, void *data /*, ssize_t avail_chars*/);
 
 
-#define POINTER_LEN sizeof(void *)
 typedef struct {
     char *label_ref;
     uint32_t label_len;
@@ -799,8 +800,13 @@ typedef struct {
 } sort_func4_data_t;
 
 
-// Label writer handlers
-// Canonical label
+
+//================================================
+// Definition of label writer handlers
+//
+
+// === First set for canonical order
+// Output: "o\n"
 char * write_leaf(
     const Node *node,
     char *out, void *data)
@@ -814,6 +820,7 @@ char * write_leaf(
   return out;
 }
 
+// Output example:   "(o)(oo)(o(o))\n"
 char * write_nonleaf(
     const Node *node,
     int num_childs,
@@ -847,18 +854,21 @@ char * write_nonleaf(
   return out;
 }
 
-// label with data pointer
-char * enrich_leaf_by_pointer(
+// === Second set for label with data pointer
+
+// Output: "{pointer-value}"
+char * enrich_leaf_with_data_pointer(
     const Node *node,
     char *out, void *data)
 {
-  *((void **)out) = node->data;
+  *((uintptr_t *)out) = (uintptr_t) node->data;
   out += POINTER_LEN;
   *out = '\0'; // Add optional string end after memory block. (Not counted)
   return out; 
 }
 
-char * enrich_nonleaf_by_pointer(
+// Output ({pointer-value}{sorted child values})
+char * enrich_nonleaf_with_data_pointer(
     const Node *node,
     int num_childs,
     char *out, void *_data)
@@ -867,7 +877,7 @@ char * enrich_nonleaf_by_pointer(
 
   //const char *out_begin = out;
   *out++ = LEFT_NON_LEAF_CHAR;
-  *((void **)out) = node->data;
+  *((uintptr_t *)out) =  (uintptr_t)node->data;
   out += POINTER_LEN;
 
   label_node_ref4_t **pRef = data->sorting_siblings;
@@ -882,52 +892,168 @@ char * enrich_nonleaf_by_pointer(
   return out; //-out_begin;
 }
 
-// label with hash value
-// TODO: Maybe this should be salted by some fixed value to hide pointer?!
+
+// === Third set
+// label with hash value. Writing arbitary value, but it has do be
+// constant for all leafs and the correct length (hash size).
 char * hash_leaf(
     const Node *node,
     char *out, void *data)
 {
-  *((void **)out) = node->data;
-  out += POINTER_LEN;
-  *out = '\0'; // Add optional string end after memory block. (Not counted)
-  return out; 
+#ifdef HASH_128BIT
+#if defined(__LP64__) || defined(_LP64)
+ uint64_t *out64 = (uint64_t *)out;
+ *out64++ = 0x2020202020202000| LEAF_CHAR;
+ *out64++ = 0x2020202020202000| LEAF_CHAR;
+#else
+ uint32_t *in32 = (uint32_t *)out;
+ *in32++ = 0x20202020;
+ *in32++ = 0x20202000| LEAF_CHAR;
+ *in32++ = 0x20202020;
+ *in32++ = 0x20202000| LEAF_CHAR;
+#endif
+ out += 16;
+ *out = '\0'; // Add optional string end after memory block. (Not counted)
+#else // 4 bytes
+  *((uint32_t *)out) = 0x20202000 | LEAF_CHAR; // "o   " or "   o"
+  out += 4;
+#endif
+
+  return out;
 }
 
+/* hash( XOR hashs of children) */
 char * hash_nonleaf(
     const Node *node,
     int num_childs,
     char *out, void *_data)
 {
-  //sort_func4_data_t * data = (sort_func4_data_t *)_data;
+  sort_func4_data_t * data = (sort_func4_data_t *)_data;
+  //const char *out_begin = out;
 
-  char *out_begin_stage1 = out;
+  label_node_ref4_t **pRef = data->sorting_siblings;
+  label_node_ref4_t ** const pRefEnd = pRef + num_childs;
 
-  // Stage 1: Write label like enrich_nonleaf_by_pointer()
-  char *out_end_stage1 = enrich_nonleaf_by_pointer(node, num_childs, out_begin_stage1, _data);
-
-  // Stage 2: Convert this new label into hash. 
+  // XOR hashs of children nodes and hashing result.
 #ifdef HASH_128BIT
-   unsigned char hash[16];
-   qhashmurmur3_128((void*)out_begin_stage1, out_end_stage1 - out_begin_stage1, hash);
-
-  *out++ = LEFT_NON_LEAF_CHAR;
-  out = mempcpy(out, hash, 16);
-  *out++ = RIGHT_NON_LEAF_CHAR;
-  *out = '\0'; // Add optional string end after memory block. (Not counted)
+  assert( (*pRef)->label_len == 16 );
+#if defined(__LP64__) || defined(_LP64)
+ uint64_t in64[2] = {0, 0};
+ while (pRef < pRefEnd) {
+   in64[0] ^= *(((uint64_t *)(*pRef)->label_ref)+0);
+   in64[1] ^= *(((uint64_t *)(*pRef)->label_ref)+1);
+   ++pRef;
+ }
+ qhashmurmur3_128(&in64, 16, out);
 #else
-   uint32_t hashval = qhashmurmur3_32((void*)out_begin_stage1, out_end_stage1 - out_begin_stage1);
+ assert( (*pRef)->label_len == 4 );
+ uint32_t in32[4] = {0, 0, 0, 0};
+ while (pRef < pRefEnd) {
+   in32[0] ^= *(((uint32_t *)(*pRef)->label_ref)+0);
+   in32[1] ^= *(((uint32_t *)(*pRef)->label_ref)+1);
+   in32[2] ^= *(((uint32_t *)(*pRef)->label_ref)+2);
+   in32[3] ^= *(((uint32_t *)(*pRef)->label_ref)+3);
+   ++pRef;
+ }
+ qhashmurmur3_128(&in32, 16, out);
+#endif
+ out += 16;
 
-  *out++ = LEFT_NON_LEAF_CHAR;
-
-  *((uint32_t *)out) = hashval;
-  out += POINTER_LEN;
-  *out++ = RIGHT_NON_LEAF_CHAR;
-  *out = '\0'; // Add optional string end after memory block. (Not counted)
+#else // 4 bytes
+ uint32_t in32 = 0;
+ while (pRef < pRefEnd) {
+   in32 ^= *(((uint32_t *)(*pRef)->label_ref));
+   ++pRef;
+ }
+ *((uint32_t *)out) = qhashmurmur3_32(&in32, 4);
+ out += 4;
 #endif
 
+ *out = '\0'; // Add optional string end after memory block. (Not counted)
+ return out; //-out_begin;
+}
+
+
+// === Fourth set
+char * hash_leaf_with_pointer(
+    const Node *node,
+    char *out, void *data)
+{
+  *((uintptr_t *)out) = (uintptr_t) node->data;
+  out += POINTER_LEN;
+  *out = '\0'; // Add optional string end after memory block. (Not counted)
+  return out; 
+}
+
+char * hash_nonleaf_with_pointer(
+    const Node *node,
+    int num_childs,
+    char *out, void *_data)
+{
+  sort_func4_data_t * data = (sort_func4_data_t *)_data;
+  //const char *out_begin = out;
+
+  label_node_ref4_t **pRef = data->sorting_siblings;
+  label_node_ref4_t ** const pRefEnd = pRef + num_childs;
+
+#ifdef HASH_128BIT
+  char hash[16]; // To store XOR-result of childs
+  assert( (*pRef)->label_len == 16 );
+#if defined(__LP64__) || defined(_LP64)
+  // 1. XOR children_node hashs
+  uint64_t in64[2] = {0, 0};
+  while (pRef < pRefEnd) {
+    in64[0] ^= *(((uint64_t *)(*pRef)->label_ref)+0);
+    in64[1] ^= *(((uint64_t *)(*pRef)->label_ref)+1);
+    ++pRef;
+  }
+  // 2. hash(XOR children_node hashs)
+  qhashmurmur3_128(&in64, 16, hash);
+#else
+  // 1. XOR children_node hashs
+  uint64_t in64[2] = {0, 0};
+  assert( (*pRef)->label_len == 4 );
+  uint32_t in32[4] = {0, 0, 0, 0};
+  while (pRef < pRefEnd) {
+    in32[0] ^= *(((uint32_t *)(*pRef)->label_ref)+0);
+    in32[1] ^= *(((uint32_t *)(*pRef)->label_ref)+1);
+    in32[2] ^= *(((uint32_t *)(*pRef)->label_ref)+2);
+    in32[3] ^= *(((uint32_t *)(*pRef)->label_ref)+3);
+    ++pRef;
+  }
+  // 2. hash(XOR children_node hashs)
+  qhashmurmur3_128(&in32, 16, hash);
+#endif
+
+  // 3. XOR data from this node
+  // XOR min(POINTER_LEN, 16) bytes and place it in POINTER_LEN bytes.
+  *((uintptr_t *)out) = *((uintptr_t *)hash) ^ ((uintptr_t) node->data);
+  out += POINTER_LEN;
+
+#else // 4 bytes
+  // 1. XOR children_node hashs
+  uint32_t in32 = 0;
+  while (pRef < pRefEnd) {
+    in32 ^= *(((uint32_t *)(*pRef)->label_ref));
+    ++pRef;
+  }
+  // 2. hash(XOR children_node hashs)
+  uintptr_t hash32 = qhashmurmur3_32(&in32, 4);
+
+  // 3. XOR data from this node
+  // XOR min(POINTER_LEN, 4) bytes and place it in POINTER_LEN bytes.
+  *((uintptr_t *)out) = hash32 ^ ((uintptr_t)node->data);
+  out += POINTER_LEN;
+#endif
+
+  *out = '\0'; // Add optional string end after memory block. (Not counted)
   return out; //-out_begin;
 }
+
+// End of writer handles
+//================================================
+// Begin of sorting algorithm 4 (unification of 1-3)
+
 
 // compare function for QUICKSORT_TEMPLATE
 int _cmp_for_sort4(label_node_ref4_t *a, label_node_ref4_t *b)
@@ -1045,10 +1171,9 @@ int sort_func4_on_leaf(Node *n, void *_data) {
   data->refs[d].label_len = label_len;
   data->refs[d].node_ref = n;
 
-
-
   return 0;
 }
+
 int sort_func4_on_nonleaf_preorder(Node *n, void *_data) {
   // n = First child node.
   sort_func4_data_t * data = (sort_func4_data_t *)_data;
@@ -1175,107 +1300,18 @@ int sort_func4_on_nonleaf_postorder(Node *n, void *_data) {
 }
 
 
-
+// End of sorting algorithm 4 (unification of 1-3)
 //================================================
 // Public functions
 
-#if 0 // Old variant
-int tree_sort_canonical_order_inplace(
-    Tree *tree,
-    char **out_label)
-{
-  if( *out_label != NULL ){
-    free(*out_label); *out_label = NULL;
-  }
-
-  sort_func1_data_t data = create_sort_func1_data(tree);
-  if (data.anchor == NULL){ // Check allocations for failure
-    assert(0);
-    destroy_sort_func1_data(&data, 0);
-    return -1;
-  }
-
-  int ret = _tree_depth_first_search(
-      tree,
-      sort_func1_on_leaf, sort_func1_on_nonleaf_preorder,
-      NULL, sort_func1_on_nonleaf_postorder,
-      &data);
-
-  if (ret == 0){
-    // Cleanup, but hold result
-    destroy_sort_func1_data(&data, 1);
-    *out_label = data.label_cache[0];
-    return 0;
-  }else{
-    // Cleanup all
-    destroy_sort_func1_data(&data, 0);
-    return -1;
-  }
-
-}
-
-/* Bring all isomorph trees into same order.
- * The label will represent the order of the nodes
- * and all isomorph trees have the same label.
- */
-int tree_sort_canonical_order(
-    const Tree *tree,
-    Tree **out_tree,
-    char **out_label)
-{
-  if( *out_tree != NULL ){
-    tree_destroy(out_tree);
-  }
-
-  Tree *copied_tree = tree_clone(tree, NULL, NULL);
-  tree_print(copied_tree, NULL, 0);
-  tree_print_integrity_check(copied_tree->root);
-  int ret = tree_sort_canonical_order_inplace(copied_tree, out_label);
-
-  if (ret) { // error occoured, return NULL for out_tree and out_label
-    tree_destroy(&copied_tree); *out_tree = NULL; // redundant.
-    free(*out_label); *out_label = NULL;
-    return ret;
-  }
-  *out_tree = copied_tree;
-  return ret;
-}
-
-char *tree_canonical_label(
-    const Tree *tree)
-{
-
-  sort_func2_data data = create_sort_func2_data(tree);
-  if (data.anchor == NULL){ // Check allocations for failure
-    assert(0);
-    destroy_sort_func2_data(&data, 0);
-    return NULL;
-  }
-
-  int ret = _tree_depth_first_search(
-      (Tree *)tree /* Discarding const is ok for this function handlers */,
-      sort_func2_on_leaf, sort_func2_on_nonleaf_preorder,
-      NULL, sort_func2_on_nonleaf_postorder,
-      &data);
-
-  if (ret == 0){
-    // Cleanup, but hold result
-    destroy_sort_func2_data(&data, 1);
-    return data.label_cache[0];
-  }else{
-    // Cleanup all
-    destroy_sort_func2_data(&data, 0);
-    return NULL;
-  }
-}
-#else // New variant using unified code (see definition of sort_func4_data_t, pp )
 
 int tree_sort_canonical_order_inplace(
         Tree *tree,
-        char **out_label)
+        char **out_label,
+        size_t *out_label_size)
 {
-  if( *out_label != NULL ){
-    free(*out_label); *out_label = NULL;
+  if(out_label && *out_label != NULL ){
+    free(*out_label); *out_label = NULL; *out_label_size = 0;
   }
 
   sort_func4_data_t data;
@@ -1289,74 +1325,202 @@ int tree_sort_canonical_order_inplace(
       NULL, sort_func4_on_nonleaf_postorder,
       &data);
 
-  if (ret == 0){
-    // Cleanup, but hold result
-    destroy_sort_func4_data(&data, 1);
-    *out_label = data.label_cache[0];
-    return 0;
-  }else{
+  if (ret){
     // Cleanup all
     destroy_sort_func4_data(&data, 0);
-    return -1;
+    return ret;
   }
 
+  if (out_label) {
+    *out_label = data.label_cache[0];
+
+    // Look into refs array for root node to get length of label
+    const ptrdiff_t d = data.tree->root - data.anchor;
+    *out_label_size = data.refs[d].label_len;
+
+    // Cleanup, but do not free label_cache[0]
+    destroy_sort_func4_data(&data, 1);
+  }else{
+    // User do not want the label, throw it away.
+    destroy_sort_func4_data(&data, 0);
+  }
+  return 0;
 }
+
 
 int tree_sort_canonical_order(
         const Tree *tree,
         Tree **out_tree,
-        char **out_label)
+        char **out_label,
+        size_t *out_label_size)
 {
-  if( *out_tree != NULL ){
+  if(out_tree && *out_tree != NULL ){
     tree_destroy(out_tree);
   }
 
   Tree *copied_tree = tree_clone(tree, NULL, NULL);
-  int ret = tree_sort_canonical_order_inplace(copied_tree, out_label);
+  int ret = tree_sort_canonical_order_inplace(copied_tree, out_label, out_label_size);
 
   if (ret) { // error occoured, return NULL for out_tree and out_label
-    tree_destroy(&copied_tree); *out_tree = NULL; // redundant.
-    free(*out_label); *out_label = NULL;
+    tree_destroy(&copied_tree);
     return ret;
   }
-  *out_tree = copied_tree;
+
+  if( out_tree ) {
+      *out_tree = copied_tree;
+  }else{
+    tree_destroy(&copied_tree);
+  }
   return ret;
 }
 
 
-char *tree_canonical_label(
-        const Tree *tree)
+int tree_sort_by_data_pointer_inplace(
+        Tree *tree,
+        char **out_label,
+        size_t *out_label_size)
 {
+   if(out_label && *out_label != NULL ){
+    free(*out_label); *out_label = NULL; *out_label_size = 0;
+  }
+
   sort_func4_data_t data;
-  if (create_sort_func4_data(tree, 0, write_leaf, write_nonleaf, &data)){
-    return NULL; // Allocation error
+ if (create_sort_func4_data(tree, 1, enrich_leaf_with_data_pointer, enrich_nonleaf_with_data_pointer, &data)){
+    return -1; // Allocation error
   }
 
   int ret = _tree_depth_first_search(
-      (Tree *)tree,
+      tree,
       sort_func4_on_leaf, sort_func4_on_nonleaf_preorder,
       NULL, sort_func4_on_nonleaf_postorder,
       &data);
 
-  if (ret == 0){
-    // Cleanup, but hold result
-    destroy_sort_func4_data(&data, 1);
-    char *out_label = data.label_cache[0];
-    return out_label;
-  }else{
+  if (ret){
     // Cleanup all
     destroy_sort_func4_data(&data, 0);
-    return NULL;
+    return ret;
   }
+
+  if (out_label) {
+    *out_label = data.label_cache[0];
+
+    // Look into refs array for root node to get length of label
+    const ptrdiff_t d = data.tree->root - data.anchor;
+    *out_label_size = data.refs[d].label_len;
+
+    // Cleanup, but do not free label_cache[0]
+    destroy_sort_func4_data(&data, 1);
+  }else{
+    // User do not want the label, throw it away.
+    destroy_sort_func4_data(&data, 0);
+  }
+  return 0;
+}
+
+int tree_sort_by_data_pointer(
+        const Tree *tree,
+        Tree **out_tree,
+        char **out_label,
+        size_t *out_label_size)
+{
+  if(out_tree && *out_tree != NULL ){
+    tree_destroy(out_tree);
+  }
+
+  Tree *copied_tree = tree_clone(tree, NULL, NULL);
+  int ret = tree_sort_by_data_pointer_inplace(copied_tree, out_label, out_label_size);
+
+  if (ret) { // error occoured, return NULL for out_tree and out_label
+    tree_destroy(&copied_tree);
+    return ret;
+  }
+
+  if( out_tree ) {
+      *out_tree = copied_tree;
+  }else{
+    tree_destroy(&copied_tree);
+  }
+  return ret;
 }
 
 
 int tree_sort_by_hash_data_inplace(
         Tree *tree,
-        char **out_label)
+        char **out_label,
+        size_t *out_label_size)
 {
-  if( *out_label != NULL ){
-    free(*out_label); *out_label = NULL;
+  if(out_label && *out_label != NULL ){
+    free(*out_label); *out_label = NULL; *out_label_size = 0;
+  }
+
+  sort_func4_data_t data;
+  if (create_sort_func4_data(tree, 1, hash_leaf_with_pointer, hash_nonleaf_with_pointer, &data)){
+    return -1; // Allocation error
+  }
+
+  int ret = _tree_depth_first_search(
+      tree,
+      sort_func4_on_leaf, sort_func4_on_nonleaf_preorder,
+      NULL, sort_func4_on_nonleaf_postorder,
+      &data);
+
+  if (ret){
+    // Cleanup all
+    destroy_sort_func4_data(&data, 0);
+    return ret;
+  }
+
+  if (out_label) {
+    *out_label = data.label_cache[0];
+
+    // Look into refs array for root node to get length of label
+    const ptrdiff_t d = data.tree->root - data.anchor;
+    *out_label_size = data.refs[d].label_len;
+
+    // Cleanup, but do not free label_cache[0]
+    destroy_sort_func4_data(&data, 1);
+  }else{
+    // User do not want the label, throw it away.
+    destroy_sort_func4_data(&data, 0);
+  }
+  return 0;
+}
+
+
+int tree_sort_by_hash_data(
+        const Tree *tree,
+        Tree **out_tree,
+        char **out_label,
+        size_t *out_label_size)
+{
+  if(out_tree && *out_tree != NULL ){
+    tree_destroy(out_tree);
+  }
+
+  Tree *copied_tree = tree_clone(tree, NULL, NULL);
+  int ret = tree_sort_by_hash_data_inplace(copied_tree, out_label, out_label_size);
+
+  if (ret) { // error occoured, return NULL for out_tree and out_label
+    tree_destroy(&copied_tree);
+    return ret;
+  }
+
+  if( out_tree ) {
+      *out_tree = copied_tree;
+  }else{
+    tree_destroy(&copied_tree);
+  }
+  return ret;
+}
+
+
+int tree_sort_by_hash_inplace(
+        Tree *tree,
+        char **out_label,
+        size_t *out_label_size)
+{
+  if(out_label && *out_label != NULL ){
+    free(*out_label); *out_label = NULL; *out_label_size = 0;
   }
 
   sort_func4_data_t data;
@@ -1370,89 +1534,13 @@ int tree_sort_by_hash_data_inplace(
       NULL, sort_func4_on_nonleaf_postorder,
       &data);
 
-  if (ret == 0){
-    // Cleanup, but hold result
-    destroy_sort_func4_data(&data, 1);
-    *out_label = data.label_cache[0];
-    return 0;
-  }else{
+  if (ret){
     // Cleanup all
     destroy_sort_func4_data(&data, 0);
-    return -1;
-  }
-}
-
-
-int tree_sort_by_hash_data(
-        const Tree *tree,
-        Tree **out_tree,
-        char **out_label)
-{
-  if( *out_tree != NULL ){
-    tree_destroy(out_tree);
-  }
-
-  Tree *copied_tree = tree_clone(tree, NULL, NULL);
-  int ret = tree_sort_by_hash_data_inplace(copied_tree, out_label);
-
-  if (ret) { // error occoured, return NULL for out_tree and out_label
-    tree_destroy(&copied_tree); *out_tree = NULL; // redundant
-    free(*out_label); *out_label = NULL;
     return ret;
   }
-  *out_tree = copied_tree;
-  return ret;
-}
 
-
-char *tree_hash_label(
-        const Tree *tree)
-{
-  sort_func4_data_t data;
-  if (create_sort_func4_data(tree, 0, hash_leaf, hash_nonleaf, &data)){
-    return NULL; // Allocation error
-  }
-
-  int ret = _tree_depth_first_search(
-      (Tree *)tree,
-      sort_func4_on_leaf, sort_func4_on_nonleaf_preorder,
-      NULL, sort_func4_on_nonleaf_postorder,
-      &data);
-
-  if (ret == 0){
-    // Cleanup, but hold result
-    destroy_sort_func4_data(&data, 1);
-    char *out_label = data.label_cache[0];
-    return out_label;
-  }else{
-    // Cleanup all
-    destroy_sort_func4_data(&data, 0);
-    return NULL;
-  }
-}
-
-
-int tree_sort_by_data_pointer_inplace(
-        Tree *tree,
-        char **out_label,
-        size_t *out_label_size)
-{
-  if( *out_label != NULL ){
-    free(*out_label); *out_label = NULL; *out_label_size = 0;
-  }
-
-  sort_func4_data_t data;
-  if (create_sort_func4_data(tree, 1, enrich_leaf_by_pointer, enrich_nonleaf_by_pointer, &data)){
-    return -1; // Allocation error
-  }
-
-  int ret = _tree_depth_first_search(
-      tree,
-      sort_func4_on_leaf, sort_func4_on_nonleaf_preorder,
-      NULL, sort_func4_on_nonleaf_postorder,
-      &data);
-
-  if (ret == 0){
+  if (out_label) {
     *out_label = data.label_cache[0];
 
     // Look into refs array for root node to get length of label
@@ -1461,72 +1549,36 @@ int tree_sort_by_data_pointer_inplace(
 
     // Cleanup, but do not free label_cache[0]
     destroy_sort_func4_data(&data, 1);
-    return 0;
   }else{
-    // Cleanup all
+    // User do not want the label, throw it away.
     destroy_sort_func4_data(&data, 0);
-    return -1;
   }
-
+  return 0;
 }
 
-int tree_sort_by_data_pointer(
+
+int tree_sort_by_hash(
         const Tree *tree,
         Tree **out_tree,
         char **out_label,
         size_t *out_label_size)
 {
-  if( *out_tree != NULL ){
+  if(out_tree && *out_tree != NULL ){
     tree_destroy(out_tree);
   }
 
   Tree *copied_tree = tree_clone(tree, NULL, NULL);
-  int ret = tree_sort_by_data_pointer_inplace(copied_tree,
-      out_label, out_label_size);
+  int ret = tree_sort_by_hash_inplace(copied_tree, out_label, out_label_size);
 
   if (ret) { // error occoured, return NULL for out_tree and out_label
-    tree_destroy(&copied_tree); *out_tree = NULL; // redundant
-    free(*out_label); *out_label = NULL; *out_label_size = 0;
+    tree_destroy(&copied_tree);
     return ret;
   }
-  *out_tree = copied_tree;
+
+  if( out_tree ) {
+      *out_tree = copied_tree;
+  }else{
+    tree_destroy(&copied_tree);
+  }
   return ret;
 }
-
-int tree_data_pointer_label(
-        const Tree *tree,
-        char **out_label,
-        size_t *out_label_size)
-{
-  if( *out_label != NULL ){
-    free(*out_label); *out_label = NULL; *out_label_size = 0;
-  }
-
-  sort_func4_data_t data;
-  if (create_sort_func4_data(tree, 0, enrich_leaf_by_pointer, enrich_nonleaf_by_pointer, &data)){
-    return -1; // Allocation error
-  }
-
-  int ret = _tree_depth_first_search(
-      (Tree *)tree,
-      sort_func4_on_leaf, sort_func4_on_nonleaf_preorder,
-      NULL, sort_func4_on_nonleaf_postorder,
-      &data);
-
-  if (ret == 0){
-    *out_label = data.label_cache[0];
-
-    // Look into refs array for root node to get length of label
-    const ptrdiff_t d = data.tree->root - data.anchor;
-    *out_label_size = data.refs[d].label_len;
-
-    // Cleanup, but do not free label_cache[0]
-    destroy_sort_func4_data(&data, 1);
-    return 0;
-  }else{
-    // Cleanup all
-    destroy_sort_func4_data(&data, 0);
-    return -1;
-  }
-}
-#endif

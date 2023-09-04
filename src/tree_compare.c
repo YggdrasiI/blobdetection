@@ -6,7 +6,7 @@
 
 #include "blobdetection/enums.h"
 #include "blobdetection/tree.h"
-//#include "blobdetection/tree_sort.h"
+#include "blobdetection/tree_sort.h"
 
 #include "tree_intern.h"
 
@@ -112,6 +112,8 @@ typedef struct {
     size_t num_sorting_siblings;
     Node **sorting_siblings1;
     Node **sorting_siblings2;
+    const Tree * const tree1; // for debugging
+    const Tree * const tree2; // for debugging
 } compare_func2_data;
 
 void destroy_compare_func2_data(compare_func2_data *d){
@@ -127,7 +129,18 @@ int parent_compare_func2(Node *n1, Node *n2, void *_compare_data) {
 
   // This function re-sorts child on left-most child and just compare results
   // on all other nodes. (Maybe it's better to check all siblings directly in first call?!)
+#ifdef DIRECT_CHECK_AFTER_SORTING
+  if( n1->parent->child != n1 ) return 0;
+#else
   if( n1->parent->child != n1 ) return child_compare_func2(n1->parent, n2->parent, _compare_data);
+#endif
+
+#if 0
+    printf("t1:\n");
+    tree_print(compare_data->tree1, n1->parent, 0);
+    printf("t2:\n");
+    tree_print(compare_data->tree2, n2->parent, 0);
+#endif
 
   // Search bijection between nodes of n1->parent and n2->parent by sorting both sets
 #ifdef TREE_REDUNDANT_INFOS
@@ -200,6 +213,13 @@ int parent_compare_func2(Node *n1, Node *n2, void *_compare_data) {
   uint32_t num_nodes = node_index;
 #endif
 
+#if 0
+  for(int ii=0; ii< num_nodes; ++ii){
+    printf("A %p\t%p\n", compare_data->sorting_siblings1[ii],
+            compare_data->sorting_siblings2[ii]);
+  }
+#endif
+
   // Sorting
   _quicksort_pointer(
       (void **)compare_data->sorting_siblings1,
@@ -210,8 +230,22 @@ int parent_compare_func2(Node *n1, Node *n2, void *_compare_data) {
       (void **)compare_data->sorting_siblings2+num_nodes,
       _cmp_pointer_by_position);
 
-#ifdef DIRECT_CHECK_AFTER_SORTING
+#if 0
+  for(int ii=0; ii< num_nodes; ++ii){
+    printf("B %p\t%p\n", compare_data->sorting_siblings1[ii],
+            compare_data->sorting_siblings2[ii]);
+    printf("child tree1:\n");
+    tree_print(compare_data->tree1, compare_data->sorting_siblings1[ii], 0);
+    printf("child tree2:\n");
+    tree_print(compare_data->tree2, compare_data->sorting_siblings2[ii], 0);
+  }
+#endif
+
+  reorder_children2(compare_data->sorting_siblings1,
+          compare_data->sorting_siblings2, num_nodes);
+
   // Check if canonical form is the same.
+#ifdef DIRECT_CHECK_AFTER_SORTING
   uint32_t idx = num_nodes;
   while(idx--){
     Node *n1 = compare_data->sorting_siblings1[idx];
@@ -219,30 +253,7 @@ int parent_compare_func2(Node *n1, Node *n2, void *_compare_data) {
     int d = child_compare_func2(n1, n2, _compare_data);
     if (d) return d;
   }
-
-  // Update node order in both trees to canonical form.
-  Node **pn1 = compare_data->sorting_siblings1;
-  Node **pn2 = compare_data->sorting_siblings2;
-  for(idx = 0; idx<num_nodes-1; ++idx){
-    (*pn1)->sibling = *(pn1+1);
-    (*pn2)->sibling = *(pn2+1);
-    ++pn1; ++pn2;
-  }
-  (*pn1)->sibling = NULL;
-  (*pn2)->sibling = NULL;
 #else // Just check leftmost node.
-
-  // Update node order in both trees to canonical form.
-  Node **pn1 = compare_data->sorting_siblings1;
-  Node **pn2 = compare_data->sorting_siblings2;
-  for(idx = 0; idx<num_nodes-1; ++idx){
-    (*pn1)->sibling = *(pn1+1);
-    (*pn2)->sibling = *(pn2+1);
-    ++pn1; ++pn2;
-  }
-  (*pn1)->sibling = NULL;
-  (*pn2)->sibling = NULL;
-
   int d = child_compare_func2(compare_data->sorting_siblings1[0],
       compare_data->sorting_siblings2[0], compare_data);
   if (d) return d;
@@ -457,8 +468,11 @@ int parent_compare_func5(Node *n1, Node *n2, void *_compare_data) {
       (void **)compare_data->sorting_siblings2+num_nodes,
       _cmp_nodes_by_data_pointer);
 
-#ifdef DIRECT_CHECK_AFTER_SORTING
+  reorder_children2(compare_data->sorting_siblings1,
+          compare_data->sorting_siblings2, num_nodes);
+
   // Check if canonical form is the same.
+#ifdef DIRECT_CHECK_AFTER_SORTING
   uint32_t idx = num_nodes;
   while(idx--){
     Node *n1 = compare_data->sorting_siblings1[idx];
@@ -466,30 +480,7 @@ int parent_compare_func5(Node *n1, Node *n2, void *_compare_data) {
     int d = child_compare_func5(n1, n2, compare_data);
     if (d) return d;
   }
-
-  // Update node order in both trees to canonical form.
-  Node **pn1 = compare_data->sorting_siblings1;
-  Node **pn2 = compare_data->sorting_siblings2;
-  for(idx = 0; idx<num_nodes-1; ++idx){
-    (*pn1)->sibling = *(pn1+1);
-    (*pn2)->sibling = *(pn2+1);
-    ++pn1; ++pn2;
-  }
-  (*pn1)->sibling = NULL;
-  (*pn2)->sibling = NULL;
 #else // Just check leftmost node.
-
-  // Update node order in both trees to canonical form.
-  Node **pn1 = compare_data->sorting_siblings1;
-  Node **pn2 = compare_data->sorting_siblings2;
-  for(idx = 0; idx<num_nodes-1; ++idx){
-    (*pn1)->sibling = *(pn1+1);
-    (*pn2)->sibling = *(pn2+1);
-    ++pn1; ++pn2;
-  }
-  (*pn1)->sibling = NULL;
-  (*pn2)->sibling = NULL;
-
   int d = child_compare_func5(compare_data->sorting_siblings1[0],
       compare_data->sorting_siblings2[0], compare_data);
   if (d) return d;
@@ -607,6 +598,8 @@ int tree_cmp_child_node_order_scrambled(
     .num_sorting_siblings = 0,
     .sorting_siblings1 = NULL,
     .sorting_siblings2 = NULL,
+    .tree1 = _tree1,
+    .tree2 = _tree2,
   };
   int ret = _trees_depth_first_search(_tree1, _tree2,
       child_compare_func2, parent_compare_func2,
@@ -648,15 +641,19 @@ int tree_cmp_if_nodes_isomorph(
    * Thus 2*num_nodes(t)+1 chars can store the whole string,
    *  where num_nodes(t) <= t->size.
    */
-  char *label_tree1 = tree_canonical_label(tree1);
-  if (label_tree1 == NULL) return -1;
-  char *label_tree2 = tree_canonical_label(tree2);
-  if (label_tree2 == NULL) {
+  char *label_tree1 = NULL, *label_tree2 = NULL;
+  size_t label_tree1_len, label_tree2_len;
+  int ret;
+
+  ret = tree_sort_canonical_order(tree1, NULL, &label_tree1, &label_tree1_len);
+  if (ret) return -1;
+  ret = tree_sort_canonical_order(tree2, NULL, &label_tree2, &label_tree2_len);
+  if (ret) {
     free(label_tree1);
     return 1;
   }
 
-  int ret = strcmp(label_tree1, label_tree2);
+  ret = strcmp(label_tree1, label_tree2);
 
   // Cleanup
   free(label_tree1);
@@ -731,9 +728,99 @@ int tree_cmp_if_data_isomorph(
   size_t label_tree1_len, label_tree2_len;
   int ret;
 
-  ret = tree_data_pointer_label(tree1, &label_tree1, &label_tree1_len);
+  ret = tree_sort_by_data_pointer(tree1, NULL, &label_tree1, &label_tree1_len);
   if (ret) return -1;
-  ret = tree_data_pointer_label(tree2, &label_tree2, &label_tree2_len);
+  ret = tree_sort_by_data_pointer(tree2, NULL, &label_tree2, &label_tree2_len);
+  if (ret){
+    free(label_tree1);
+    return 1;
+  }
+#if 0
+  printf("Label1: %s\nLabel2: %s\nsize1: %lu len1: %lu\nsize2: %lu len2: %lu\n",
+      label_tree1, label_tree2,
+      label_tree1_len, strlen(label_tree1),
+      label_tree2_len, strlen(label_tree2));
+#endif
+
+  ret = label_tree1_len - label_tree2_len;
+  if (ret == 0){
+    ret = memcmp(label_tree1, label_tree2, label_tree1_len);
+  }
+
+  // Cleanup
+  free(label_tree1);
+  free(label_tree2);
+  return ret;
+}
+
+int tree_cmp_node_hash_isomorph(
+    const Tree * const tree1,
+    const Tree * const tree2)
+{
+  assert(tree1 != NULL && tree2 != NULL);
+
+  /* Generate labels by hashing XOR-ed child values. (Without respect of ->data)
+   *
+   * If both root labels are the same the trees had an isomorph
+   * structure.
+   * (Or two hashes collided.)
+   */
+
+  char *label_tree1 = NULL, *label_tree2 = NULL;
+  size_t label_tree1_len, label_tree2_len;
+  int ret;
+
+  ret = tree_sort_by_hash(tree1, NULL, &label_tree1, &label_tree1_len);
+  if (ret) return -1;
+  ret = tree_sort_by_hash(tree2, NULL, &label_tree2, &label_tree2_len);
+  if (ret){
+    free(label_tree1);
+    return 1;
+  }
+#if 0
+  printf("Label1: %s\nLabel2: %s\nsize1: %lu len1: %lu\nsize2: %lu len2: %lu\n",
+      label_tree1, label_tree2,
+      label_tree1_len, strlen(label_tree1),
+      label_tree2_len, strlen(label_tree2));
+#endif
+
+  ret = label_tree1_len - label_tree2_len;
+  if (ret == 0){
+    ret = memcmp(label_tree1, label_tree2, label_tree1_len);
+  }
+
+  // Cleanup
+  free(label_tree1);
+  free(label_tree2);
+  return ret;
+}
+
+int tree_cmp_node_data_isomorph(
+    const Tree * const tree1,
+    const Tree * const tree2)
+{
+  assert(tree1 != NULL && tree2 != NULL);
+
+  /* Generate labels by hashing XOR-ed child values AND own data->pointer.
+   *
+   * If both root labels are the same the trees had an isomorph
+   * structure and the data-Pointer of each node matches.
+   * (Or two hashes collided.)
+   */
+  /* Generate labels which containing the data-pointer as part and
+   * sorting the labels from child nodes during tree traversal.
+   *
+   * If both root labels are the same the trees had an isomorph
+   * structure and the data-Pointer of each node matches.
+   */
+
+  char *label_tree1 = NULL, *label_tree2 = NULL;
+  size_t label_tree1_len, label_tree2_len;
+  int ret;
+
+  ret = tree_sort_by_hash_data(tree1, NULL, &label_tree1, &label_tree1_len);
+  if (ret) return -1;
+  ret = tree_sort_by_hash_data(tree2, NULL, &label_tree2, &label_tree2_len);
   if (ret){
     free(label_tree1);
     return 1;
@@ -779,6 +866,10 @@ int tree_cmp(
       return tree_cmp_child_data_order_scrambled(tree1, tree2);
     case TREE_COMPARE_IF_DATA_ISOMORPH:
       return tree_cmp_if_data_isomorph(tree1, tree2);
+    case TREE_COMPARE_ISOMORPH_NODE_HASH:
+      return tree_cmp_node_hash_isomorph(tree1, tree2);
+    case TREE_COMPARE_ISOMORPH_DATA_HASH:
+      return tree_cmp_node_data_isomorph(tree1, tree2);
     default:
       fprintf(stderr, "Unsupported compare type: ");
       fprintf_enum_name(stderr, compare_type);

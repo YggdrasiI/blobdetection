@@ -103,7 +103,7 @@ int _tree_depth_first_search(
         if (on_non_leaf_pre_order(cur->child, data)) return 1;
       }
 
-      // After on_non_leaf_in_order()-call to allow resort of childs before.
+      // Set pointer after on_non_leaf_in_order()-call to allow resort of childs before.
       cur = cur->child;
       continue;
     }
@@ -214,14 +214,14 @@ int _trees_depth_first_search(
         return -12; //Child missing
       }
 
-      // Pre-Order-Positon, non-leafs
+      // Pre-Order-Position, non-leafs
       // Event for cur1->parent, but argument is cur1!
       if (on_non_leaf_pre_order != NULL) {
         int32_t d = on_non_leaf_pre_order(cur1->child, cur2->child, data);
         if (d) return d;
       }
 
-      // After on_non_leaf_in_order()-call to allow resort of childs before.
+      // Set pointer after on_non_leaf_in_order()-call to allow resort of childs before.
       cur1 = cur1->child;
       cur2 = cur2->child;
       assert(cur1!= NULL && cur2 != NULL); // guaranteed due previous if's.

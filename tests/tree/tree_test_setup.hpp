@@ -197,3 +197,10 @@ int check_integrity(Tree *t) {
 	}
 	return err;
 }
+
+void add_printable_data_pointer(Tree *t, int inc){
+	char *offset = (char *)0x4141414141414141; //shift label chars into printable range.
+	for(int i=0; i<t->size; ++i){
+		t->nodes[i].data = offset + (inc?i:0);
+	}
+}

@@ -55,7 +55,7 @@ void swap_siblings(Node *a, Node *b)
   Node *p = a->parent;
   Node *c = p->child;
   Node *d = p->child;
-  //serach c, d with ..., c, a, ..., d, b order
+  //search c, d with ..., c, a, ..., d, b order
   if(c==a) c = NULL;
   else{
     while(c->sibling!=a) c=c->sibling;
@@ -121,6 +121,46 @@ int32_t successor(Node *parent, Node *child)
 }
 
 void *quicksort_siblings(Node **begin, Node **end);
+
+/* Assume that pchildren containing pointers to all
+ * children of a node. Change order of this nodes given 
+ * by the array.
+ */
+  INLINE
+void reorder_children1(
+        Node * const * const pchildren1,
+        uint32_t num_children)
+{
+  // Update node order in both trees to canonical form.
+  Node * const *pn1 = pchildren1+num_children; // Points behind array
+  (*--pn1)->sibling = NULL; // Rightmost child without sibling
+  while(--num_children){
+    (*(pn1-1))->sibling = *pn1; // Map on right child
+    pn1--;
+  }
+  (*pn1)->parent->child = *pn1; // Leftmost child set in parent node
+}
+
+  INLINE
+void reorder_children2(
+        Node * const * const pchildren1,
+        Node * const * const pchildren2,
+        uint32_t num_children)
+{
+  // Update node order in both trees to canonical form.
+  Node * const *pn1 = pchildren1+num_children; // Points behind array
+  Node * const *pn2 = pchildren2+num_children;
+  (*--pn1)->sibling = NULL; // Rightmost child without sibling
+  (*--pn2)->sibling = NULL;
+  while(--num_children){
+    (*(pn1-1))->sibling = *pn1; // Map on right child
+    (*(pn2-1))->sibling = *pn2;
+    --pn1; --pn2;
+  }
+  (*pn1)->parent->child = *pn1; // Leftmost child set in parent node
+  (*pn2)->parent->child = *pn2;
+}
+
 /*
  * END Helper functions for sorting
  * */
