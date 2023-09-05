@@ -4,6 +4,8 @@
 
 extern "C" {
 #include "blobdetection/tree.h"
+#include "blobdetection/tree_sort.h"
+
 #include "tree_loops.h"
 }
 
@@ -200,7 +202,7 @@ int check_integrity(Tree *t) {
 
 void add_printable_data_pointer(Tree *t, int inc){
 	char *offset = (char *)0x4141414141414141; //shift label chars into printable range.
-	for(int i=0; i<t->size; ++i){
+	for(size_t i=0; i<t->size; ++i){
 		t->nodes[i].data = offset + (inc?i:0);
 	}
 }

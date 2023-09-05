@@ -327,7 +327,7 @@ TEST(TestTreeCompare, CompareType8_EqualStructure8) {
 	init_tree_structure8(t2);
 
 	char *offset = (char *)0x4141414141414141; //shift label chars into printable range.
-	for(int i=0; i<t1->size; ++i){
+	for(size_t i=0; i<t1->size; ++i){
 		t1->nodes[i].data = offset + 0x0102030405060708 + i; //* 16;
 		t2->nodes[i].data = offset + 0x0102030405060708 + i; //* 16;
 	}
